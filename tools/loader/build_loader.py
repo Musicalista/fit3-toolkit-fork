@@ -9,7 +9,7 @@ def run(*a):
     r = subprocess.run(a, capture_output=True, text=True)
     if r.returncode: sys.exit("FAILED: %s\n%s%s" % (" ".join(a[:2]), r.stdout, r.stderr))
     return r.stdout
-def build(src, out):
+def build(src, out, quiet=False):
     d = tempfile.mkdtemp(prefix="f3loader_"); o, elf = os.path.join(d, "l.o"), os.path.join(d, "l.elf")
     run("arm-none-eabi-gcc", "-mcpu=cortex-m4", "-mthumb", "-mfloat-abi=soft", "-Os", "-Wall", "-Werror", "-ffreestanding", "-fno-builtin", "-fno-pic", "-fno-stack-protector", "-fno-exceptions",
         "-fno-tree-loop-distribute-patterns", "-ffunction-sections", "-fdata-sections", "-c", src, "-o", o)
@@ -23,8 +23,10 @@ def build(src, out):
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     run("arm-none-eabi-objcopy", "-O", "binary", elf, out)
     syms = {l.split()[2]: int(l.split()[0], 16) for l in run("arm-none-eabi-nm", elf).splitlines() if len(l.split()) == 3}
-    print("wrote %s, %d bytes" % (out, os.path.getsize(out)))
-    for name in ("loader_entry", "world_create", "world_event"):
-        if name in syms: print("  %s at %#x (Thumb address %#x)" % (name, syms[name] & ~1, syms[name] | 1))
+    if not quiet:
+        print("wrote %s, %d bytes" % (out, os.path.getsize(out)))
+        for name in ("loader_entry", "world_create", "world_event"):
+            if name in syms: print("  %s at %#x (Thumb address %#x)" % (name, syms[name] & ~1, syms[name] | 1))
+    return syms
 if __name__ == "__main__":
     build(sys.argv[1], sys.argv[2])

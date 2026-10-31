@@ -5,7 +5,7 @@
  * font tables. The scoring rules, the data and the save format are those of apps/tenis (best of 3 sets, tie-break at 6-6, 16 undo steps, one save of 128 bytes 3 s after
  * the last change and when the window is deleted).
  *
- * Side key: see world_event (T7). Touch: a click on a card is a point for that player; the left strip of a card (the letter) toggles who serves before the first point. "Undo" takes a point back,
+ * Side key: the stock behaviour (to the watch face), see world_event. Touch: a click on a card is a point for that player; the left strip of a card (the letter) toggles who serves before the first point. "Undo" takes a point back,
  * "Stats" shows an overlay with the match and set times and a "New" button that asks twice. Back gesture: closes the overlay, or leaves the window.
  * Time: ticks (ms) + a shift stored in the save file, so durations survive a restart of the watch (the RTC call has an unknown signature, so it is not used).
  * Freestanding C: no libc, no libgcc (hardware divide only), no static data (everything lives in one app-heap block). Firmware addresses: docs/symbols.csv. */
@@ -251,7 +251,7 @@ static void on_card(lv_event_t *e) {
     }
 }
 #define BACK_ANIM 0x14                                                  /* 4th argument of wm_open for "back" (T8 decides whether this is the right one) */
-/* what both the back gesture and the side key do: close the stats overlay first, then leave the window */
+/* back gesture: close the stats overlay first, then leave the window */
 static void go_back(State *s) {
     if (s->over_shown) show_stats(s, 0);
     else wm_open(3, -1, 0, BACK_ANIM);
@@ -309,22 +309,15 @@ __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 pa
     return scr;
 }
 
-/* world_event(class, kind, data): the window manager's callback of window 0x2b (T4, T7).
- *   (0, 0)  window entered          -> remember the window id as the stock one did (wm_set_current)
- *   (0, 8)  "key policy" query      -> the return value is a bit mask (T7): the stock windows return 0x2c4; bit 6 means "the side key goes to the watch face".
- *                                      We return 0x284 (bit 6 clear), which leaves the long press (0x404) and the double press (0x407, 0x408) as stock and hands the
- *                                      short press to us:
- *   (1, 6)  short press of the side key -> go back, the same as the gesture (closes the stats overlay first)
- * The arguments arrive without sign or zero extension, so they are masked. The state comes from the screen of the window record (RAM 0x200fb4e4 + 0x2b * 0x30):
- * its +3 bit 2 says "screen created", +0x10 is the lv_obj, whose user_data we set to the state in world_create. */
-#define REC_2B 0x200fbcf4
+/* world_event(class, kind, data): the window manager's callback of window 0x2b (T4, T7, T8). Every answer matters: the manager uses the return value.
+ *   (0, 0)  window entered     -> remember the window id as the stock one did (wm_set_current)
+ *   (0, 8)  key policy query   -> a bit mask (T7). 0x2c4 is what the stock windows answer; with bit 6 set the manager sends the short press of the side key to the watch face
+ *                                 by itself (wm_request(1, 2, ...)), exactly as in the stock apps, so we do nothing for the key.
+ *   everything else -> 0. In particular the queries 6, 7 and 9 must be 0: a non-zero answer makes the manager run its own swipe-back with its own animation (T8).
+ * The arguments arrive without sign or zero extension, so they are masked. */
 __attribute__((section(".text.entry.event"))) u32 world_event(u32 cls, u32 kind, void *data) {
     (void)data; cls &= 0xff; kind &= 0xff;
     if (cls == 0 && kind == 0) { wm_set_current(0x2b); return 0; }
-    if (cls == 0 && kind == 8) return 0x284;
-    if (cls == 1 && kind == 6) {
-        lv_obj_t *scr = *(lv_obj_t **)(REC_2B + 0x10);
-        if (scr && (*(u8 *)(REC_2B + 3) & 4)) { State *s = *(State **)((u8 *)scr + 0x10); if (s) go_back(s); }
-    }
+    if (cls == 0 && kind == 8) return 0x2c4;
     return 0;
 }
