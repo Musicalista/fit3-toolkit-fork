@@ -7,7 +7,7 @@
  *   world_event  (stock 0x2c1ecd68, +0x24): the stock one only rebuilds the page; ours keeps the one thing it set on entry (window +0x24 = 0x2b via 0x2c224d30).
  * The stock destroy (0x2c1ecee4, +0x2c) stays: with no stock state it only runs null-safe cleanup, then the window manager deletes our screen.
  * The screen shows what v0 showed (uptime, touch counters) plus the back gesture, done like the flashlight page: GESTURE (12) with lv_indev_get_gesture_dir == 2 (right)
- * -> ui_gesture_consume (0x2c224f04) + wm_open(3, -1, 0, 0) (0x2c225ddc). DELETE (33) on the screen deletes our timer and frees the state.
+ * -> wm_open(3, -1, 0, 0x14) (0x2c225ddc; the 4th argument is the transition: 0x14 slides the way the finger moves, 0 slid the other way) + ui_gesture_consume (0x2c224f04). DELETE (33) on the screen deletes our timer and frees the state.
  * Not handled (replaced stock behaviour): the World clock tile (param 0x67) and the time-change message (class 2, 0x3b): both are ignored here. */
 typedef unsigned int u32; typedef unsigned short u16; typedef unsigned char u8; typedef int i32;
 typedef struct lv_obj lv_obj_t; typedef struct lv_timer lv_timer_t; typedef struct lv_event lv_event_t; typedef struct lv_indev lv_indev_t;
@@ -82,7 +82,7 @@ static void on_event(lv_event_t *e) {
     State *s = (State *)lv_event_get_user_data(e); u32 code = lv_event_get_code(e);
     if (code == EV_DELETE) { if (s->timer) lv_timer_del(s->timer); s->timer = 0; lv_mem_free(s); return; }
     if (code == EV_GESTURE) {
-        if (lv_indev_get_gesture_dir(lv_indev_get_act()) == 2) { ui_gesture_consume(); wm_open(3, -1, 0, 0); }
+        if (lv_indev_get_gesture_dir(lv_indev_get_act()) == 2) { wm_open(3, -1, 0, 0x14); ui_gesture_consume(); }   /* 0x14 = the "back" slide: the stock World clock page calls exactly this (0x2c1ecb82) */
         return;
     }
     if (code == EV_PRESSED || code == EV_CLICKED || code == EV_RELEASED) {
@@ -104,7 +104,7 @@ __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 pa
     { u8 *z = (u8 *)s; for (u32 i = 0; i < sizeof(State); i++) z[i] = 0; }
     s->panel = scr;
     lv_obj_clear_flag(scr, FLAG_SCROLLABLE); set_bg_color(scr, 0x0000); set_bg_opa(scr, 255);
-    s->l_title = mk_label(scr, 40, 0xffff, "Loader v1");
+    s->l_title = mk_label(scr, 40, 0xffff, "Loader v1b");
     s->l_up = mk_label(scr, 120, 0x047f, "0"); s->l_cnt = mk_label(scr, 190, 0xffff, "p0 c0 r0"); s->l_xy = mk_label(scr, 250, 0xadd8, "0,0");
     lv_obj_add_event_cb(scr, on_event, 0, s);                      /* 0 = LV_EVENT_ALL */
     s->timer = lv_timer_create(on_tick, 250, s);

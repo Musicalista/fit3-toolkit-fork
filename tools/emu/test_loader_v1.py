@@ -25,7 +25,7 @@ def main():
     ok("screen is not scrollable", not (e.u32(scr + 0x24) & (1 << 4)), "flags=%#x" % e.u32(scr + 0x24))
     spec = e.u32(scr + 8); n = e.u32(spec + 4); labels = [e.u32(e.u32(spec) + 4 * i) for i in range(n)]
     texts = [e.cstr(e.u32(l + 0x2c)) for l in labels]
-    ok("four labels with the expected texts", texts == ["Loader v1", "0.0", "p0 c0 r0", "0,0"], repr(texts))
+    ok("four labels with the expected texts", texts == ["Loader v1b", "0.0", "p0 c0 r0", "0,0"], repr(texts))
     ev = e.u32(spec + 0xc); state = e.u32(ev + 4); timer = e.u32(state + 20)
     ok("state block and tick timer exist", state and timer, "state=%#x timer=%#x" % (state, timer))
     cb = e.u32(timer + 8)
@@ -39,7 +39,7 @@ def main():
     e.hook(0x2c279240, lambda em: 0x20000400); calls.clear()
     for d, expect in ((2, True), (3, False)):
         e.hook(0x2c279336, lambda em, d=d: d); e.call(A["event_send"], scr, 12, 0)
-        ok("gesture dir %d %s" % (d, "goes back via wm_open(3,-1,0,0)" if expect else "does nothing"), (("wm_open", 3, 0xffffffff, 0, 0) in calls) == expect, calls)
+        ok("gesture dir %d %s" % (d, "goes back via wm_open(3,-1,0,0x14), as the stock page does" if expect else "does nothing"), (("wm_open", 3, 0xffffffff, 0, 0x14) in calls) == expect, calls)
         calls.clear()
     log = []; e.hook(0x2c28a448, lambda em: log.append(("timer_del", em.arg(0))) or 0); e.hook(0x2c28a668, lambda em: log.append(("mem_free", em.arg(0))) or 0)
     e.call(0x2c1ecee4)                                                            # stock destroy, run before the window manager deletes the screen
