@@ -1,0 +1,425 @@
+address,name,kind,confidence,evidence
+0x2c275948,lv_obj_class_create_obj,func,verified,"allocs class instance_size, links to parent/screen; mask 0xffff0"
+0x2c275a86,lv_obj_class_init_obj,func,verified,sends events 0x22/0x23 (CHILD_CHANGED/CREATED) to parent
+0x2c27cb84,lv_obj_create,func,verified,"wraps 0x2c275948(&0x2c32ae74,parent)+0x2c275a86; 767 callers"
+0x2c32ae74,lv_obj_class,data,verified,"base=0,w=h=218(0xda),instance_size=44,bits 0x2ca"
+0x2c27c694,lv_obj_constructor,func,verified,class+4; sets flags 0x3302/0x870 at obj+0x24
+0x2c27d394,lv_obj_destructor,func,verified,"class+8; frees spec_attr (+8), children, event_dsc"
+0x2c27d058,lv_obj_event,func,likely,class+0x10 event_cb
+0x2c27cba8,lv_obj_has_class,func,likely,walks class->base_class until == arg; used by every LV_ASSERT_OBJ
+0x2c27d3fc,lv_obj_allocate_spec_attr,func,verified,"allocs 0x24 bytes zero, sets +0x20/+0x21 bits"
+0x2c27cbb8,lv_obj_add_flag,func,verified,flags |= f at obj+0x24; 1139 callers
+0x2c27cc5c,lv_obj_clear_flag,func,verified,flags &= ~f at obj+0x24
+0x2c27b164,lv_obj_del,func,verified,"invalidate, obj_del_core, sends CHILD_CHANGED/DELETED(0x22/0x24) to parent"
+0x2c27b068,obj_del_core,func,verified,"sends event 0x21 (LV_EVENT_DELETE), resets indevs, frees obj"
+0x2c27b1e8,lv_obj_clean,func,verified,deletes all children via obj_del_core
+0x2c277954,lv_obj_set_x,func,likely,called by set_pos; style X
+0x2c2779bc,lv_obj_set_y,func,likely,called by set_pos
+0x2c277a24,lv_obj_set_pos,func,verified,set_x + set_y; 283 callers
+0x2c277a5c,lv_obj_set_width,func,likely,called by set_size
+0x2c277ac4,lv_obj_set_height,func,likely,called by set_size
+0x2c277b2c,lv_obj_set_size,func,verified,"set_width+set_height; called (obj,256,402) in worldclock"
+0x2c277c44,lv_obj_set_align,func,likely,style align (prop 9) only
+0x2c277c4c,lv_obj_align (RTL-aware),func,likely,style align + set_pos; mirrors align and negates x if global flag; 1768 callers
+0x2c277c80,lv_obj_align (plain),func,likely,"style align + set_pos, no mirroring"
+0x2c27908c,lv_obj_align_to,func,likely,"(obj,base,align,x,y); 1803 callers"
+0x2c277d68,lv_obj_get_width,func,verified,"x2-x1+1 from obj+0x1c,+0x14"
+0x2c277d90,lv_obj_get_height,func,verified,"y2-y1+1 from obj+0x20,+0x18"
+0x2c277c9c,lv_obj_get_coords,func,likely,copies obj+0x14 area
+0x2c27ae8c,lv_obj_get_parent,func,verified,returns obj+4
+0x2c27af24,lv_obj_get_screen,func,verified,walks parent chain to root
+0x2c27af54,lv_obj_get_disp,func,likely,finds display owning screen; disp+0x10=act_scr
+0x2c27afb0,lv_obj_get_child,func,verified,"children[] at spec_attr+0, count +4, negative idx"
+0x2c27aff0,lv_obj_get_child_cnt,func,verified,spec_attr+4
+0x2c27b018,lv_obj_get_index,func,likely,loops get_child
+0x2c2782a8,lv_obj_invalidate,func,likely,called after flag/text/src changes
+0x2c278d2c,lv_obj_update_layout,func,likely,"guarded by re-entrancy flag, loops layout"
+0x2c277b98,lv_obj_mark_layout_as_dirty,func,likely,sets bit in obj+0x2a and screen
+0x2c27a5ec,lv_obj_get_style_prop,func,verified,"(obj,part,prop); prop 0x57=TEXT_FONT used in img_set_src"
+0x2c27ab0a,lv_obj_set_local_style_prop,func,verified,get_local_style+lv_style_set_prop+refresh; all set_style_* call it
+0x2c27a518,lv_obj_get_local_style,func,likely,calls lv_style_init (0x2c2895d8)
+0x2c27a760,lv_obj_refresh_style,func,likely,"(obj,part,prop) after set_prop"
+0x2c27b5c8,lv_obj_set_scrollbar_mode,func,verified,spec_attr+0x20 bits0-1; worldclock calls with 0
+0x2c27b6a6,lv_obj_get_scroll_x,func,verified,-spec_attr+0x10
+0x2c27b6c6,lv_obj_get_scroll_y,func,likely,"-spec_attr+0x14; 99 callers, used by [APPLIST] scroll handler"
+0x2c27b6e6,lv_obj_get_scroll_top,func,hypothesis,same expression as get_scroll_y
+0x2c27bae8,lv_obj_scroll_by,func,likely,uses get_scroll_x
+0x2c27be34,lv_obj_scroll_to_x,func,likely,lv_anim_del + scroll_by
+0x2c27be64,lv_obj_scroll_to_y,func,verified,"lv_anim_del(0x2c28ceac)+scroll_by(0,y-cur); 82 callers"
+0x2c27be94,lv_obj_scroll_to,func,likely,scroll_to_x + scroll_to_y
+0x2c27bf48,lv_obj_get_scrollbar_area,func,hypothesis,"1572 bytes, 5 callers, geometry code"
+0x2c27d9cc,lv_obj_add_event_cb,func,verified,"appends {cb,user_data,filter} (12 B) to spec_attr+0xc; count at +0x22&0x3f"
+0x2c27d8fc,lv_event_send,func,verified,"builds on-stack lv_event_t (target,cur,code,user_data,param) -> 0x2c27d7a4"
+0x2c27d7a4,event_send_core,func,likely,calls indev->driver->feedback_cb (+8)
+0x2c27d980,lv_event_get_target,func,verified,returns e+0; 264 callers
+0x2c27d984,lv_event_get_current_target,func,verified,returns e+4
+0x2c27d988,lv_event_get_code,func,verified,returns byte e+8 & 0x7f
+0x2c27d990,lv_event_get_param,func,verified,returns e+0x10
+0x2c27d994,lv_event_get_user_data,func,verified,returns e+0xc
+0x2c388a94,lv_label_class,data,verified,"instance_size 88, w=h=SIZE_CONTENT(0x200007d1)"
+0x2c28de90,lv_label_create,func,verified,class_create_obj(0x2c388a94); 419 callers
+0x2c28e98c,lv_label_set_text,func,verified,"text ptr obj+0x2c, static flag obj+0x54 bit3; first calls 0x2c213710 (text shaping)"
+0x2c28ea6c,lv_label_set_text_fmt,func,likely,"frees old text, text=0x2c28a150(fmt,...); 876 callers"
+0x2c28eb48,lv_label_set_long_mode,func,likely,lv_anim_del then mode; 421 callers
+0x2c28df00,lv_label_get_text,func,verified,returns obj+0x2c
+0x2c388b94,lv_img_class,data,verified,instance_size 96 (= std 80 + 16 Samsung bytes at +0x50)
+0x2c2905ac,lv_img_create,func,verified,class_create_obj(0x2c388b94); 515 callers
+0x2c2904e4,lv_img_constructor,func,verified,"clears CLICKABLE, adds ADV_HITTEST 0x10000; zeroes 16 B at +0x50"
+0x2c29064c,lv_img_set_src,func,verified,"src_type via 0x2c27ee7c, header via 0x2c27ebcc; variable src copied (16 B) to img+0x50; 982 callers"
+0x2c290d68,lv_img_set_angle,func,verified,"wraps >=3600 (0xe10), angle at +0x40"
+0x2c290e60,lv_img_set_pivot,func,likely,pivot at +0x44/+0x48
+0x2c290f4c,lv_img_set_zoom,func,likely,zoom u16 at +0x4c
+0x2c291044,lv_img_set_antialias,func,likely,bit7 of +0x4e
+0x2c29105c,lv_img_set_size_mode,func,likely,bits0-1 of +0x4f
+0x2c29109c,lv_img_get_src,func,verified,returns obj+0x2c
+0x2c388b5c,lv_btn_class,data,verified,"instance_size 44, content size"
+0x2c290474,lv_btn_create,func,verified,class_create_obj(0x2c388b5c); 30 callers
+0x2c290458,lv_btn_constructor,func,verified,"clears SCROLLABLE(0x10), adds SCROLL_ON_FOCUS(0x400)"
+0x2c388a54,lv_switch_class,data,verified,"w=87(0x57) h=51(0x33)=4*218/10,4*218/17; size 48"
+0x2c388ab8,lv_slider_class,data,likely,"base=bar class, instance_size 152"
+0x2c28f984,lv_slider_create,func,likely,class_create_obj(0x2c388ab8)
+0x2c388b1c,lv_roller_class,data,likely,"size 52; default text ""Option 1\nOption 2.."" at 0x2c388ae8"
+0x2c28fda0,lv_roller_create,func,likely,class_create_obj(0x2c388b1c)
+0x2c388d64,lv_bar_class,data,likely,"w=436 h=21=218/10, size 112"
+0x2c296220,lv_bar_create,func,likely,class_create_obj(0x2c388d64)
+0x2c388d88,lv_line_class,data,likely,"size 52, content size"
+0x2c296654,lv_line_create,func,likely,class_create_obj(0x2c388d88)
+0x2c388d3c,lv_checkbox_class,data,likely,"size 52, content size"
+0x2c295ba8,lv_checkbox_create,func,likely,class_create_obj(0x2c388d3c)
+0x2c388be8,lv_dropdown_class,data,likely,"w=218,h=content,size 72"
+0x2c291368,lv_dropdown_create,func,likely,class_create_obj(0x2c388be8)
+0x2c32aca4,lv_chart_class,data,likely,"w=100%,h=436,size 180"
+0x2c272188,lv_chart_create,func,likely,class_create_obj(0x2c32aca4)
+0x2c28a3f0,lv_timer_create,func,verified,"(cb,period,user_data) fields +0,+8,+0xc; 138 callers"
+0x2c28a448,lv_timer_del,func,verified,ll remove + free
+0x2c28a61c,lv_timer_pause,func,likely,sets bit0 of timer+0x14
+0x2c28a626,lv_timer_resume,func,likely,clears bit0 of timer+0x14
+0x2c28a630,lv_timer_set_period,func,likely,*timer=period
+0x2c28a634,lv_timer_ready,func,likely,last_run=tick-period-1
+0x2c28a646,lv_timer_set_repeat_count,func,likely,timer+0x10
+0x2c28a64a,lv_timer_reset,func,likely,last_run=lv_tick_get()
+0x2c28a46c,lv_timer_handler,func,verified,iterates timer ll; called by LVGL task 0x2c14c1b0
+0x2c28a3d4,_lv_timer_core_init,func,likely,called from lv_init
+0x2c27cb30,lv_init,func,likely,"calls timer core init, img decoder init; first call in 0x2c269e98"
+0x2c28ce78,lv_anim_init,func,verified,"memset 0x44, time=500, end=100, repeat=1, path=0x2c28cc74"
+0x2c28cc74,lv_anim_path_linear,func,likely,stored at anim+0x1c by lv_anim_init
+0x2c28cf0c,lv_anim_start,func,likely,lv_anim_del + ll insert; 102 callers
+0x2c28ceac,lv_anim_del,func,likely,"(var,exec_cb); 47 callers"
+0x2c28cf98,lv_anim_get,func,likely,ll search by var/exec_cb
+0x2c28cfc8,lv_anim_speed_to_time,func,verified,"abs(dv)*1000/speed, rounded up"
+0x2c28a658,lv_mem_alloc,func,verified,"wraps 0x2c2bdc28(3,size) (heap tag 3); 298 callers"
+0x2c28a668,lv_mem_free,func,verified,"wraps free(3,p)"
+0x2c28a67c,lv_mem_realloc,func,likely,
+0x2c28a6a8,lv_mem_buf_get,func,verified,16-slot buffer pool
+0x2c28a9fc,lv_memset_00,func,likely,"(p,len) zero fill"
+0x2c28a99c,lv_memset,func,likely,"(p,val,len)"
+0x2c28a7bc,lv_memcpy,func,likely,"(dst,src,len)"
+0x2c28b042,_lv_ll_ins_head,func,likely,node alloc + head link; used by timer/anim/indev
+0x2c2893fc,lv_disp_get_default,func,verified,returns global 0x20134410
+0x2c289408,lv_disp_get_hor_res,func,verified,swaps with ver when rotated bit; 685 callers
+0x2c289424,lv_disp_get_ver_res,func,verified,261 callers
+0x2c289440,lv_disp_get_dpi,func,verified,default 0xda=218
+0x2c289468,lv_disp_get_next,func,likely,ll head/next
+0x2c275b66,lv_disp_get_layer_top,func,verified,returns disp+0x1c
+0x2c275b74,lv_disp_get_layer_sys,func,verified,returns disp+0x20
+0x2c275bc6,lv_disp_get_theme,func,likely,disp+8
+0x2c275b16,lv_scr_load (simplified),func,verified,"sets disp+0x10, sends events 0x25-0x28; no animation; 8 callers"
+0x2c279ffa,lv_theme_get_from_obj,func,likely,obj disp -> theme
+0x2c2894c8,lv_indev_drv_init,func,verified,"memset 0x20, sets +0x18/+0x1c"
+0x2c2894e8,lv_indev_drv_register,func,verified,"allocs 0x90 B indev, lv_timer_create(0x2c279858,5 ms,indev)"
+0x2c279858,lv_indev_read_timer_cb,func,verified,timer cb of indev; user_data=indev at timer+0xc
+0x2c289550,_lv_indev_read,func,likely,"memset data 0x1c, calls drv->read_cb"
+0x2c279240,lv_indev_get_act,func,verified,returns global 0x20131944; 337 callers
+0x2c2793c0,lv_indev_get_obj_act,func,likely,returns global; 4 callers
+0x2c279310,lv_indev_get_point,func,verified,"null->0, non-pointer->-1, else indev+8,+0xc"
+0x2c279370,lv_indev_get_vect,func,likely,"indev+0x20,+0x24"
+0x2c27924c,lv_indev_get_type,func,verified,returns drv->type
+0x2c279336,lv_indev_get_gesture_dir,func,verified,indev+0x78>>4; gesture handler tests ==2 (right)
+0x20131944,indev_act,data,verified,global read by lv_indev_get_act
+0x2013187c,touch_indev_drv,data,verified,"lv_indev_drv_t: type=1 POINTER, read_cb=0x2c26a2a4"
+0x2013189c,touch_indev,data,verified,indev returned by lv_indev_drv_register
+0x2c26a384,touch_indev_init,func,verified,drv_init+type=1+read_cb+register
+0x2c26a2a4,touch_read_cb,func,verified,"pops ring via 0x2c14dff8, writes x,y,state(+0x18)"
+0x2c14dff8,touch_ring_pop,func,verified,"5x16 B ring at 0x2010d0d4 (count +0x50, tail +0x51), mutex 0x2010d128"
+0x2c14d598,touch_ring_push,func,verified,"writes record at head (+0x52), count++"
+0x2c14d648,touch_sys_task,func,likely,"entry w/o callers; on event bit15 locks mutex, calls 0x2c0a76d8, pushes ring"
+0x2c14c1b0,lvgl_ui_task,func,likely,entry w/o callers; calls 0x2c269e98 and lv_timer_handler
+0x2c269e98,ui_init,func,likely,"lv_init, theme, touch_indev_init, image decoders"
+0x2c0a76d8,touch_panel_read,func,verified,"64 B record: type +1, x +4, y +6; mirrors 0x100-x,0x192-y; sets flag 0x20102e12"
+0x2c2895d8,lv_style_init,func,verified,memset 12 B + sentinel 0xaabbccdd; 9 callers
+0x2c2895ec,lv_style_reset,func,likely,"checks sentinel, frees values"
+0x2c289ac0,lv_style_set_prop,func,verified,"sentinel check, group bits at +0xa, count +0xb"
+0x2c289904,lv_style_get_prop,func,likely,search props in style
+0x2c28ae60,lv_style_set_width,func,verified,calls lv_style_set_prop with prop 1
+0x2c28ae68,lv_style_set_max_width,func,verified,calls lv_style_set_prop with prop 3
+0x2c28ae78,lv_style_set_max_height,func,verified,calls lv_style_set_prop with prop 6
+0x2c28ae80,lv_style_set_blend_mode,func,verified,calls lv_style_set_prop with prop 104
+0x2c28ae88,lv_style_set_transform_width,func,verified,calls lv_style_set_prop with prop 105
+0x2c28ae90,lv_style_set_pad_top,func,verified,calls lv_style_set_prop with prop 16
+0x2c28ae98,lv_style_set_pad_bottom,func,verified,calls lv_style_set_prop with prop 17
+0x2c28aea0,lv_style_set_pad_left,func,verified,calls lv_style_set_prop with prop 18
+0x2c28aea8,lv_style_set_pad_right,func,verified,calls lv_style_set_prop with prop 19
+0x2c28aeb0,lv_style_set_pad_row,func,verified,calls lv_style_set_prop with prop 20
+0x2c28aeb8,lv_style_set_pad_column,func,verified,calls lv_style_set_prop with prop 21
+0x2c28aec0,lv_style_set_bg_color,func,verified,calls lv_style_set_prop with prop 32
+0x2c28aed2,lv_style_set_bg_opa,func,verified,calls lv_style_set_prop with prop 33
+0x2c28aeda,lv_style_set_bg_grad_color,func,verified,calls lv_style_set_prop with prop 34
+0x2c28aeec,lv_style_set_bg_img_src,func,verified,calls lv_style_set_prop with prop 40
+0x2c28aef4,lv_style_set_border_color,func,verified,calls lv_style_set_prop with prop 48
+0x2c28af06,lv_style_set_border_opa,func,verified,calls lv_style_set_prop with prop 49
+0x2c28af0e,lv_style_set_border_width,func,verified,calls lv_style_set_prop with prop 50
+0x2c28af16,lv_style_set_border_side,func,verified,calls lv_style_set_prop with prop 51
+0x2c28af1e,lv_style_set_border_post,func,verified,calls lv_style_set_prop with prop 52
+0x2c28af26,lv_style_set_outline_width,func,verified,calls lv_style_set_prop with prop 53
+0x2c28af2e,lv_style_set_outline_color,func,verified,calls lv_style_set_prop with prop 54
+0x2c28af40,lv_style_set_outline_opa,func,verified,calls lv_style_set_prop with prop 55
+0x2c28af48,lv_style_set_outline_pad,func,verified,calls lv_style_set_prop with prop 56
+0x2c28af50,lv_style_set_shadow_width,func,verified,calls lv_style_set_prop with prop 64
+0x2c28af58,lv_style_set_shadow_ofs_y,func,verified,calls lv_style_set_prop with prop 66
+0x2c28af60,lv_style_set_shadow_spread,func,verified,calls lv_style_set_prop with prop 67
+0x2c28af68,lv_style_set_shadow_color,func,verified,calls lv_style_set_prop with prop 68
+0x2c28af7a,lv_style_set_shadow_opa,func,verified,calls lv_style_set_prop with prop 69
+0x2c28af82,lv_style_set_line_width,func,verified,calls lv_style_set_prop with prop 73
+0x2c28af92,lv_style_set_line_color,func,verified,calls lv_style_set_prop with prop 77
+0x2c28afa4,lv_style_set_arc_width,func,verified,calls lv_style_set_prop with prop 80
+0x2c28afac,lv_style_set_arc_rounded,func,verified,calls lv_style_set_prop with prop 81
+0x2c28afb4,lv_style_set_arc_color,func,verified,calls lv_style_set_prop with prop 82
+0x2c28afc6,lv_style_set_text_color,func,verified,calls lv_style_set_prop with prop 85
+0x2c28afd8,lv_style_set_text_font,func,verified,calls lv_style_set_prop with prop 87
+0x2c28afe0,lv_style_set_text_line_space,func,verified,calls lv_style_set_prop with prop 89
+0x2c28afe8,lv_style_set_text_align,func,verified,calls lv_style_set_prop with prop 91
+0x2c28aff0,lv_style_set_radius,func,verified,calls lv_style_set_prop with prop 11
+0x2c28aff8,lv_style_set_clip_corner,func,verified,calls lv_style_set_prop with prop 23
+0x2c28b000,lv_style_set_opa_layered,func,verified,calls lv_style_set_prop with prop 97
+0x2c28b008,lv_style_set_color_filter_dsc,func,verified,calls lv_style_set_prop with prop 98
+0x2c28b010,lv_style_set_anim,func,verified,calls lv_style_set_prop with prop 100
+0x2c28b018,lv_style_set_anim_speed,func,verified,calls lv_style_set_prop with prop 102
+0x2c27d492,lv_obj_set_style_width,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 2 callers"
+0x2c27d4a6,lv_obj_set_style_max_width,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 33 callers"
+0x2c27d4b0,lv_obj_set_style_height,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 4 callers"
+0x2c27d4ba,lv_obj_set_style_min_height,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 16 callers"
+0x2c27d4c4,lv_obj_set_style_max_height,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 4 callers"
+0x2c27d4ce,lv_obj_set_style_x,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 1 callers"
+0x2c27d4d8,lv_obj_set_style_y,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 1 callers"
+0x2c27d4e2,lv_obj_set_style_align,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 4 callers"
+0x2c27d4ec,lv_obj_set_style_blend_mode,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 3 callers"
+0x2c27d4f6,lv_obj_set_style_transform_width,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 3 callers"
+0x2c27d500,lv_obj_set_style_pad_top,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 252 callers"
+0x2c27d50a,lv_obj_set_style_pad_bottom,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 302 callers"
+0x2c27d514,lv_obj_set_style_pad_left,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 143 callers"
+0x2c27d51e,lv_obj_set_style_pad_right,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 140 callers"
+0x2c27d528,lv_obj_set_style_pad_row,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 17 callers"
+0x2c27d532,lv_obj_set_style_pad_column,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 25 callers"
+0x2c27d53c,lv_obj_set_style_bg_color,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 641 callers"
+0x2c27d55c,lv_obj_set_style_bg_opa,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 289 callers"
+0x2c27d566,lv_obj_set_style_bg_img_src,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 14 callers"
+0x2c27d570,lv_obj_set_style_bg_img_opa,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 1 callers"
+0x2c27d57a,lv_obj_set_style_bg_img_tiled,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 1 callers"
+0x2c27d584,lv_obj_set_style_border_color,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 31 callers"
+0x2c27d5a4,lv_obj_set_style_border_opa,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 2 callers"
+0x2c27d5ae,lv_obj_set_style_border_width,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 52 callers"
+0x2c27d5b8,lv_obj_set_style_border_side,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 66 callers"
+0x2c27d5c2,lv_obj_set_style_border_post,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 3 callers"
+0x2c27d5cc,lv_obj_set_style_outline_width,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 56 callers"
+0x2c27d5d6,lv_obj_set_style_outline_color,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 15 callers"
+0x2c27d5f6,lv_obj_set_style_shadow_width,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 19 callers"
+0x2c27d600,lv_obj_set_style_img_opa,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 50 callers"
+0x2c27d60a,lv_obj_set_style_line_width,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 29 callers"
+0x2c27d614,lv_obj_set_style_line_dash_width,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 6 callers"
+0x2c27d61e,lv_obj_set_style_line_dash_gap,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 6 callers"
+0x2c27d628,lv_obj_set_style_line_rounded,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 24 callers"
+0x2c27d632,lv_obj_set_style_line_color,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 47 callers"
+0x2c27d652,lv_obj_set_style_line_opa,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 1 callers"
+0x2c27d65c,lv_obj_set_style_arc_width,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 20 callers"
+0x2c27d666,lv_obj_set_style_arc_rounded,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 3 callers"
+0x2c27d670,lv_obj_set_style_arc_color,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 13 callers"
+0x2c27d690,lv_obj_set_style_arc_img_src,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 3 callers"
+0x2c27d69a,lv_obj_set_style_text_color,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 601 callers"
+0x2c27d6ba,lv_obj_set_style_text_opa,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 72 callers"
+0x2c27d6c4,lv_obj_set_style_text_font,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 622 callers"
+0x2c27d6ce,lv_obj_set_style_text_letter_space,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 111 callers"
+0x2c27d6d8,lv_obj_set_style_text_line_space,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 103 callers"
+0x2c27d6e2,lv_obj_set_style_text_decor,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 3 callers"
+0x2c27d6ec,lv_obj_set_style_text_align,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 558 callers"
+0x2c27d6f6,lv_obj_set_style_radius,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 381 callers"
+0x2c27d700,lv_obj_set_style_clip_corner,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 4 callers"
+0x2c27d70a,lv_obj_set_style_opa,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 6 callers"
+0x2c27d714,lv_obj_set_style_color_filter_dsc,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 1 callers"
+0x2c27d71e,lv_obj_set_style_color_filter_opa,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 3 callers"
+0x2c27d728,lv_obj_set_style_layout,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 3 callers"
+0x2c27d732,lv_obj_set_style_base_dir,func,verified,"calls 0x2c27ab0a(obj,prop,v,sel); 41 callers"
+0x2c288010,lv_font_load,func,verified,"lv_fs_open, parses head/cmap/loca/glyf, allocs 32 B lv_font_t"
+0x2c288d70,lv_font_get_glyph_dsc_fmt_txt,func,verified,stored at font+0 by lv_font_load
+0x2c288b9c,lv_font_get_bitmap_fmt_txt,func,verified,stored at font+4 by lv_font_load
+0x2c287dc0,lv_font_free,func,likely,"frees dsc, cmaps, loca, glyf"
+0x2c1006b0,fonts_init,func,verified,"lv_font_load for 24 ""P:/nand/system/font/*.bin"" paths"
+0x2010b130,font_roboto_tbl,data,verified,"13 lv_font_t*: 86,50,48,40,36,34,32,30,28,26,24,22,20"
+0x2010b0e0,font_roboto_medium_tbl,data,verified,"11 lv_font_t*: 86,48,44,40,36,32,30,28,24,23,20"
+0x2010b090,font_roboto_bold_60,data,verified,lv_font_t*
+0x2010b088,font_led_digital_32,data,verified,lv_font_t*
+0x2c16da40,app_create_label,func,verified,label_create+width+align+font+color+set_text+align_to; 68 callers
+0x2c2134fc,text_id_get_font,func,likely,string id -> lv_font_t* (0x20 stride table); 298 callers
+0x2c2138cc,text_id_get_string,func,verified,id -> blob+offset; table 0x2011740c; 456 callers
+0x2c213a90,app_get_font,func,hypothesis,"returns lv_font_t* proxy at *0x20117408, copies metrics of font idx 10"
+0x2c213710,text_shape,func,hypothesis,called by lv_label_set_text; script-specific converters (9 cases)
+0x2c1ebb84,app_set_pad_all,func,verified,4x set_style_pad_*
+0x2c28c544,lv_fs_open,func,verified,"(file,path,mode); drive letter path[1]==:"
+0x2c28c274,lv_fs_read,func,verified,"(file,buf,btr,br)"
+0x2c28c424,lv_fs_seek,func,likely,"(file,pos,whence)"
+0x2c28c234,lv_fs_close,func,likely,used by res pack close
+0x2c28c5d0,lv_fs_get_ext,func,verified,returns text after last dot
+0x2c27ebcc,lv_img_decoder_get_info,func,verified,iterates decoder ll 0x201345a4
+0x2c27ec28,lv_img_decoder_open,func,verified,"memset 0x28 dsc, iterate decoders"
+0x2c27ed0c,lv_img_decoder_close,func,likely,
+0x2c27ed30,lv_img_decoder_create,func,verified,ll node 0x14 B
+0x2c27ed54,_lv_img_decoder_init,func,verified,registers builtin decoder; called by lv_init
+0x2c27ed94,lv_img_decoder_set_info_cb,func,verified,*d=cb
+0x2c27ed98,lv_img_decoder_set_open_cb,func,verified,d+4=cb
+0x2c27ed9c,lv_img_decoder_set_read_line_cb,func,likely,d+8=cb
+0x2c27ee7c,lv_img_src_get_type,func,verified,"0x20-0x7f first byte=file(1), >=0x80 symbol(2), else variable(0)"
+0x2c21111c,res_decoder_register,func,verified,"sets info 0x2c210e04, open 0x2c210c54, read_line 0x2c210ae4, close 0x2c210ae8"
+0x2c210e04,res_decoder_info_cb,func,verified,"src string ""<id>"" no ext; id<0x116a; header from pack"
+0x2c210c54,res_decoder_open_cb,func,verified,"loads image id into RAM, sets dsc+0x18"
+0x2c210b10,res_pack_open,func,verified,"binary search 0x34 entries in 0x2c300a84, lv_fs_open pack"
+0x2c300a84,res_pack_table,data,verified,"52 x {path ptr, first id, last id}"
+0x2c300cf4,res_id_table,data,verified,"4458 x {offset,size} per image id"
+0x2c26a5c4,img_decoder2_register,func,likely,second decoder: info 0x2c26f29c open 0x2c26f1d4 close 0x2c26f1c0 (PNG?)
+0x2c3a09f8,loader_touch_read,func,verified,loader code (stock firmware patch); calls 0x2c0a76d8
+0x2c181d10,app_stopwatch_init,func,verified,"string 'app_stopwatch_init'; creates black screen, 3 event cbs, 0x54 state, timer"
+0x2c1812c8,stopwatch_build_page,func,verified,"lv_obj_clean + builds page 0/1/2 (list/running/stopped): pill btn 216x60 r100 0x5ade"
+0x2c181e00,stopwatch_screen_gesture_cb,func,verified,"code 0xc then lv_indev_get_gesture_dir"
+0x2c181f34,stopwatch_btn_event_cb,func,verified,"SHORT_CLICKED(4)/LONG_PRESSED(5) on pill and image buttons"
+0x2c1f090c,app_flashlight_init,func,verified,"string 'app_flashlight_init'; white screen + vertical slider 72x268 range 30..255"
+0x2c1f07d0,flashlight_screen_event_cb,func,verified,"gesture 2 -> 0x2c225ddc(3,-1,0) back; gesture 1 -> red SOS 0xf800"
+0x2c1b70ec,settings_list_build,func,verified,"Settings main list: title text 0x69f then cards from table 0x2c2f9020"
+0x2c1b5234,settings_about_build_page,func,verified,"string 'app_settings_about_goto_sub_page'; switch(page) builds sub pages"
+0x2c1b6aa4,settings_about_create,func,verified,"allocs 0x84 state, screen with gesture cb 0x2c1b67fc, calls 0x2c1b5234(0)"
+0x2c1b67fc,settings_screen_gesture_cb,func,verified,"gesture_dir==2 returns to parent subpage"
+0x2c1b6f24,ui_text_label,func,verified,"(parent,text_id,w,color,align): font+string from text id; 494 callers"
+0x2c1b6ee0,ui_toggle_img,func,verified,"image '1276' off / '1278' on, CLICKABLE, user state at +0x10"
+0x2c1b6ff8,ui_divider,func,verified,"(parent,w): w x 1 obj bg 0x4a49"
+0x2c1b7248,ui_card,func,verified,"(parent,w,padLR,padTB,cb): bg 0x2124 radius 26 minh 90"
+0x2c1b72d4,ui_row_transparent,func,verified,"(parent,w,minh,padLR,padTB,cb): bg_opa 0"
+0x2c1b7338,ui_card_alt,func,verified,"bg 0x3186 radius 100 minh 60"
+0x2c1b7024,ui_menu_group,func,verified,"(parent,count,first): card of rows from table 0x2c2f9020 with dividers"
+0x2c1b6cd8,ui_menu_row,func,verified,"(parent,img,text_id,idx): icon LEFT_MID + label w162; click cb 0x2c1b6c40"
+0x2c1b6c40,ui_menu_row_click_cb,func,verified,"CLICKED(7) -> 0x2c225ddc(2,page_id,0,0xf)"
+0x2c2f9020,settings_menu_table,data,verified,"12-byte records: id,img string ptr,text id u16,page id s16; 11 entries"
+0x2c1b6ca4,ui_set_pad_tb,func,verified,"pad_top+pad_bottom"
+0x2c1b6cbe,ui_set_pad_lr,func,verified,"pad_left+pad_right"
+0x2c180cbc,ui_zero_pad,func,verified,"pad l/r/t/b = 0"
+0x2c16a978,ui_plain_container,func,verified,"(parent,w,h,scroll_dir): border0 pad0 bg black no scrollbar; 172 callers"
+0x2c16a90c,ui_img_align_to,func,verified,"(ref,x,y,align,img_id); 145 callers"
+0x2c16b63c,ui_page_dots,func,verified,"(parent,count,sel): 8px dots r=0x7fff color 0x8410, selected 12px white"
+0x2c16b034,create_radio_list_type_one,func,verified,"string name; rows minh 90 ring 38px outline 2 color 0x041f"
+0x2c16afb0,radio_list_set_select,func,verified,"string name"
+0x2c16d998,ui_label_font_text,func,verified,"(parent,w,text_id,color)"
+0x2c16db0a,ui_label_align_to,func,verified,"(parent,ref,align,x,y,w,color,text_id)"
+0x2c1573ac,ui_label_fixed,func,verified,"(parent,text_id,w,color,align): non-clickable label"
+0x2c157a68,alarm_list_build,func,verified,"alarm list: add img 1291, rows 254w r26 bg 0x2124 toggle img 1276/1278"
+0x2c157778,alarm_phone_switch_event_cb,func,verified,"string name; toggles image 1276/1278 on CLICKED(7)"
+0x2c275874,lv_obj_set_flex_flow,func,likely,"sets flex_flow style + layout id from 0x20131916"
+0x2c2758c4,lv_obj_set_flex_align,func,likely,"main,cross,track styles + layout"
+0x2c27b610,lv_obj_set_scroll_dir,func,likely,"spec_attr byte +0x21 low nibble; called with 0xc (vertical)"
+0x2c27b632,lv_obj_set_scroll_snap_x,func,likely,"spec_attr byte +0x20 bits 2-3"
+0x2c27beb4,lv_obj_scroll_to_view,func,hypothesis,"update_layout then scroll core"
+0x2c27a8e8,lv_obj_add_style,func,verified,"slider uses it with selectors 0/0x20000/0x30000 (main/indicator/knob)"
+0x2c27aa08,lv_obj_remove_style,func,likely,"called with (obj,NULL,0xfffff) on slider"
+0x2c296454,lv_bar_set_range,func,verified,"checks lv_bar_class; stores min/max at +0x30/+0x34"
+0x2c296238,lv_bar_set_value,func,verified,"checks lv_bar_class; anim with param_3"
+0x2c296380,lv_bar_set_mode,func,verified,"byte +0x6c low 2 bits"
+0x2c27938e,lv_indev_wait_release,func,likely,"sets bit 3 of indev byte +5; called in every gesture cb"
+0x2c225ddc,wm_open,func,verified,"(op,id,arg,anim): op 2 push, 3 back (id -1), 0 switch; error 'return from the root screen'"
+0x2c225afc,wm_dispatch,func,verified,"switch(op) screen manager; string tag 'WM'"
+0x2c224f04,ui_gesture_consume,func,likely,"lv_indev_wait_release + 0x2c14de08"
+0x2c26a1b8,disp_init,func,verified,"hor/ver 0x100 x 0x192 (256x402); 2 buffers 0x32400 bytes; string 'disp_init'"
+0x2c213a5c,font_by_id,func,verified,"font_id -> lv_font_t* (table 0x2011740c, stride 0x20)"
+0x2c213188,language_res_load,func,verified,"loads /user/language.res: fonts+strings; log tag FONT_LOD"
+0x2c30021c,applist_rows_template,data,verified,"12 x 12 B {u8 key (1..12; 10=World clock),pad,s16 app id,char* icon id string,u16 text id,pad}; copied to heap by 0x2c21081c"
+0x2c21081c,applist_rows_init,func,verified,"allocs 0x90 B, copies template 0x2c30021c, ptr to 0x201172c0, row count 12 to 0x201172cc"
+0x201172c0,applist_rows_ptr,data,verified,"RAM ptr to the 12 app-list rows (editable copy)"
+0x2c2104ac,applist_build_rows,func,verified,"per row: lv_img_create+lv_img_set_src(row+4) and label text_id_get_font/text_id_get_string(row+8); logs ""app_list worldclock key"" for key 10"
+0x2c2102dc,applist_row_click_cb,func,verified,"row click: starts app id row+2 via 0x2c225ddc(2,id,0,0xf)"
+0x2c30d1ec,language_file_names,data,verified,"69 char* ""language_xx.res"" indexed by language index (1=en, 0=zh_rCN)"
+0x2c213ce8,language_file_name,func,verified,"returns language_file_names[index]"
+0x2c211c3c,language_set,func,verified,"index<0x45: language_res_load(index), falls back to en on failure"
+0x2c211cf4,language_init,func,likely,"calls 0x2c213144; called from lvgl_ui_task before fonts_init"
+0x2c213144,language_state_init,func,verified,"allocs 0x20, zeroes state 0x2011740c (0x28 B) and 0x20117434"
+0x2011740c,language_state,data,verified,"{u16 ver,u16 0,count,blob size,hdr 0x18,nfonts,..;+0x18 id table,+0x1c blob,+0x20 font table,+0x24 lv_font_t[nfonts] x0x20}"
+0x2c212428,language_font_load,func,likely,"builds a 32 B lv_font_t from a font embedded in language.res (file offset, size, key)"
+0x2c213be4,font_ptr_to_key,func,verified,"inverse of font_by_id: lv_font_t* in language font array -> key byte"
+0x2c14b0a8,unzip_file,func,likely,"opens src as ZIP and extracts to dst in 0x19000 chunks; used to make /user/language.res from /nand/system/font/language_xx.res"
+0x2c103d78,font_for_style,func,verified,"style idx (table 0x2010b358, 0x5c B entries, family +1, size +0x58) -> lv_font_t*; family 1=ROBOTO tbl, 3=MEDIUM tbl, 2=static, 0x0f size 0x20=LED"
+0x2010b358,ui_style_table,data,likely,"{u8 count at +0, ptr to 0x5c-byte entries at +4} read by font_for_style"
+0x3ce4e5e4,res_img_cache,data,verified,"0x116a x 12 B {u32 lv header,(body size<<2)|loaded flag,RAM ptr of body}; filled by res_decoder_info/open"
+0x2c210aec,res_cache_free_id,func,verified,"frees RAM body of image id (entry+8)"
+0x2c287bb0,img_cf_to_hw_format,func,likely,"maps Samsung cf 4,5,0x15..0x1b to a draw-engine pixel format (0x1b->0x67); called by 0x2c2860f4 and 0x2c287170"
+0x2c225198,wm_request_deferred,func,likely,same ops as wm_request but queues when screen off/transition (called from LCD handler 0x2c14b948)
+0x2c2257f8,wm_switch_exec,func,verified,"leaves old window (+0x24 kind 1, +0x2c destroy + lv_obj_del if flag 0x10), creates new via record+0x1c"
+0x2c224f44,wm_enter_finish,func,verified,"lv_scr_load(record+0x10), calls +0x24(kind 0), +0x20(param), clears flags"
+0x2c2250d8,wm_release_window,func,verified,"asserts id<=0xa5; calls +0x2c then lv_obj_del(+0x10), clears +0x10"
+0x2c224c04,wm_delete_prev_screen,func,likely,"if cur flag 0x10 and id!=2: deletes previous window screen (+0x2c, lv_obj_del); used before AOD push"
+0x2c227510,wm_notify_lcd,func,verified,calls current record +0x24 with kind 2 (LCD off) or 3 (LCD on)
+0x2c2253a8,wm_lcd_off_policy,func,likely,"reads flag bits of current record (+2 bit6/bit7, +3 bit0) for reason 0/1/2; 0x601 handler ignores LCD off when 0"
+0x2c224d90,wm_current_id,func,verified,returns *(short*)*(wm+0xc) or -1
+0x2c225d9c,wm_start_root,func,likely,wm_request op 0 plus screen-timeout capture; used by GUI task init
+0x2c225668,wm_snapshot_window,func,likely,"allocs 0x32400 B (256x402x2) buffer at record+0x18, renders the window for animation"
+0x2c14b948,gui_lcd_event_handler,func,verified,"events 0x600 LCD on (state 0), 0x601 LCD off (state 2), 0x602, 0x603; logs [LCD_ON]/[LCD_OFF]; calls lv_timer_handler 0x2c28a46c on wake"
+0x2010d0b0,gui_power_state,data,verified,"0 = LCD on, 2 = LCD off; read by GUI task loop 0x2c14c1b0 and 0x2c14b948"
+0x200fb4e4,app_record_table_ram,data,verified,"166 records x 0x30, id*0x30+base; used by all wm code (0x2c2257f8)"
+0x200fd404,wm_state,data,verified,"window manager state; +0xc current record ptr, +0x1c AOD/active flag, +0xe4/+0xe5 deferred/busy; directly follows the table"
+0x2c3b4200,app_record_table_flash,data,likely,"flash image of 0x200fb4e4 (.data init; copy code not located); 166 records, id 0 at this address"
+0x2c3b4500,app_record_free_id_0x10,data,verified,record of id 0x10 all zero (free slot)
+0x2c3b5f40,app_record_free_id_0x9c,data,verified,record of id 0x9c all zero (free slot)
+0x2c30021c,applist_row_template,data,verified,"12 rows x 12 B {u8 kind,s16 window id @2,char* icon id @4,u16 string @8}; copied by 0x2c21081c"
+0x2c21081c,applist_rows_init,func,verified,"copies 0x90 B template to heap block ptr 0x201172c0, count byte 0x201172cc=12"
+0x201172c0,applist_rows_ptr,data,verified,heap copy of row template; read by 0x2c2104ac and 0x2c2102dc
+0x2c2104ac,applist_build,func,verified,"builds rows (icon image id, label) ordered by 0x2c0e3d9c; kind 10 needs 0x2c0e8440, kind 11 needs 0x2c0e6f70; logs ""app_list worldclock key"""
+0x2c2102dc,applist_row_click_cb,func,verified,"LV_EVENT_CLICKED(7): wm_request(2, row.window_id, 0, 0xf) via 0x2c225ddc"
+0x2c0e3d9c,applist_get_order,func,likely,"reads KV 0x520 via 0x2c0e3c6c, returns count + order bytes (max 14)"
+0x2c0e3c6c,applist_load_order,func,likely,"KV 0x520 (16 B) read, normalise to permutation, write back"
+0x2c0e3c0c,applist_store_order,func,likely,called by app_sort command 0x2c0c13ec to store order
+0x2c0c13ec,cmd_app_sort_show,func,hypothesis,"text command handler with ""-app_sort""/""-app_show"" responses; validates 11-12 entries"
+0x2c0e8440,kv_worldclock_enabled,func,hypothesis,KV 0x9d4 byte+8 bit0; gates World clock row (kind 10) in applist_build
+0x2c1dc250,app_watchface_init,func,likely,window id 0x02 record 0x2c3b4260 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1dbb08,app_watchface_edit_init,func,likely,window id 0x03 record 0x2c3b4290 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1dbf3c,app_watchface_preview_init,func,likely,window id 0x04 record 0x2c3b42c0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1da188,app_watchface_aod_init,func,likely,window id 0x06 record 0x2c3b4320 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c210898,app_applist_init,func,likely,window id 0x07 record 0x2c3b4350 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1a59d4,app_sport_list_init,func,likely,window id 0x09 record 0x2c3b43b0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1986ac,app_sport_main_init,func,likely,window id 0x0c record 0x2c3b4440 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c190734,app_sport_res_init,func,likely,window id 0x0e record 0x2c3b44a0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c188094,app_sport_msg_init,func,likely,window id 0x0f record 0x2c3b44d0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c18d2c0,app_sport_res_list_init,func,likely,window id 0x11 record 0x2c3b4530 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1d9094,app_music_init,func,likely,window id 0x1c record 0x2c3b4740 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1f1274,app_find_phone_init,func,likely,window id 0x22 record 0x2c3b4860 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1ecc64,app_worldclock_init,func,likely,window id 0x2b record 0x2c3b4a10 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1e91d8,app_battery_charging_init,func,likely,window id 0x2d record 0x2c3b4a70 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1e7cc4,app_battery_low_init,func,likely,window id 0x2e record 0x2c3b4aa0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1ea1f0,app_battery_temp_init,func,likely,window id 0x2f record 0x2c3b4ad0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1b0a64,app_settings_modes_init,func,likely,window id 0x37 record 0x2c3b4c50 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1b1a54,app_settings_notifications_init,func,likely,window id 0x38 record 0x2c3b4c80 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1b4f88,app_settings_vibrate_init,func,likely,window id 0x39 record 0x2c3b4cb0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1bb948,app_settings_display_init,func,likely,window id 0x3a record 0x2c3b4ce0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1bebfc,app_settings_health_init,func,likely,window id 0x3b record 0x2c3b4d10 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1b3c60,app_settings_advanced_init,func,likely,window id 0x3c record 0x2c3b4d40 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1ba1b8,app_settings_security_init,func,likely,window id 0x3d record 0x2c3b4d70 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1c3f20,app_settings_safety_init,func,likely,window id 0x3e record 0x2c3b4da0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1c1d30,app_settings_general_init,func,likely,window id 0x3f record 0x2c3b4dd0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1b7ac4,app_settings_tutorials_init,func,likely,window id 0x40 record 0x2c3b4e00 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1cb7a4,app_oobe_shipmode_init,func,likely,window id 0x45 record 0x2c3b4ef0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1ce67c,app_oobe_tutorial_init,func,likely,window id 0x46 record 0x2c3b4f20 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1c588c,app_quick_panel_init,func,likely,window id 0x48 record 0x2c3b4f80 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1c457c,app_reboot_mode_init,func,likely,window id 0x49 record 0x2c3b4fb0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c172b0c,app_weather_edit_init,func,likely,window id 0x4b record 0x2c3b5010 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c2074d0,app_calendar_init,func,likely,window id 0x4e record 0x2c3b50a0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c17d0d4,app_tile_edit_init,func,likely,window id 0x5f record 0x2c3b53d0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c17f9b8,app_tile_addable_init,func,likely,window id 0x60 record 0x2c3b5400 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c17fc88,app_tile_guide_init,func,likely,window id 0x61 record 0x2c3b5430 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c161cc0,app_power_off_init,func,likely,window id 0x89 record 0x2c3b5bb0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1617b8,app_calculator_init,func,likely,window id 0x8c record 0x2c3b5c40 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c156ca4,app_alarm_alert_init,func,likely,window id 0x91 record 0x2c3b5d30 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1802ac,app_stopwatch_aod_init,func,likely,window id 0x99 record 0x2c3b5eb0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1d9cb8,app_music_aod_init,func,likely,window id 0x9a record 0x2c3b5ee0 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1c4260,app_resetting_init,func,likely,window id 0xa3 record 0x2c3b6090 +0x1c create fn; name from log/tag strings in its callbacks
+0x2c1d77b8,app_music_list_init,func,likely,window id 0xa4 record 0x2c3b60c0 +0x1c create fn; name from log/tag strings in its callbacks
