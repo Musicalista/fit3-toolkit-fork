@@ -42,15 +42,18 @@ the loader copies those strings to the NUL, so shorter ones are fine, and the wa
 
 Apps are described by 48-byte records starting at file offset `0x334a10` (word 0: flags and id; word 7 at `+0x1c`: the `init` function, stored as `0x0c......|1`).
 World clock is id `0x2b`, `app_worldclock_init` at `0x2c1ecc64`: it creates a fresh screen with `lv_obj_create(NULL)` (`0x2c27cb84`), registers an event callback, and for the
-main page (`param & 0xff == 0x67`) calls `app_worldclock_tile_init(root)` (`0x2c1ecbac`) at **`0x2c1ecd1c`**, its only call site. Replacing that one `bl` with a stub in the free space
-that creates the same 80 ms timer would open our menu on the World clock page. The label "World Clock" appears four times in the English language resource
+main page (`param & 0xff == 0x67`) calls `app_worldclock_tile_init(root)` (`0x2c1ecbac`) at `0x2c1ecd1c`; any other value takes the full-page branch (see Stage 1). The label "World Clock" appears four times in the English language resource
 (inner offsets `0xa8d2 0x11504 0x115c0 0x1d83f`). The list icon is not located yet. None of this has been built or flashed.
 
-## Stage 1 (built by `tools/firmware/world_clock_takeover.py`, not flashed)
+## Stage 1 (built by `tools/firmware/world_clock_takeover.py`)
 
-The stub at `0x2c3a4530` (16 bytes of code and two literals) is `push {r0-r3,lr}; mov r2,r0; ldr r0,=0x2c3a1ab9; movs r1,#80; ldr r3,=0x2c28a3f1; blx r3; pop {r0-r3,pc}`:
-it passes `root` (still in `r0` at the hook site) as the timer's user data, so the loader's callback opens its menu on that page. Together with the label change ("World Clock" -> "Tennis",
-same length, in `language_en`, `_rUS`, `_rCA` and `_rPH`) that is 31 changed bytes in the main image and four rewritten language files. The packet header's resource size is recomputed
+`app_worldclock_init(param)` builds one of two pages: for `param & 0xff == 0x67` the tile (`app_worldclock_tile_init(root)`, `0x2c1ecbac`), otherwise the full page with the city list
+(`0x2c1ebfdc`, called at `0x2c1ecd30` with `r0 = 0`; it takes its objects from the context `**r4`, where `[ctx]` is the root and `[ctx+4]` a 256 x 402 content object).
+The first package replaced the tile call: the label changed but tapping the list entry still opened the stock page, so **the app list uses the full-page branch**.
+The current package replaces the full-page call by a stub at `0x2c3a4530` (20 bytes of code, two literals):
+`push {r3,lr}; bl 0x2c1ebfdc; ldr r3,[r4]; ldr r2,[r3]; ldr r0,=0x2c3a1ab9; movs r1,#80; ldr r3,=0x2c28a3f1; blx r3; pop {r3,pc}`. It runs the original builder (so the page and its event
+handler, `0x2c1ecd68`, keep a consistent state), then schedules the loader's menu on the page's root, which draws on top. Together with the label change ("World Clock" -> "Tennis",
+same length, in `language_en`, `_rUS`, `_rCA` and `_rPH`) that is 36 changed bytes in the main image and four rewritten language files. The packet header's resource size is recomputed
 (it is the sum of the unpacked sizes of the non-firmware components and changes with the language files).
 
 ## Not known

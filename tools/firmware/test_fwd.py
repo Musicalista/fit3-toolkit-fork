@@ -26,7 +26,7 @@ if os.path.exists(flat):
     out = os.path.join(tempfile.mkdtemp(prefix="wc_"), "out.bin"); w.build(flat, out, "Tennis"); q = fwd.Package.load(out); old = fwd.Package.load(flat)
     changed = [k for k in q.paths() if q.raw(k) != old.raw(k)]
     assert fwd.MAIN in changed and len(changed) == 5 and all("language_en" in k for k in changed if k != fwd.MAIN), changed
-    m = q.raw(fwd.MAIN); assert fwd.main_image_crc(m) == fwd.u32(m, 0x1008) and m[0x324530:0x324540] == bytes.fromhex("0fb5024602485021024b98470fbd00bf")
+    m = q.raw(fwd.MAIN); assert fwd.main_image_crc(m) == fwd.u32(m, 0x1008) and w.decode_bl(m, 0x2c1ecd30) == w.STUB and w.decode_bl(m, w.STUB + 2) == w.ORIG_CALLEE and m[0x324530:0x324532] == bytes.fromhex("08b5") and m[0x324544:0x32454c] == bytes.fromhex("b91a3a2cf1a3282c")
     assert all(b"World Clock" not in fwd.unzip_single(q.raw(k))[1] for k in changed if k != fwd.MAIN)
     print("  ok   the stage-1 package changes the main image and four English language files only"); ok += 1
     try: w.build(out, os.path.join(os.path.dirname(out), "twice.bin"), "Tennis"); sys.exit("FAIL: patching an already patched package was not refused")
