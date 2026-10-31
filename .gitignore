@@ -11,3 +11,6 @@ __pycache__/
 *.apk
 *.so
 *.res
+
+# Samsung promotional images used for reference only
+/reference-images/

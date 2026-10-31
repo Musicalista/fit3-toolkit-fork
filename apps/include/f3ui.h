@@ -1,5 +1,6 @@
 /* f3ui.h: colours and small widgets in the style of the watch's own UI (black background, dark rounded cards, pill buttons, switches).
- * The colours are estimates from the watch's screens, not Samsung's values: refine them against photos (docs/apps.md).
+ * Sampled from Samsung's promotional render of the Fit3 UI (reference-images/, not in git): cards #242424, secondary buttons #2c-#34, blue (67,144,246), grey text about 150.
+ * They are still estimates, not Samsung's values.
  * Greys are multiples of 8 on purpose: RGB565 has 5 bits for red and blue but 6 for green, other values get a green tint. Needs f3app.h. */
 #ifndef F3UI_H
 #define F3UI_H
@@ -7,13 +8,15 @@
 
 #define UI_BG       RGB(0, 0, 0)                  /* OLED black */
 #define UI_CARD     RGB(32, 32, 32)               /* card / list row */
-#define UI_CARD_HI  RGB(56, 56, 56)               /* pressed or secondary button */
+#define UI_CARD_HI  RGB(48, 48, 48)               /* secondary button ("Reply" pill) */
 #define UI_TEXT     RGB(255, 255, 255)
 #define UI_DIM      RGB(152, 152, 152)            /* secondary text */
 #define UI_BLUE     RGB(62, 145, 255)             /* accent */
 #define UI_GREEN    RGB(48, 209, 130)
 #define UI_RED      RGB(255, 69, 58)
 #define UI_ORANGE   RGB(255, 159, 10)
+#define UI_TEAL     RGB(28, 197, 151)             /* app icon: Samsung Health */
+#define UI_PURPLE   RGB(84, 77, 185)              /* app icon: Media Controller */
 #define UI_OFF      RGB(72, 72, 72)               /* switch track when off */
 
 static void ui_clear(const F3Api *A) { A->rect(A->fb, 0, 0, F3_W, F3_H, UI_BG); }
