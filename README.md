@@ -13,8 +13,7 @@ own font tables, the stock back transition, the back gesture and side key of the
 best of 3 sets with tie-breaks; the match survives a restart of the watch. It is plain C compiled into the free flash of the firmware, started by the window manager like any
 other window: no loader menu, no scrolling page, nothing runs at boot.
 
-Not yet seen on a real watch in its final form (built and tested on the emulator, to be confirmed): the side key going to the watch face, the direction of the back transition, and the own
-app-list icon. See [docs/status.md](docs/status.md) for the exact list.
+Everything above has been used on a real watch (one SM-R390). It has not been tried on any other watch or firmware version: the build refuses anything but R390XXU0AZA3.
 
 Build it from **your own** stock package with one command:
 
