@@ -55,7 +55,14 @@ def raises(fn, text=""):
     return False
 
 w = Watch(); quiet = lambda *_: None
-hello, tenis = os.path.join(HERE, "hello.f3a"), os.path.join(HERE, "tenis.f3a")
+# synthetic apps (a valid .f3a only needs the "F3A1" magic and at least 64 bytes), so the test needs no third-party files
+import tempfile
+TMP = tempfile.mkdtemp(prefix="f3test_")
+def make_app(app_id, meta):
+    path = os.path.join(TMP, app_id + ".f3a"); open(path, "wb").write(b"F3A1" + bytes(range(256)) * 3 + b"\x00")      # ends in 0: the corruption test flips bits
+    open(os.path.join(TMP, app_id + ".meta"), "w", encoding="utf-8").write(meta + "\n"); return path
+hello = make_app("hello", "hello;F8D8B0;A85A20;Ol\xe1;Hello;" + "0" * 256)
+tenis = make_app("tenis", "tenis;C6EFA8;3A7A1E;Tennis;Tennis")
 check(len(F.cmd_list(w.connect)) == 0, "list on a fresh watch (no index file) -> 0 apps")
 F.cmd_install(w.connect, hello, quiet)
 check(w.fs["/user/a_hello.f3a"] == open(hello, "rb").read(), "hello.f3a stored byte for byte as /user/a_hello.f3a")
@@ -73,5 +80,6 @@ c = Watch(); c.mode = "corrupt"
 check(raises(lambda: F.cmd_install(c.connect, hello, quiet), "does not match") and "/user/a_index.txt" not in c.fs, "corrupted write is detected and the app list is NOT changed")
 for bad in ("/user/apps/x.f3a", "/user/a_../x.f3a", "/nand/system/x", "/user/safe.flag", "/user/a_UPPER.f3a", "/user/a_index.txt.bak"):
     check(raises(lambda: F.check_path(bad), "refusing"), "path guard refuses %s" % bad)
-check(raises(lambda: F.cmd_install(w.connect, os.path.join(HERE, "SHA256SUMS.local.txt"), quiet)), "a file that is not an app id / .f3a is refused")
+notes = os.path.join(TMP, "Notes.txt"); open(notes, "wb").write(b"not an app")
+check(raises(lambda: F.cmd_install(w.connect, notes, quiet)), "a file that is not an app id / .f3a is refused")
 print("all %d checks passed" % n_ok)

@@ -58,15 +58,20 @@ def check_path(path):
     if not SAFE_PATH.match(path): raise Error("refusing to touch %r" % path)
 
 def read_file(link, path, limit=1 << 20):
-    check_path(path); link.drain(); link.send("061" + path + "\0"); h = link.read(5, 15)
+    check_path(path); return read_raw(link, path, limit)
+
+def read_raw(link, path, limit=1 << 20, progress=None):
+    """reads any path to the end (the watch must see the closing "062", otherwise it keeps an export open until it times out)"""
+    link.drain(); link.send("061" + path + "\0"); h = link.read(5, 15)
     if h[0] != 0x40: return None                                 # no such file (the watch answers with an "AT^FI..." text)
     total = int.from_bytes(h[1:5], "big")
-    if total > limit: raise Error("file too big")
+    if total > limit: raise Error("%s is %d bytes, over the limit of %d (nothing was read)" % (path, total, limit))
     data = b""
     while len(data) < total:
         link.send("062"); hh = link.read(5, 15); n = int.from_bytes(hh[1:5], "big")
         if hh[0] != 0x40 or n == 0 or n > total - len(data): raise Error("invalid block while reading")
         data += link.read(n, 60); link.read(4, 60)
+        if progress: progress(len(data), total)
     link.send("062"); time.sleep(0.1); return data
 
 def write_file(link, path, data, progress=None):
