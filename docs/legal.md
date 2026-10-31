@@ -15,6 +15,10 @@ The Bluetooth patch used here leaves the watch visible and its file service open
 - none of the code of the SDK and loader (an external checkout, see [howto.md](howto.md));
 - no Samsung fonts or images (the notes describe the formats; `local/` is git-ignored).
 
+What it does contain: our own code (the loader in `tools/loader/`, the tools, the apps), our own icon artwork (`tools/assets/mkicon.py` draws it), and notes on how the firmware works with the
+addresses and function names we found (`docs/research/`, `docs/symbols.csv`). Those are our analysis for interoperability; they quote no Samsung code. `tools/build_tennis.py` builds a package
+from the stock package *you* provide; do not redistribute its output, which contains Samsung's firmware.
+
 `tools/firmware/make_flat_pkg.py` *produces* a modified package from one you already have; do not redistribute its output.
 
 ## Credits and third-party terms
@@ -25,6 +29,9 @@ The Bluetooth patch used here leaves the watch visible and its file service open
 | Transfer protocol, package validation rules | **yuriyurin**, [fit3-flasher](https://github.com/yuriyurin/fit3-flasher) | the Fit3 store project notes that it carried no licence |
 | Roboto (the shape of the fonts on the watch) | Google | Apache 2.0 for Roboto itself; Samsung's compiled font files are theirs |
 | Fonts and images on the watch | Samsung | proprietary; for inspection on your own watch only |
+
+The two Bluetooth patches that `build_package.py` applies (two one-instruction changes, addresses in its source) were first made by Musicalista; we found them again by comparing the stock
+package with `fit3-spp-only.bin`, and we reproduce them without copying that package.
 
 Before publishing anything derived from the loader, ask its author. Our reading of the loader (addresses, hook points) is analysis for interoperability, and it is documented, not copied.
 

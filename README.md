@@ -1,45 +1,53 @@
-# Fit3 lab: custom apps and tooling for the Samsung Galaxy Fit3 (SM-R390)
+# Fit3 lab: a native tennis score tracker for the Samsung Galaxy Fit3 (SM-R390), and the tools behind it
 
 > **Unofficial and experimental. Not affiliated with Samsung. Flashing firmware can leave a watch unusable.**
 > Read [docs/legal.md](docs/legal.md) before you do anything, and keep the stock firmware at hand.
 
-The Galaxy Fit3 runs FreeRTOS with an LVGL user interface on a BES1502x chip. It has no official SDK. This repository collects what we found out while
-putting our own native apps on one, plus the tools and apps that came out of it:
+The Galaxy Fit3 runs FreeRTOS with an LVGL 8.3 user interface on a BES1502x chip. It has no official SDK. This repository holds what we found out while putting our own
+native app on one, and the tools that came out of it.
 
-- **Tools** to inspect and validate firmware packages, to build a package whose app loader works on a fresh watch, and to install, list and remove apps over
-  Bluetooth from a Linux PC (no phone app needed).
-- **Apps** written in C for the "light app" loader of [Musicalista/fit3-store-apps-games](https://github.com/Musicalista/fit3-store-apps-games): a tennis
-  score tracker and a style demo that draws with the watch's own Roboto fonts.
-- A **PC simulator** (a window with the mouse as the finger) so apps can be written and tested without touching the watch.
-- **Notes**: the file-transfer protocol, the firmware layout and patch points we identified, and the formats of the watch's fonts and images.
+## What works (firmware R390XXU0AZA3, one SM-R390)
 
-## Status
+A **tennis score tracker that replaces the *World clock* entry of the app list** and looks like a stock app: LVGL cards and pill buttons in the stock colours, Roboto from the watch's
+own font tables, the stock back transition, the back gesture and side key of the stock apps, its own app-list name and icon. Tap a card for a point; Undo; Stats with a two-step "New";
+best of 3 sets with tie-breaks; the match survives a restart of the watch. It is plain C compiled into the free flash of the firmware, started by the window manager like any
+other window: no loader menu, no scrolling page, nothing runs at boot.
 
-What is verified on a real watch and what is not: [docs/status.md](docs/status.md). Short version: stock firmware R390XXU0AZA3 plus a patched package
-boots, native apps run from RAM, and apps install from a PC; the loader's page still scrolls under the finger, and replacing a stock list entry is analysed but
-not built.
+Not yet seen on a real watch in its final form (built and tested on the emulator, to be confirmed): the side key going to the watch face, the direction of the back transition, and the own
+app-list icon. See [docs/status.md](docs/status.md) for the exact list.
 
-## Layout
+Build it from **your own** stock package with one command:
 
-| Path | What is in it |
+```
+python3 -I tools/build_tennis.py <your R390XXU0AZA3 package>.bin out.bin       # then flash out.bin with Fit3 Manager; see docs/howto.md
+```
+
+What is verified and what is not: [docs/status.md](docs/status.md). Where this is going: [docs/roadmap.md](docs/roadmap.md).
+
+## What is in here
+
+| Path | What |
 |---|---|
-| [`docs/`](docs/) | the notes: [status](docs/status.md), [roadmap](docs/roadmap.md), [howto](docs/howto.md), [protocol](docs/protocol.md), [firmware](docs/firmware.md), [assets](docs/assets.md), [apps](docs/apps.md), [legal](docs/legal.md) |
-| [`tools/`](tools/README.md) | Python tools: `firmware/` (inspect, validate, patch packages), `device/` (talk to the watch), `assets/` (decode Samsung fonts), `build_app.py` |
-| [`apps/`](apps/README.md) | our apps (`tenis`, `styledemo`) and the shared headers `apps/include/` (`f3font.h`, `f3ui.h`) |
-| [`sim/`](sim/README.md) | the PC simulator |
-| `local/` (not in git) | firmware packages, the phone APK and assets pulled from a watch |
-| `fit3-store/` (not in git) | external checkout of the SDK, see [docs/howto.md](docs/howto.md) |
+| [`tools/loader/`](tools/loader/README.md) | the loader: `loader_v2.c` is the tennis window; `loader_v0.c`, `loader_v1.c` are the steps that got us there (kept as small, readable examples of the technique) |
+| [`tools/firmware/`](tools/README.md) | read, validate and rebuild firmware packages: `build_package.py` (spp patches, window take-over, label, icon, every checksum), `validate_fwd.py` |
+| [`tools/emu/`](tools/emu/README.md) | a Unicorn harness that runs functions of the real firmware on the PC; the loader's tests run on it |
+| [`tools/assets/`](tools/README.md) | decoders for the watch's fonts, image packs and language packs; `mkicon.py` draws our app-list icon |
+| [`tools/re/`](tools/re/README.md) | the Ghidra pipeline (headless) used to analyse the firmware |
+| [`tools/device/`](tools/README.md) | talk to the watch over Bluetooth: install apps, copy fonts and images (read-only) |
+| [`docs/research/`](docs/research/) | analysis notes T1-T8: LVGL, the stock UI patterns, resources, the window manager, services, the side key, transitions |
+| [`docs/symbols.csv`](docs/symbols.csv) | ~500 named firmware addresses with confidence and evidence |
+| [`docs/`](docs/) | [status](docs/status.md), [roadmap](docs/roadmap.md), [howto](docs/howto.md), [protocol](docs/protocol.md), [firmware](docs/firmware.md), [assets](docs/assets.md), [apps](docs/apps.md), [legal](docs/legal.md) |
+| [`apps/`](apps/README.md), [`sim/`](sim/README.md) | the older route: apps for the "light app" loader of Musicalista and a PC simulator for them |
+| `local/`, `fit3-store/`, `build/` (not in git) | your firmware packages and assets pulled from your watch; the external SDK checkout; build output |
 
-## Quick start
+## How it works, in short
 
-```
-python3 -I tools/firmware/validate_fwd.py local/firmware/<package>.bin     # every CRC of a package
-python3 -I tools/build_app.py tenis                                         # apps/tenis -> build/tenis.f3a
-sim/run.sh styledemo --data local/assets/fonts                              # try an app on the PC
-python3 -I tools/device/f3_install.py install build/tenis.f3a               # put it on the watch
-```
+The stock firmware calls two functions of the World clock window through a table. `build_package.py` puts a `b.w` branch at their entry, into our code in the free flash
+(`0x2c3a0524..0x2c3af920`, zeros in stock). Our code calls the firmware's own LVGL functions (addresses in `docs/symbols.csv`), answers the window manager's queries (key policy,
+swipe, transition) and keeps its state in one heap block. The research that made this possible is in `docs/research/`; the emulator tests check every claim they rest on
+([tools/emu](tools/emu/README.md)). The honest limits are in [docs/status.md](docs/status.md).
 
 ## Credits
 
-The app loader, the SDK and the firmware patches come from **Musicalista**; the transfer protocol and package checks from **yuriyurin/fit3-flasher**. Details in
-[docs/legal.md](docs/legal.md). This repository contains none of their code and no Samsung firmware or assets.
+The patched packages, the app loader, the SDK and the first firmware patches come from **Musicalista**; the transfer protocol and package checks from **yuriyurin/fit3-flasher**.
+Details in [docs/legal.md](docs/legal.md). This repository contains none of their code and no Samsung firmware or assets.

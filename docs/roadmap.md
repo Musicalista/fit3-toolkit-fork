@@ -1,37 +1,39 @@
 # Roadmap: a native-feeling entry for our apps
 
-**Goal:** our tennis app opens from the stock app list, in the slot of an app nobody uses (World clock), and looks like a stock app. Nothing below is built yet unless the
-[status](status.md) says so.
+**Goal:** our tennis app opens from the stock app list, in the slot of an app nobody uses (World clock), and looks like a stock app. What is done and verified is in [status](status.md).
 
 ## Decisions so far
 
-- The stock **World clock** list entry is the slot to take over, not Settings > Extra apps.
-- Keep a loader, so apps stay installable in seconds over Bluetooth. Compiling an app into the firmware would mean an 18 MB over-the-air update for every change.
-- The loader should become **ours** (a small clean-room one): no menu in front of the app, a fix for the page scrolling under the finger, and no dependency on binaries we may not publish.
-- Look and feel: until now we drew into the frame buffer with the watch's own Roboto fonts and a palette sampled from the stock UI (`apps/include/`). The Ghidra research ([research/](research/),
-  [symbols.csv](symbols.csv)) now gives the LVGL addresses and the stock page recipes, so phase 2 can build native LVGL objects; this is still untested on a watch.
+- The stock **World clock** list entry is the slot to take over.
+- Compiling an app into the firmware means an 18 MB over-the-air update for every change, so the long-term idea is still a small **loader** plus apps installed in seconds over Bluetooth
+  (phase 6). The tennis tracker itself is compiled into our loader: it is the app the project is for.
+- Look and feel comes from calling the firmware's own LVGL functions with the stock page recipes (research T1, T2) and the firmware's Roboto font tables, not from drawing pixels.
+- The **window manager's contract** matters more than the drawing: the return values of the window's event function steer the side key and the swipe-back (T7, T8). A wrong answer is
+  a visible bug, not a crash.
 
 ## Phases
 
-| # | What | Why first | Risk |
-|---|---|---|---|
-| 1 (try 1: label ok, hook not reached; try 1b built) | Replace the `bl` that builds the World clock page (`0x2c1ecd30`) by a stub that runs it and then schedules the existing loader's menu with an 80 ms timer; rename the label | cheapest way to prove, on the real watch, that the list entry reaches that code and that a loader page opened on its fresh root behaves (scroll, close) | one flash with our package |
-| 2 | Our own loader in the free flash (`0x2c3a4525..0x2c3af920`, 46 KB): load `.f3a`, API, canvas, timer, touch; start the app directly; create `/user/apps` with the firmware's `mkdir_p` (to be located) | removes the menu, fixes scrolling, ends the `/user/a_*` workaround | the hook only runs when the entry is opened |
-| 3 | `tools/firmware/build_package.py`: stock package + spp patches + our loader + hooks + strings, all checksums repaired | publishable as code and a recipe: you bring the stock firmware | as phase 2 |
-| 4 | Icon and label. Label: a longer, descriptive name replaces text ID 181 in the English language files (done in `build_package.py`, `--label`). Icon (decision: **own image from our loader**, route B): `app_applist.res` is *not* an OTA component, so the row of the app list (`0x2c30021c + 9*12 + 4`) is pointed at an image we ship in the free flash; needs the real icon size (hypothesis 64x64) and a check that `applist_build_rows` accepts an image pointer | looks native in the list | the row builder may only take icon IDs (then: reuse a stock icon) |
-| 5 | Optional: our own API version (touch events that are not lost on scroll, fonts and images from the firmware, vibration patterns) | | |
+| # | What | State |
+|---|---|---|
+| 1 | Hook the World clock page builder, rename the entry | done (stage 1b), superseded by 2 |
+| 2 | Own loader in the free flash: take over the window's create/event functions with `b.w` branches, own screen, own back gesture, no stock page | **done and verified** (`loader_v1`, `loader_v2`) |
+| 3 | `build_package.py` / `build_tennis.py`: stock package + patches + loader + label + icon, all checksums repaired, nothing third-party in the repository | **done** (the result is identical to the hand-built package; the only third-party input is your stock package) |
+| 4 | Label and icon: a longer name (`--label`, text ID 181), our own 64 x 64 icon (`mkicon.py`, `--icon`: the list row points at an `lv_img_dsc_t` in the free flash) | label verified; icon built and tested in the emulator, **to be verified on the watch** |
+| 5 | The tennis app as native LVGL objects: cards, Undo, Stats, save | **done and verified** |
+| 6 | A hub for `.f3a` apps behind the same entry: our loader implements the old frame-buffer API (so existing apps run), `mkdir_p("/user/apps")`, start apps directly, installs from the PC | open |
+| 7 | Our own API for new apps: native LVGL objects from apps, fonts and images of the firmware, vibration, files | open |
 
-Why a faulty hook is not a brick: nothing of ours runs at boot. A broken stub restarts the watch when someone opens World clock; the watch still boots, so a package can be flashed
-over Bluetooth again. A package that does not pass `tools/firmware/validate_fwd.py`, or that touches code that runs at boot, is what can brick a watch.
+Why a faulty window is not a brick: nothing of ours runs at boot. A broken function restarts the watch when someone opens the entry (or, for the icon, the app list); the watch still
+boots, so a package can be flashed over Bluetooth again. A package that does not pass `tools/firmware/validate_fwd.py`, or that touches code that runs at boot, is what can brick a watch.
+
+## Ideas, not planned
+
+- A 13th row in the app list instead of replacing an entry (needs patches to the row count and the order normaliser; the phone's app list may not accept it; see T4).
+- Other languages for the label (only the English language files are changed today).
+- Using the RTC for wall-clock times (its signature is unknown; the tracker uses ticks plus a stored shift).
+- Heart rate and step counter access (getters not found yet, see T5).
 
 ## Dependencies on third-party code
 
-| Used today | For | Replaced by | When |
-|---|---|---|---|
-| SDK `apps/appcc.py`, `app.ld` | compile and link `.f3a` | our own script and linker file (the format is documented) | phase 2 |
-| SDK `apps/f3app.h`, `f3game.h` | the API the loader provides, helpers | our own header with the same layout (an interface) | phase 2 |
-| SDK `apps/host_game.c` | the simulator's fake API | our own harness (about 100 lines) | phase 2 |
-| Musicalista's patched packages | loader and spp patch | `build_package.py` | phase 3 |
-| fit3-flasher / Fit3 Manager | send a package | stays (we do not reimplement the flashing UI) | |
-
-After phase 3 the `fit3-store/` checkout is no longer needed.
+None in the build of the tennis package: it needs your stock package, `arm-none-eabi-gcc`, Python with numpy, and nothing else. The old route (the "light app" loader and SDK of
+Musicalista, `apps/`, `sim/`) still needs the external `fit3-store/` checkout and is described in [howto.md](howto.md).
