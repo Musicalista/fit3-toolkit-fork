@@ -5,6 +5,7 @@ The package built from the stock package must equal fit3-worldclock-stage1b.bin 
 import io, os, struct, sys, tempfile, zipfile
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import fwd, fwx, build_package as bp, world_clock_takeover as wc
+sys.path.insert(0, os.path.join(HERE, "..", "assets"))
 ROOT = os.path.join(HERE, "..", ".."); FW = os.path.join(ROOT, "local", "firmware"); WORK = os.path.join(ROOT, "local", "work")
 need = ["stock-aza3.bin", "fit3-spp-only.bin", "fit3-store-base-spp-flat.bin", "fit3-worldclock-stage1b.bin"]
 if not all(os.path.exists(os.path.join(FW, n)) for n in need): sys.exit("skip: local/firmware lacks " + ", ".join(n for n in need if not os.path.exists(os.path.join(FW, n))))
@@ -59,7 +60,14 @@ refuses("loader below the free flash", loader_addr=0x2c3a0000, menu_callback=0x2
 refuses("loader over used flash", loader_addr=0x2c300000, menu_callback=0x2c3a1ab9)
 refuses("callback outside the loader", menu_callback=0x2c3a8001)
 refuses("stub overlapping the loader", stub_addr=0x2c3a1000)
-refuses("label longer than 11 characters", label="Tennis score")
+# a label longer than "World Clock" is accepted and replaces only the app-list string (ID 181) of the English files
+lp = os.path.join(WORK, "long-label.bin"); bp.build(P("stock-aza3.bin"), lp, loader, label="Tennis match score", quiet=True, validate=False)
+import lvlang
+for k in fwd.Package.load(lp).paths():
+    if not bp.wc.LANG.match(k): continue
+    Lnew = lvlang.Lang(fwd.Package.load(lp).raw(k)); Lold = lvlang.Lang(stock.raw(k))
+    assert Lnew.string(181) == "Tennis match score" and all(Lnew.string(i) == Lold.string(i) for i in range(Lold.count) if i != 181), k
+print("  ok   a long label replaces only text ID 181 in every English language file"); ok += 1
 refuses("hook target outside the loader", hook_a=0x2c3a8000)
 try: bp.build(P("fit3-worldclock-stage1b.bin"), os.path.join(WORK, "refused.bin"), loader, quiet=True, validate=False); sys.exit("FAIL: patched package accepted as stock")
 except AssertionError: print("  ok   refused: an already patched package as the stock input"); ok += 1

@@ -10,14 +10,16 @@ What it changes (every old byte is checked first; nothing is written when someth
   3. (v1 takeover instead of the hook: `b.w` at the entry of the stock World clock create (0x2c1ecc64) and window-event (0x2c1ecd68) functions, no stub)
   3. the World clock hook: `bl 0x2c1ebfdc` at 0x2c1ecd30 becomes `bl stub`; the stub (28 bytes at --stub-addr, default: 16-aligned end of the loader) runs the original
      builder and then lv_timer_create(--menu-callback, 80 ms, root). See world_clock_takeover.py for the reasoning.
-  4. labels: every "World Clock" in language_en*.res becomes --label (default Tennis, at most 11 characters).
+  4. labels: every "World Clock" in language_en*.res becomes --label (default Tennis) when it fits in 11 characters; a longer label replaces only the app-list string (ID 181),
+     which wraps onto two lines like the longer stock names
   5. optional loader hooks of the old (Musicalista) loader: --hook-a / --hook-b retarget the `bl` at 0x2c1d0802 / 0x2c1b76a0; --extra-apps renames "Tips and tutorials"
      to "Extra apps" (en, en_rUS) and "Dicas e tutoriais" to "Apps extras" (pt_rPT, pt_rBR), which is how that loader's Settings entry is labelled.
   6. all checksums: main image CRC, ZIP CRCs, component CRC32s, catalogue, sizes, packet and header (via fwd.py). The updater is never touched.
 The result is run through validate_fwd.py. Addresses are those of R390XXU0AZA3 only. No Samsung or third-party bytes are stored in this repository: you bring the stock package and the loader."""
 import argparse, os, re, struct, subprocess, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import fwd, world_clock_takeover as wc
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets"))
+import fwd, world_clock_takeover as wc, lvlang
 
 BASE = 0x2c080000
 FREE_START, FREE_END = 0x2c3a0524, 0x2c3af920          # zeros in the stock image (checked at build time)
@@ -35,6 +37,7 @@ EXTRA_APPS = [  # (language file, old string, new string); the new string is pad
     (re.compile(r"language_pt_r(PT|BR)\.res$"), b"Dicas e tutoriais", b"Apps extras"),
 ]
 at = lambda vma: vma - BASE
+APPLIST_TEXT_ID = 181                                   # "World Clock" in the app list (T3/T4); the same words under other IDs (page titles, complications) stay as they are
 TAKEOVER = {  # stage 2 (loader v1): `b.w ours` at the entry of the stock World clock window functions: (entry, the stock bytes there, what the function is)
     "create": (0x2c1ecc64, bytes.fromhex("2de9f341"), "window create fn (record 0x2b +0x1c)"),
     "event": (0x2c1ecd68, bytes.fromhex("70b58eb0"), "window event fn (record 0x2b +0x24)"),
@@ -64,7 +67,7 @@ def check_stock(p):
 def build(stock, out, loader, loader_addr=FREE_START, label="Tennis", stub_addr=None, menu_callback=0x2c3a1ab9, hook_a=None, hook_b=None, extra_apps=False, validate=True, quiet=False, takeover=None):
     log = (lambda *a: None) if quiet else print
     new_label = label.encode("ascii") + b"\0"; old_label = b"World Clock\0"
-    assert len(new_label) <= len(old_label), "the label must be at most 11 characters"
+    long_label = len(new_label) > len(old_label)            # longer than "World Clock": only the app-list string (text ID 181) is replaced, via lvlang.Lang.set_string
     p = fwd.Package.load(stock); raw = bytearray(check_stock(p)); orig = bytes(raw)
     # --- loader and stub placement
     lend = loader_addr + len(loader)
@@ -104,7 +107,10 @@ def build(stock, out, loader, loader_addr=FREE_START, label="Tennis", stub_addr=
         english, other = wc.LANG.match(path), re.search(r"language_pt_r(PT|BR)\.res$", path)
         if not (english or other): continue
         zbytes = p.raw(path); inner = fwd.unzip_single(zbytes)[1]; new = inner; n = m = 0
-        if english: n = new.count(old_label); new = new.replace(old_label, new_label.ljust(len(old_label), b"\0"))
+        if english and long_label:
+            L = lvlang.Lang(new); assert L.string(APPLIST_TEXT_ID) == "World Clock", "text %d is not the World Clock row" % APPLIST_TEXT_ID
+            new = L.set_string(APPLIST_TEXT_ID, label); n = 1
+        elif english: n = new.count(old_label); new = new.replace(old_label, new_label.ljust(len(old_label), b"\0"))
         if extra_apps:
             for rx, old, repl in EXTRA_APPS:
                 if rx.search(path): m += new.count(old + b"\0"); new = new.replace(old + b"\0", repl.ljust(len(old)) + b"\0")
