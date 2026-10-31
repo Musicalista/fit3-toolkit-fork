@@ -112,6 +112,9 @@ def main():
     # side key (T7): the window manager asks (0,8) for the key policy, then sends (1,6) for a short press
     ok("key policy (0,8) = 0x284: bit 6 clear, so the short press reaches us", e.call(0x2c1ecd68, 0, 8, 0) == 0x284 and not (0x284 & 0x40))
     ok("the policy keeps the stock long/double press bits (2, 7, 9)", 0x284 & 0x4 and 0x284 & 0x80 and 0x284 & 0x200)
+    # T8: the window manager asks (0, 7) and (0, 9) whether it should run its own swipe-back and which animation; a garbage answer made it animate to the wrong side
+    ok("window queries 6, 7 and 9 answer 0, so the manager runs no swipe of its own", all(e.call(0x2c1ecd68, 0, k, 0) == 0 for k in (6, 7, 9)), [e.call(0x2c1ecd68, 0, k, 0) for k in (6, 7, 9)])
+    ok("every window event answers a defined value (0 except the policy)", all(e.call(0x2c1ecd68, c, k, 0) == (0x284 if (c, k) == (0, 8) else 0) for c in (0, 1, 2) for k in range(12)))
     r.click(r.stats); r.calls.clear(); e.call(0x2c1ecd68, 1, 6, 0)
     ok("side key with the overlay open closes it only", r.hidden(r.ov) and not any(c[0] == "wm_open" for c in r.calls), r.calls)
     e.call(0x2c1ecd68, 0xabcd0001, 0x12340006, 0)                                 # garbage in the upper bytes: masked
