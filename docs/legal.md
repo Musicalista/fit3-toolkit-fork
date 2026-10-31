@@ -1,0 +1,33 @@
+# Disclaimer, credits and licensing
+
+## Disclaimer
+
+This is an independent, unofficial hobby project. It is **not affiliated with, endorsed by or supported by Samsung** (or by the authors credited below). Galaxy Fit3 and Samsung
+are trademarks of their owners.
+
+**Flashing firmware can make a watch unusable, and recovery may be impossible.** A package that boots on one watch may not boot on another: everything here was tried on one watch,
+one firmware version (R390XXU0AZA3), one model (SM-R390). Apps are native code with no sandbox; a faulty app can restart the watch, and an app can read and write the watch's files.
+The Bluetooth patch used here leaves the watch visible and its file service open to anyone in range. Flashing may void your warranty. You use all of this at your own risk; there is no warranty.
+
+## What this repository does not contain
+
+- no Samsung firmware, no firmware package of any kind, no firmware-derived binary;
+- none of the code of the SDK and loader (an external checkout, see [howto.md](howto.md));
+- no Samsung fonts or images (the notes describe the formats; `local/` is git-ignored).
+
+`tools/firmware/make_flat_pkg.py` *produces* a modified package from one you already have; do not redistribute its output.
+
+## Credits and third-party terms
+
+| What | From | Terms as far as we know |
+|---|---|---|
+| App SDK, `.f3a` format, loader, Fit3 Manager, firmware patches | **Musicalista**, [fit3-store-apps-games](https://github.com/Musicalista/fit3-store-apps-games), [freemyfit3](https://github.com/Musicalista/freemyfit3) | no licence file in either repository; the packages are marked "private builds ... do not publish the .bin files" |
+| Transfer protocol, package validation rules | **yuriyurin**, [fit3-flasher](https://github.com/yuriyurin/fit3-flasher) | the Fit3 store project notes that it carried no licence |
+| Roboto (the shape of the fonts on the watch) | Google | Apache 2.0 for Roboto itself; Samsung's compiled font files are theirs |
+| Fonts and images on the watch | Samsung | proprietary; for inspection on your own watch only |
+
+Before publishing anything derived from the loader, ask its author. Our reading of the loader (addresses, hook points) is analysis for interoperability, and it is documented, not copied.
+
+## Licence of this repository
+
+Not chosen yet. Decide before the first public release (MIT or Apache-2.0 would suit the tools and apps; the notes could be CC BY).
