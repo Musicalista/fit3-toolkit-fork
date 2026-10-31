@@ -12,7 +12,7 @@ The Bluetooth patch used here leaves the watch visible and its file service open
 ## What this repository does not contain
 
 - no Samsung firmware, no firmware package of any kind, no firmware-derived binary;
-- none of the code of the SDK and loader (an external checkout, see [howto.md](howto.md));
+- none of the code of Musicalista's SDK and loader (our `sdk/`, `tools/appcc.py` and `sim/host_api.c` are written from scratch and follow only the binary interface and file format that its repository publishes (names, signatures, layouts), so that apps are compatible both ways; no code or text was copied);
 - no Samsung fonts or images (the notes describe the formats; `local/` is git-ignored).
 
 What it does contain: our own code (the loader in `tools/loader/`, the tools, the apps), our own icon artwork (`tools/assets/mkicon.py` draws it), and notes on how the firmware works with the
@@ -25,7 +25,7 @@ from the stock package *you* provide; do not redistribute its output, which cont
 
 | What | From | Terms as far as we know |
 |---|---|---|
-| App SDK, `.f3a` format, loader, Fit3 Manager, firmware patches | **Musicalista**, [fit3-store-apps-games](https://github.com/Musicalista/fit3-store-apps-games), [freemyfit3](https://github.com/Musicalista/freemyfit3) | no licence file in either repository; the packages are marked "private builds ... do not publish the .bin files" |
+| `.f3a` format and API (our `sdk/` is an independent implementation of it), loader, Fit3 Manager, firmware patches | **Musicalista**, [fit3-store-apps-games](https://github.com/Musicalista/fit3-store-apps-games), [freemyfit3](https://github.com/Musicalista/freemyfit3) | no licence file in either repository; the packages are marked "private builds ... do not publish the .bin files" |
 | Transfer protocol, package validation rules | **yuriyurin**, [fit3-flasher](https://github.com/yuriyurin/fit3-flasher) | the Fit3 store project notes that it carried no licence |
 | Roboto (the shape of the fonts on the watch) | Google | Apache 2.0 for Roboto itself; Samsung's compiled font files are theirs |
 | Fonts and images on the watch | Samsung | proprietary; for inspection on your own watch only |
@@ -41,5 +41,5 @@ Before publishing anything derived from the loader, ask its author. Our reading 
 (`tools/assets/mkicon.py`). One licence on purpose, with the patent grant that Apache-2.0 includes. Source files carry an `SPDX-License-Identifier: Apache-2.0` line.
 
 What the licence does **not** do: it covers what we wrote, nothing else. It does not licence Samsung's firmware, fonts or images (you bring them), the SDK and loader of Musicalista
-(an external checkout, which has no licence of its own; `apps/` and `sim/` are our code but compile against its headers) or the package your build produces (it contains Samsung's firmware).
+(which have no licence of their own; we neither contain nor need them: `sdk/`, `apps/` and `sim/` are our code, compatible with their format) or the package your build produces (it contains Samsung's firmware).
 Copyright of contributions stays with their authors, who grant the licence by contributing. This is not legal advice.

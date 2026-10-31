@@ -1,16 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 """Live window for a Fit3 light app: mouse = finger, the top-right corner is the watch's own close button.
-usage: python3 sim_gui.py <libsim_app.so> [--data DIR] [--scale N] [--shot FILE --script "x,y x,y ..."]"""
+usage: python3 sim_gui.py <libsim_app.so> [--data DIR] [--scale N] [--lang pt|en] [--shot FILE --script "x,y x,y ..."] [--monkey SEED]"""
 import argparse, ctypes, os, sys, time, tkinter as tk
 import numpy as np
 
 W, H, STEP = 256, 402, 0.033
 
-def load(path, data):
+def load(path, data, pt=False):
     lib = ctypes.CDLL(os.path.abspath(path))
     lib.sim_fb.restype = ctypes.POINTER(ctypes.c_ushort)
     now = time.localtime(); secs = now.tm_hour * 3600 + now.tm_min * 60 + now.tm_sec
     os.makedirs(data, exist_ok=True)
+    lib.sim_set_lang(int(pt))
     if lib.sim_init(data.encode(), secs): sys.exit("f3app_main failed")
     return lib
 
@@ -63,7 +64,9 @@ def headless(lib, script, out):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(); ap.add_argument("lib"); ap.add_argument("--data", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "data"))
     ap.add_argument("--scale", type=int, default=0); ap.add_argument("--shot"); ap.add_argument("--script", default="")
-    a = ap.parse_args(); lib = load(a.lib, a.data)
+    ap.add_argument("--lang", choices=("pt", "en"), default="en"); ap.add_argument("--monkey", type=int, help="random taps/swipes/holds, no window; exit status 1 if the app quit early or misused the API")
+    a = ap.parse_args(); lib = load(a.lib, a.data, a.lang == "pt")
+    if a.monkey is not None: sys.exit(lib.sim_monkey(a.monkey))
     if a.shot: headless(lib, a.script, a.shot); sys.exit(0)
     root = tk.Tk(); scale = a.scale or (2 if root.winfo_screenheight() >= 950 else 1); root.destroy()
     Gui(lib, scale).root.mainloop()

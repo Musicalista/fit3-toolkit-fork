@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Logic test for apps/tenis/tenis.c (scoring, serve rotation, tie-break, undo, persistence format).
- * gcc -O1 -I fit3-store/apps -I apps/include -finput-charset=UTF-8 -fexec-charset=ISO-8859-1 -o /tmp/tenis_logic apps/tenis/test_logic.c && /tmp/tenis_logic */
+ * gcc -O1 -I sdk -I apps/include -finput-charset=UTF-8 -fexec-charset=ISO-8859-1 -o /tmp/tenis_logic apps/tenis/test_logic.c && /tmp/tenis_logic */
 #include <stdio.h>
 #include "tenis.c"
 

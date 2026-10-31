@@ -1,20 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
-"""build_app.py <app>: build apps/<app>/ into build/<id>.f3a and build/<id>.meta with the SDK's appcc.py.
-The SDK (Musicalista/fit3-store-apps-games) is an external checkout, by default ./fit3-store; override with F3_SDK=/path/to/its/apps.
+"""build_app.py <app>: build apps/<app>/ into build/<id>.f3a and build/<id>.meta with tools/appcc.py and the SDK in sdk/ (nothing outside this repository is read).
 apps/<app>/meta holds the launcher line "id;BGRRGGBB;FGRRGGBB;Name PT;Name EN" (the icon field is optional); apps/include is on the include path.
-Needs arm-none-eabi-gcc (ARM_GNU_BIN, default /usr/bin)."""
+Needs arm-none-eabi-gcc and ld (ARM_GNU_BIN = their directory, default /usr/bin)."""
 import os, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SDK = os.environ.get("F3_SDK", os.path.join(ROOT, "fit3-store", "apps"))
 os.environ.setdefault("ARM_GNU_BIN", "/usr/bin")
-os.environ["CPATH"] = os.pathsep.join(filter(None, [os.path.join(ROOT, "apps", "include"), os.environ.get("CPATH", "")]))   # gcc picks this up from appcc's subprocess
-sys.path.insert(0, SDK)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import appcc
 
 def build(app):
     d = os.path.join(ROOT, "apps", app); fields = open(os.path.join(d, "meta"), encoding="utf-8").read().strip().split(";")
-    app_id, bg, fg, pt, en = fields[:5]; out = os.path.join(ROOT, "build", app_id + ".f3a")
-    n = appcc.build(os.path.join(d, app + ".c"), app_id, pt, en, out)
+    app_id = fields[0]; pt, en = fields[3], fields[4]; out = os.path.join(ROOT, "build", app_id + ".f3a")
+    n = appcc.build(os.path.join(d, app + ".c"), app_id, pt, en, out, [os.path.join(ROOT, "apps", "include")])
     open(out[:-4] + ".meta", "w", encoding="utf-8").write(";".join(fields) + "\n")
     print("%s: image %d B, bss %d B, %d relocations, file %d B" % (out, *n))
 

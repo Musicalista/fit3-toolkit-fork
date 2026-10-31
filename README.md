@@ -15,7 +15,7 @@ other window: no loader menu, no scrolling page, nothing runs at boot.
 
 Everything above has been used on a real watch (one SM-R390). It has not been tried on any other watch or firmware version: the build refuses anything but R390XXU0AZA3.
 
-Build it from **your own** stock package with one command:
+Build it from **your own** stock package with one command (pick another entry than World clock with `--slot`; see [docs/howto.md](docs/howto.md)):
 
 ```
 python3 -I tools/build_tennis.py <your R390XXU0AZA3 package>.bin out.bin       # then flash out.bin with Fit3 Manager; see docs/howto.md
@@ -36,8 +36,9 @@ What is verified and what is not: [docs/status.md](docs/status.md). Where this i
 | [`docs/research/`](docs/research/) | analysis notes T1-T8: LVGL, the stock UI patterns, resources, the window manager, services, the side key, transitions |
 | [`docs/symbols.csv`](docs/symbols.csv) | ~500 named firmware addresses with confidence and evidence |
 | [`docs/`](docs/) | [status](docs/status.md), [roadmap](docs/roadmap.md), [howto](docs/howto.md), [protocol](docs/protocol.md), [firmware](docs/firmware.md), [assets](docs/assets.md), [apps](docs/apps.md), [legal](docs/legal.md) |
-| [`apps/`](apps/README.md), [`sim/`](sim/README.md) | the older route: apps for the "light app" loader of Musicalista and a PC simulator for them |
-| `local/`, `fit3-store/`, `build/` (not in git) | your firmware packages and assets pulled from your watch; the external SDK checkout; build output |
+| [`apps/`](apps/README.md), [`sim/`](sim/README.md) | the older route: apps for the "light app" loader of Musicalista (our own SDK in `sdk/`) and a PC simulator for them |
+| [`sdk/`](sdk/README.md) | header files, linker script and format description for light apps (compiled by `tools/appcc.py`) |
+| `local/`, `build/` (not in git) | your firmware packages and assets pulled from your watch; build output |
 
 ## How it works, in short
 

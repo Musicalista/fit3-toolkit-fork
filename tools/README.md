@@ -22,6 +22,7 @@ Python 3 only (Pillow for `assets/lvfont.py`). Run with `python3 -I`. They never
 | `assets/lvres.py`, `assets/lvlang.py` | decode the image packs (`.res`) and read or edit the language packs | no |
 | `assets/mkicon.py` | draw our app-list icon (64 x 64, RGB565 + alpha) | no |
 | `assets/lvfont.py` | decode the watch's LVGL fonts and render text to a PNG | no |
-| `build_app.py` | build `apps/<name>` to `build/<id>.f3a` and `.meta` with the SDK's compiler script | no |
+| `build_app.py` | build `apps/<name>` to `build/<id>.f3a` and `.meta` with `appcc.py` and the SDK in [`sdk/`](../sdk/README.md) | no |
+| `appcc.py` | our `.f3a` compiler (arm-none-eabi-gcc + ld, reads the ELF itself); the file format is in [`sdk/README.md`](../sdk/README.md) | no |
 
 Protocol: [../docs/protocol.md](../docs/protocol.md). Firmware: [../docs/firmware.md](../docs/firmware.md).

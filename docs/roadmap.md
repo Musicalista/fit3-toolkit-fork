@@ -37,4 +37,4 @@ boots, so a package can be flashed over Bluetooth again. A package that does not
 ## Dependencies on third-party code
 
 None in the build of the tennis package: it needs your stock package, `arm-none-eabi-gcc`, Python with numpy, and nothing else. The old route (the "light app" loader and SDK of
-Musicalista, `apps/`, `sim/`) still needs the external `fit3-store/` checkout and is described in [howto.md](howto.md).
+Musicalista) is only for compatibility now: our own SDK (`sdk/`, `tools/appcc.py`) builds `apps/` and `sim/` without it, and the `.f3a` format is described in [sdk/README.md](../sdk/README.md).
