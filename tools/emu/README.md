@@ -46,3 +46,13 @@ A display is needed before widgets exist: see `Probe._display` (draw buffer + dr
 `test_loader_v2.py` (the tennis window; `F3_WINDOW`, `F3_CREATE`, `F3_EVENT`, `F3_IMAGE` select another replaced window), `test_icon.py` (the app-list icon), `test_slots.py` (builds a package for
 every replaceable app-list entry and runs the window test on each; run it with the system `python3 -I`, it starts the emulator's venv itself). The window tests need the patched main image:
 `python3 -I tools/firmware/fwx.py local/firmware/<package>.bin main local/re/main-v2.bin`.
+
+## Screenshots of the tennis window (`screenshot.py`)
+
+`local/venv/bin/python -I tools/emu/screenshot.py build/shots` renders a short match (empty page, in progress, stats, finished) by running **the firmware's own LVGL code** in the emulator: the
+fonts are loaded by the firmware's `fonts_init` from the files you pulled from your watch (`tools/device/f3_pull.py`, `local/assets/fonts`), the window is created by the patched stock address and
+LVGL's software renderer draws into a 256 x 402 RGB565 buffer. Text, colours, cards, pills and layout are what the watch computes.
+
+Known limit: **a filled box that is a child of a card with rounded corners is drawn black** (our serve dot) or not at all (our divider) here, while the same box on the screen or in a square card
+is right. It is not known whether the watch does the same (it probably does not: the stock pages have such children). Do not use these pictures to judge those two details; the emulator also
+fails when such a box overlaps a card on the screen level. The renderer needs `unicorn` and Pillow in the venv (`local/venv/bin/pip install unicorn capstone pillow`).
