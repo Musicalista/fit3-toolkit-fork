@@ -23,7 +23,7 @@ not built.
 
 | Path | What is in it |
 |---|---|
-| [`docs/`](docs/) | the notes: [status](docs/status.md), [howto](docs/howto.md), [protocol](docs/protocol.md), [firmware](docs/firmware.md), [assets](docs/assets.md), [apps](docs/apps.md), [legal](docs/legal.md) |
+| [`docs/`](docs/) | the notes: [status](docs/status.md), [roadmap](docs/roadmap.md), [howto](docs/howto.md), [protocol](docs/protocol.md), [firmware](docs/firmware.md), [assets](docs/assets.md), [apps](docs/apps.md), [legal](docs/legal.md) |
 | [`tools/`](tools/README.md) | Python tools: `firmware/` (inspect, validate, patch packages), `device/` (talk to the watch), `assets/` (decode Samsung fonts), `build_app.py` |
 | [`apps/`](apps/README.md) | our apps (`tenis`, `styledemo`) and the shared headers `apps/include/` (`f3font.h`, `f3ui.h`) |
 | [`sim/`](sim/README.md) | the PC simulator |
