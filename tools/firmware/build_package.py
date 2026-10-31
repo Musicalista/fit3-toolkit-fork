@@ -43,14 +43,14 @@ at = lambda vma: vma - BASE
 ICON_ROW_PTR, ICON_STOCK_PTR = 0x2c30028c, 0x2c2e4390        # app-list template row 9 (World clock): 0x2c30021c + 9*12 + 4 = the char* "21", the image ID string of the stock icon
 ICON_SIZE = 64 * 64 * 3                                       # body of a 64 x 64 LV_IMG_CF_TRUE_COLOR_ALPHA image, 16-bit colour: RGB565 LE + alpha (tools/assets/mkicon.py)
 APPLIST_TABLE, APPLIST_ROWS = 0x2c30021c, 12                 # flash template of the app-list rows, 12 bytes each: u8 kind, pad, s16 window id, char* icon id string, u16 text id, pad
-WINDOW_TABLE, WINDOW_COUNT = 0x2c3b4200, 166                 # flash image of the window records, 0x30 bytes each (T4): +0x1c create, +0x20 post-enter, +0x24 event, +0x28 ?, +0x2c destroy
+WINDOW_TABLE, WINDOW_COUNT = 0x2c3b4200, 166                 # flash image of the window records, 0x30 bytes each (docs/details.md): +0x1c create, +0x20 post-enter, +0x24 event, +0x28 ?, +0x2c destroy
 WINDOW_FNS = (("create", 0x1c), ("post", 0x20), ("event", 0x24), ("x28", 0x28), ("destroy", 0x2c))
 FORBIDDEN = {0x36: "Settings: replacing it would lock you out of the watch's settings"}     # only with force_slot
 WARNED = {0x08: "Health", 0x4d: "Stopwatch", 0x1d: "Timer", 0x90: "Alarm"}                    # apps with state outside their window: a stock app stops working
 KEEP_STOCK = {0x2b: ("destroy",)}                            # World clock: its stock destroy is null-safe without stock state (seen on a watch), so it stays as it was shipped
 BX_LR = bytes.fromhex("7047")
 ALL_LANG = re.compile(r"^/nand/system/font/language_[A-Za-z_]+\.res$")
-APPLIST_TEXT_ID = 181                                   # "World Clock" in the app list (T3/T4); the same words under other IDs (page titles, complications) stay as they are
+APPLIST_TEXT_ID = 181                                   # "World Clock" in the app list (docs/details.md); the same words under other IDs (page titles, complications) stay as they are
 TAKEOVER = {  # stage 2 (loader v1): `b.w ours` at the entry of the stock World clock window functions: (entry, the stock bytes there, what the function is)
     "create": (0x2c1ecc64, bytes.fromhex("2de9f341"), "window create fn (record 0x2b +0x1c)"),
     "event": (0x2c1ecd68, bytes.fromhex("70b58eb0"), "window event fn (record 0x2b +0x24)"),

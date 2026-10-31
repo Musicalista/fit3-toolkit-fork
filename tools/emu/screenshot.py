@@ -46,7 +46,7 @@ class Screen:
         h = self.handles[self.e.u32(em.arg(0))]; pos, wh = em.arg(1), em.arg(2)
         h[1] = pos if wh == 0 else h[1] + pos if wh == 1 else len(h[0]) + pos; return 0
     def _flush(self, em):
-        # lv_disp_drv.flush_cb(drv, area, color_p); with LV_USE_LARGE_COORD an lv_area_t is four int32 (T1)
+        # lv_disp_drv.flush_cb(drv, area, color_p); with LV_USE_LARGE_COORD an lv_area_t is four int32 (docs/details.md)
         x1, y1, x2, y2 = struct.unpack("<iiii", self.e.read(em.arg(1), 16)); w = x2 - x1 + 1
         px = self.e.read(em.arg(2), w * (y2 - y1 + 1) * 2)
         for r in range(y2 - y1 + 1): self.fb[((y1 + r) * W + x1) * 2:((y1 + r) * W + x1 + w) * 2] = px[r * w * 2:(r + 1) * w * 2]

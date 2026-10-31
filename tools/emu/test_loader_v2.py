@@ -112,11 +112,11 @@ def main():
     r.calls.clear(); r.gesture(2); ok("back gesture with the overlay open closes the overlay only", r.hidden(r.ov) and not any(c[0] == "wm_open" for c in r.calls), r.calls)
     r.calls.clear(); r.gesture(3); ok("a left gesture does nothing", not r.calls, r.calls)
     r.gesture(2); ok("back gesture on the score page leaves the window (wm_open 3,-1,0,BACK)", ("wm_open", 3, 0xffffffff, 0, BACK) in r.calls, r.calls)
-    # side key (T7): the manager asks (0,8) for the key policy; 0x2c4 (bit 6 set) lets the manager itself send the short press to the watch face, as the stock windows do
+    # side key (docs/details.md, section 2): the manager asks (0,8) for the key policy; 0x2c4 (bit 6 set) lets the manager itself send the short press to the watch face, as the stock windows do
     r.calls.clear(); e.call(EVENT, 0, 0, 0); ok("entering the window sets its own id (wm_set_current)", ("set_current", WIN) in r.calls, r.calls)
     ok("key policy (0,8) = 0x2c4, the stock windows' answer", e.call(EVENT, 0, 8, 0) == 0x2c4, hex(e.call(EVENT, 0, 8, 0)))
     ok("the garbage-free arguments: upper bytes are masked", e.call(EVENT, 0xabcd0000, 0x12340008, 0) == 0x2c4)
-    # T8: the manager asks (0, 7) and (0, 9) whether it should run its own swipe-back and which animation; a garbage answer made it animate to the wrong side
+    # the manager asks (0, 7) and (0, 9) whether it should run its own swipe-back and which animation; a garbage answer made it animate to the wrong side
     ok("window queries 6, 7 and 9 answer 0, so the manager runs no swipe of its own", all(e.call(EVENT, 0, k, 0) == 0 for k in (6, 7, 9)), [e.call(EVENT, 0, k, 0) for k in (6, 7, 9)])
     ok("every window event answers a defined value (0 except the policy)", all(e.call(EVENT, c, k, 0) == (0x2c4 if (c, k) == (0, 8) else 0) for c in (0, 1, 2) for k in range(12)))
     r.calls.clear(); e.call(EVENT, 1, 6, 0); ok("the short press of the side key is left to the manager (we do not call wm)", not r.calls, r.calls)

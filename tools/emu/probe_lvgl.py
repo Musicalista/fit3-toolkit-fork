@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""probe_lvgl.py: check the LVGL claims of docs/research/T1-lvgl.md by running the real firmware functions in the emulator.
+"""probe_lvgl.py: check the LVGL claims of docs/details.md by running the real firmware functions in the emulator.
 
     local/venv/bin/python -I tools/emu/probe_lvgl.py [path/to/main-stock.bin]
 
@@ -127,7 +127,7 @@ class Probe:
         c("lv_style_init writes sentinel 0xaabbccdd at +0 and zeroes the rest of the 12-byte lv_style_t", e.u32(st) == 0xaabbccdd and e.read(st + 4, 8) == bytes(8) and e.u8(st + 12) == 0xA5, "%s, byte[12]=%#x" % (e.read(st, 12).hex(), e.u8(st + 12)))
         n0 = len(e.allocs); tm = call(A["timer_create"], 0x20000340 | 1, 80, 0x77)
         c("lv_timer_t: period at +0 (80), callback at +8, user_data at +0xc", (e.u32(tm), e.u32(tm + 8) & ~1, e.u32(tm + 0xc)) == (80, 0x20000340, 0x77), "%s" % [h(e.u32(tm + o)) for o in (0, 8, 0xc)])
-        c("lv_indev_data_t is 0x1c bytes with state at +0x18 (H in T1)", False, "not exercised: needs the indev driver and the touch ring", skip=True)
+        c("lv_indev_data_t is 0x1c bytes with state at +0x18 (a hypothesis)", False, "not exercised: needs the indev driver and the touch ring", skip=True)
         return self.results
 
 

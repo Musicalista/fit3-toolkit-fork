@@ -2,7 +2,7 @@
 /* loader_v2.c: the tennis match score tracker as a native LVGL window, replacing the stock World clock window (id 0x2b) like loader_v1.
  *
  * Same take-over as v1 (build_package.py --takeover-create/--takeover-event): world_create builds a fresh screen with LVGL objects styled after the stock pages
- * (docs/research/T2-ui-patterns.md): black screen, 254 px cards with radius 26 and colour 0x2124, pill buttons (radius 100, colour 0x5ade), Roboto from the firmware's
+ * (docs/details.md, section 6): black screen, 254 px cards with radius 26 and colour 0x2124, pill buttons (radius 100, colour 0x5ade), Roboto from the firmware's
  * font tables. The scoring rules, the data and the save format are those of apps/tenis (best of 3 sets, tie-break at 6-6, 16 undo steps, one save of 128 bytes 3 s after
  * the last change and when the window is deleted).
  *
@@ -59,14 +59,14 @@ typedef struct lv_obj lv_obj_t; typedef struct lv_timer lv_timer_t; typedef stru
 #define EV_CLICKED 7
 #define EV_GESTURE 12
 #define EV_DELETE 33
-#define ROBOTO_MEDIUM(i) (*(const void *const *)(0x2010b0e0 + 4 * (i)))   /* T3: 0:86 1:48 2:44 3:40 4:36 5:32 6:30 7:28 8:24 9:23 10:20 */
+#define ROBOTO_MEDIUM(i) (*(const void *const *)(0x2010b0e0 + 4 * (i)))   /* docs/details.md: 0:86 1:48 2:44 3:40 4:36 5:32 6:30 7:28 8:24 9:23 10:20 */
 #define FT_POINT ROBOTO_MEDIUM(2)
 #define FT_GAMES ROBOTO_MEDIUM(4)
 #define FT_NAME ROBOTO_MEDIUM(5)
 #define FT_BTN ROBOTO_MEDIUM(7)
 #define FT_SMALL ROBOTO_MEDIUM(8)
 
-/* palette (RGB565; T2 for the UI colours, apps/tenis for the players) */
+/* palette (RGB565; docs/details.md for the UI colours, apps/tenis for the players) */
 #define C_BLACK 0x0000
 #define C_WHITE 0xffff
 #define C_CARD 0x2124
@@ -254,7 +254,7 @@ static void on_card(lv_event_t *e) {
         if (t == s->zone[w] || t == s->card[w]) { point(s, w); return; }
     }
 }
-#define BACK_ANIM 0x14                                                  /* 4th argument of wm_open for "back" (T8 decides whether this is the right one) */
+#define BACK_ANIM 0x14                                                  /* 4th argument of wm_open for "back": the slide the stock windows use (docs/details.md) */
 /* back gesture: close the stats overlay first, then leave the window */
 static void go_back(State *s) {
     if (s->over_shown) show_stats(s, 0);
@@ -313,11 +313,11 @@ __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 pa
     return scr;
 }
 
-/* world_event(class, kind, data): the window manager's callback of window 0x2b (T4, T7, T8). Every answer matters: the manager uses the return value.
+/* world_event(class, kind, data): the window manager's callback of window 0x2b (docs/details.md, section 2). Every answer matters: the manager uses the return value.
  *   (0, 0)  window entered     -> remember the window id as the stock one did (wm_set_current)
- *   (0, 8)  key policy query   -> a bit mask (T7). 0x2c4 is what the stock windows answer; with bit 6 set the manager sends the short press of the side key to the watch face
+ *   (0, 8)  key policy query   -> a bit mask. 0x2c4 is what the stock windows answer; with bit 6 set the manager sends the short press of the side key to the watch face
  *                                 by itself (wm_request(1, 2, ...)), exactly as in the stock apps, so we do nothing for the key.
- *   everything else -> 0. In particular the queries 6, 7 and 9 must be 0: a non-zero answer makes the manager run its own swipe-back with its own animation (T8).
+ *   everything else -> 0. In particular the queries 6, 7 and 9 must be 0: a non-zero answer makes the manager run its own swipe-back with its own animation (docs/details.md).
  * The arguments arrive without sign or zero extension, so they are masked. */
 __attribute__((section(".text.entry.event"))) u32 world_event(u32 cls, u32 kind, void *data) {
     (void)data; cls &= 0xff; kind &= 0xff;

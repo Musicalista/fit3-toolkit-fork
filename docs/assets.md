@@ -19,4 +19,4 @@ All the fonts we pulled are uncompressed, 2 bits per pixel, ASCII 0x20..0x7a (so
 
 ## Images: `app_*.res`, `common.res`, ...
 
-A pack of records without a directory, each `lv_img_header_t (4 bytes) | body`; formats, the ID tables and the app-list icon are in [research/T3-resources.md](research/T3-resources.md); `tools/assets/lvres.py` decodes them.
+A pack of records without a directory, each `lv_img_header_t (4 bytes) | body`; formats, the ID tables and the app-list icon are in [details.md](details.md); `tools/assets/lvres.py` decodes them.

@@ -3,7 +3,7 @@
 
     python3 -I tools/assets/mkicon.py build/tennis_icon.bin [build/tennis_icon.png]
 
-Stock icons of the app list (docs/research/T3-resources.md, measured on a watch; nothing of Samsung's is stored here): 64 x 64, a disc that touches the four edges, a
+Stock icons of the app list (docs/details.md, measured on a watch; nothing of Samsung's is stored here): 64 x 64, a disc that touches the four edges, a
 soft vertical gradient (the top is about 16/11/35 steps lighter than the bottom in R/G/B), a flat glyph, anti-aliased. This drawing is original artwork.
 
 Output: 64 * 64 * 3 bytes, per pixel RGB565 little endian then alpha (LVGL's LV_IMG_CF_TRUE_COLOR_ALPHA at 16-bit colour, header cf 5), ready for

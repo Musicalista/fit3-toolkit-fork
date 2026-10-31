@@ -49,7 +49,7 @@ typedef struct { i32 x, y; } lv_point_t;
 #define EV_RELEASED 8
 #define EV_GESTURE 12
 #define EV_DELETE 33
-#define FONT_ROBOTO_MEDIUM_32 (*(const void *const *)0x2010b0f4)   /* T3: slot of the table filled by fonts_init */
+#define FONT_ROBOTO_MEDIUM_32 (*(const void *const *)0x2010b0f4)   /* slot of the table filled by fonts_init */
 
 typedef struct {
     lv_obj_t *panel, *l_title, *l_up, *l_cnt, *l_xy;

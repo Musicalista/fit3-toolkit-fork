@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""lvres.py: decoder for the Fit3 image packs (/nand/system/image/*.res) and helper for the firmware's image-ID tables (docs/research/T3-resources.md).
+"""lvres.py: decoder for the Fit3 image packs (/nand/system/image/*.res) and helper for the firmware's image-ID tables (docs/details.md).
 
     python3 -I lvres.py info  <pack.res> [--fw main.bin --first-id N]     list the records (id, offset, size, format, w x h)
     python3 -I lvres.py png   <pack.res> <outdir> [--fw main.bin --first-id N]   write one PNG per record (needs Pillow)

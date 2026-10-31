@@ -1,7 +1,7 @@
 # tools/emu: run firmware functions on a PC
 
 `fw_emu.py` loads the main image of R390XXU0AZA3 (`local/re/main-stock.bin`, never in git) into Unicorn (Cortex-M4, Thumb) and calls single functions.
-`probe_lvgl.py` uses it to check the LVGL claims of `docs/research/T1-lvgl.md`; results in `docs/research/T6-emulator.md`.
+`probe_lvgl.py` uses it to check the structure and behaviour claims of [docs/details.md](../../docs/details.md) against the real firmware code.
 
 ## Setup (once)
 

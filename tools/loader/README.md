@@ -11,7 +11,7 @@ Each version is a small, working example of one step of the technique; `loader_v
 | `loader_v2.c` | the tennis score tracker as native LVGL objects, with the right answers to the window manager (key policy, swipe queries), a save file, the back gesture. |
 | `loader.ld` | linker script: `.text.entry` first (`world_create` is the first function), `.text.entry.*` kept, no `.data`/`.bss`. |
 
-## Rules of the window manager that cost us time (research T4, T7, T8)
+## Rules of the window manager that cost us time (more in [docs/details.md](../../docs/details.md))
 
 - The window's event function `(class, kind, data)` is **asked questions**; its return value is used. `(0, 8)` is the key policy mask (bit 6 set: the short press of the side key goes to the
   watch face by itself); `(0, 6)`, `(0, 7)`, `(0, 9)` must return 0, or the manager runs its own swipe-back with its own transition. An event function that returns garbage looks like

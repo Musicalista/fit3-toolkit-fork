@@ -7,8 +7,8 @@
 - The stock **World clock** list entry is the slot to take over.
 - Compiling an app into the firmware means an 18 MB over-the-air update for every change, so the long-term idea is still a small **loader** plus apps installed in seconds over Bluetooth
   (phase 6). The tennis tracker itself is compiled into our loader: it is the app the project is for.
-- Look and feel comes from calling the firmware's own LVGL functions with the stock page recipes (research T1, T2) and the firmware's Roboto font tables, not from drawing pixels.
-- The **window manager's contract** matters more than the drawing: the return values of the window's event function steer the side key and the swipe-back (T7, T8). A wrong answer is
+- Look and feel comes from calling the firmware's own LVGL functions with the stock page recipes and the firmware's Roboto font tables ([details](details.md)), not from drawing pixels.
+- The **window manager's contract** matters more than the drawing: the return values of the window's event function steer the side key and the swipe-back ([details](details.md), section 2). A wrong answer is
   a visible bug, not a crash.
 
 ## Phases
@@ -29,10 +29,10 @@ boots, so a package can be flashed over Bluetooth again. A package that does not
 
 ## Ideas, not planned
 
-- A 13th row in the app list instead of replacing an entry (needs patches to the row count and the order normaliser; the phone's app list may not accept it; see T4).
+- A 13th row in the app list instead of replacing an entry (needs patches to the row count and the order normaliser; the phone's app list may not accept it; see [details](details.md)).
 - Checking on a watch what replacing each other stock app breaks (Alarm, Timer and Stopwatch keep state outside their window), and a non-English watch for `--languages all`.
 - Using the RTC for wall-clock times (its signature is unknown; the tracker uses ticks plus a stored shift).
-- Heart rate and step counter access (getters not found yet, see T5).
+- Heart rate and step counter access (getters not found yet, see [details](details.md)).
 
 ## Dependencies on third-party code
 

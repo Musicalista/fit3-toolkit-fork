@@ -5,7 +5,7 @@
  * It builds a full-screen black panel as a child of that root (what the old loader did, so leaving the page by the stock back gesture still works) and shows
  *   - an uptime counter driven by our own 250 ms timer (proves the timer runs; after the screen sleeps and wakes it shows whether the timer survived),
  *   - press / click / release counters and the last touch point, read with lv_indev_get_point(lv_indev_get_act()) in the LVGL event handler (no panel driver calls).
- * Lifetime (docs/research/T4-app-framework.md, hypothesis): the panel gets an LV_EVENT_DELETE (33) handler that deletes our timer and frees the state, so no timer
+ * Lifetime (docs/details.md): the panel gets an LV_EVENT_DELETE (33) handler that deletes our timer and frees the state, so no timer
  * outlives its objects. Nothing here writes files, calls blocking functions, or touches the registry.
  * Firmware addresses: docs/symbols.csv. Freestanding C: no libc, no libgcc (no division), no static data (state lives in an LVGL-heap block). */
 typedef unsigned int u32; typedef unsigned short u16; typedef unsigned char u8; typedef int i32;
@@ -42,7 +42,7 @@ typedef struct { i32 x, y; } lv_point_t;
 #define EV_CLICKED 7
 #define EV_RELEASED 8
 #define EV_DELETE 33
-#define FONT_ROBOTO_MEDIUM_32 (*(const void *const *)0x2010b0f4)   /* T3: slot of the table filled by fonts_init */
+#define FONT_ROBOTO_MEDIUM_32 (*(const void *const *)0x2010b0f4)   /* slot of the table filled by fonts_init */
 
 typedef struct {
     lv_obj_t *panel, *l_title, *l_up, *l_cnt, *l_xy;

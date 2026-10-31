@@ -26,7 +26,7 @@ r = e2.call(snip, 5, 0x00300001); assert r == 0 and e2.unmapped_fetch == [0x0030
 e3 = fw_emu.FwEmu(IMG, max_insns=50)
 try: e3.call(0x2c27cb30); sys.exit("FAIL: no timeout")
 except fw_emu.EmuTimeout: ok += 1
-# the T1 claims
+# the structure claims of docs/details.md
 res = probe_lvgl.Probe(IMG).run(); fails = [r for r in res if r[0] == "FAIL"]
 assert not fails, fails; assert sum(r[0] == "PASS" for r in res) >= 35; ok += 1
 print("%d checks passed (LVGL probe: %d PASS, %d SKIP)" % (ok, sum(r[0] == "PASS" for r in res), sum(r[0] == "SKIP" for r in res)))

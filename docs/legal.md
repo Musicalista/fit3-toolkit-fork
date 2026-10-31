@@ -16,7 +16,7 @@ The Bluetooth patch used here leaves the watch visible and its file service open
 - no Samsung fonts or images (the notes describe the formats; `local/` is git-ignored).
 
 What it does contain: our own code (the loader in `tools/loader/`, the tools, the apps), our own icon artwork (`tools/assets/mkicon.py` draws it), and notes on how the firmware works with the
-addresses and function names we found (`docs/research/`, `docs/symbols.csv`). Those are our analysis for interoperability; they quote no Samsung code. `tools/build_tennis.py` builds a package
+addresses and function names we found (`docs/details.md`, `docs/symbols.csv`). Those are our analysis for interoperability; they quote no Samsung code. `tools/build_tennis.py` builds a package
 from the stock package *you* provide; do not redistribute its output, which contains Samsung's firmware.
 
 `tools/firmware/make_flat_pkg.py` *produces* a modified package from one you already have; do not redistribute its output.
@@ -37,7 +37,7 @@ Before publishing anything derived from the loader, ask its author. Our reading 
 
 ## Licence of this repository
 
-[Apache License 2.0](../LICENSE) for everything in the repository: the code (`tools/`, `apps/`, `sim/`), the notes (`docs/`, `docs/research/`, `docs/symbols.csv`) and our icon
+[Apache License 2.0](../LICENSE) for everything in the repository: the code (`tools/`, `apps/`, `sim/`), the notes (`docs/`, `docs/symbols.csv`) and our icon
 (`tools/assets/mkicon.py`). One licence on purpose, with the patent grant that Apache-2.0 includes. Source files carry an `SPDX-License-Identifier: Apache-2.0` line.
 
 What the licence does **not** do: it covers what we wrote, nothing else. It does not licence Samsung's firmware, fonts or images (you bring them), the SDK and loader of Musicalista
