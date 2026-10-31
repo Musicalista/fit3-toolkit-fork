@@ -5,7 +5,7 @@
  * font tables. The scoring rules, the data and the save format are those of apps/tenis (best of 3 sets, tie-break at 6-6, 16 undo steps, one save of 128 bytes 3 s after
  * the last change and when the window is deleted).
  *
- * Touch: a click on a card is a point for that player; the left strip of a card (the letter) toggles who serves before the first point. "Undo" takes a point back,
+ * Side key: see world_event (T7). Touch: a click on a card is a point for that player; the left strip of a card (the letter) toggles who serves before the first point. "Undo" takes a point back,
  * "Stats" shows an overlay with the match and set times and a "New" button that asks twice. Back gesture: closes the overlay, or leaves the window.
  * Time: ticks (ms) + a shift stored in the save file, so durations survive a restart of the watch (the RTC call has an unknown signature, so it is not used).
  * Freestanding C: no libc, no libgcc (hardware divide only), no static data (everything lives in one app-heap block). Firmware addresses: docs/symbols.csv. */
@@ -192,7 +192,7 @@ static lv_obj_t *mk_pill(State *s, lv_obj_t *parent, i32 x, i32 y, i32 w, const 
 /* ---- refresh: everything shown follows from the match state ---- */
 static void render(State *s) {
     const Match *m = &s->m; char b[28], *e; u32 now = now_s(s), ref = m->over ? m->t_end : now;
-    if (m->started) { e = put(b, "Match "); fmt_dur(e, dur(m->t_match, ref)); set_txt(s, L_HDR, b); } else set_txt(s, L_HDR, "Tennis score");
+    if (m->started) { e = put(b, "Match "); fmt_dur(e, dur(m->t_match, ref)); set_txt(s, L_HDR, b); } else set_txt(s, L_HDR, "");
     for (int w = 0; w < 2; w++) {
         int o = 1 - w, won = m->over && m->winner == w; const char *p;
         e = b; for (int i = 0; i <= m->cur; i++) { if (i) e = put(e, " "); e = putn(e, m->g[i][w], 1); }
@@ -206,7 +206,7 @@ static void render(State *s) {
     }
     if (m->over) set_txt(s, L_INFO, "Match over");
     else if (m->started) { e = put(b, "G "); e = fmt_short(e, dur(m->t_game, now)); e = put(e, "   S "); fmt_short(e, dur(m->t_set[m->cur], now)); set_txt(s, L_INFO, b); }
-    else set_txt(s, L_INFO, "Tap a card: point");
+    else set_txt(s, L_INFO, "");
     set_bg_color(s->b_undo, s->ucount ? C_BTN : C_BTN_OFF);
     /* stats overlay */
     e = put(b, "Time "); if (m->started) fmt_dur(e, dur(m->t_match, ref)); else put(e, "-"); set_txt(s, L_ST_TIME, b);
@@ -250,12 +250,17 @@ static void on_card(lv_event_t *e) {
         if (t == s->zone[w] || t == s->card[w]) { point(s, w); return; }
     }
 }
+#define BACK_ANIM 0x14                                                  /* 4th argument of wm_open for "back" (T8 decides whether this is the right one) */
+/* what both the back gesture and the side key do: close the stats overlay first, then leave the window */
+static void go_back(State *s) {
+    if (s->over_shown) show_stats(s, 0);
+    else wm_open(3, -1, 0, BACK_ANIM);
+}
 static void on_screen(lv_event_t *e) {
     State *s = (State *)lv_event_get_user_data(e); u32 code = lv_event_get_code(e);
     if (code == EV_DELETE) { if (s->timer) lv_timer_del(s->timer); s->timer = 0; flush(s); app_free(s); return; }
     if (code == EV_GESTURE && lv_indev_get_gesture_dir(lv_indev_get_act()) == 2) {
-        if (s->over_shown) show_stats(s, 0);
-        else wm_open(3, -1, 0, 0x14);                                  /* the stock "back": slides like the finger (0x14) */
+        go_back(s);
         ui_gesture_consume();
     }
 }
@@ -272,6 +277,7 @@ __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 pa
     lv_obj_t *scr = lv_obj_create(0);
     State *s = (State *)app_malloc(sizeof(State)); if (!s) return scr;
     fill8(s, 0, sizeof(State)); s->scr = scr;
+    *(void **)((u8 *)scr + 0x10) = s;                                  /* lv_obj_t.user_data: world_event finds the state through the window record's screen */
     load(s);
     lv_obj_clear_flag(scr, FL_SCROLLABLE); set_bg_color(scr, C_BLACK); set_bg_opa(scr, 255);
     s->lab[L_HDR] = mk_text(scr, 0, 8, 256, FT_SMALL, C_MUTED, 2, "");
@@ -303,8 +309,22 @@ __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 pa
     return scr;
 }
 
-/* world_event(class, kind, data): class 0 = window life cycle (kind 0 entered, 1 leaving, 2 LCD off, 3 LCD on), class 2 = messages */
-__attribute__((section(".text.entry.event"))) void world_event(char cls, char kind, void *data) {
-    (void)data;
-    if (cls == 0 && kind == 0) wm_set_current(0x2b);
+/* world_event(class, kind, data): the window manager's callback of window 0x2b (T4, T7).
+ *   (0, 0)  window entered          -> remember the window id as the stock one did (wm_set_current)
+ *   (0, 8)  "key policy" query      -> the return value is a bit mask (T7): the stock windows return 0x2c4; bit 6 means "the side key goes to the watch face".
+ *                                      We return 0x284 (bit 6 clear), which leaves the long press (0x404) and the double press (0x407, 0x408) as stock and hands the
+ *                                      short press to us:
+ *   (1, 6)  short press of the side key -> go back, the same as the gesture (closes the stats overlay first)
+ * The arguments arrive without sign or zero extension, so they are masked. The state comes from the screen of the window record (RAM 0x200fb4e4 + 0x2b * 0x30):
+ * its +3 bit 2 says "screen created", +0x10 is the lv_obj, whose user_data we set to the state in world_create. */
+#define REC_2B 0x200fbcf4
+__attribute__((section(".text.entry.event"))) u32 world_event(u32 cls, u32 kind, void *data) {
+    (void)data; cls &= 0xff; kind &= 0xff;
+    if (cls == 0 && kind == 0) { wm_set_current(0x2b); return 0; }
+    if (cls == 0 && kind == 8) return 0x284;
+    if (cls == 1 && kind == 6) {
+        lv_obj_t *scr = *(lv_obj_t **)(REC_2B + 0x10);
+        if (scr && (*(u8 *)(REC_2B + 3) & 4)) { State *s = *(State **)((u8 *)scr + 0x10); if (s) go_back(s); }
+    }
+    return 0;
 }

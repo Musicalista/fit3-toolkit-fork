@@ -507,3 +507,6 @@ address,name,kind,confidence,evidence
 0x2c22a810,wdt_start,func,likely,"(seconds): called with 120 at boot (0x2c0999a0) and 30 from 0x2c26963e; creates ping timer; app_wdt_irq_handle 0x2c22a6e0 asserts/reboots"
 0x2c22a6e0,app_wdt_irq_handle,func,verified,"string 'app_wdt_irq_handle' ref; dumps and asserts (reboot)"
 0x2c14b7e0,wm_screen_off_disable_wrapper,func,likely,"wrapper of 0x2c224d60; getter thunk 0x2c14b7e8"
+0x2c225f2c,wm_key_dispatch,func,verified,"side-key msgs 0x400-0x409 -> current window event fn: first queries fn(0,8,0) for a key-policy bitmask (bit2 0x404 -> wm+0x28 window 0x89 power off; bit6 0x406 -> wm_request_deferred(1 wm+0x22=2 watchface); bit7 0x407 -> double-press app; bit9 0x408 -> 0x2c15ee70); bit clear -> fn(1,kind,0) kinds 0x400:0 0x401:1 0x402:4 0x403:3 0x404:2 0x405:5 0x406:6 0x407:7 0x408:9; emulated"
+0x2c224650,wm_key_anim_select,func,likely,"picks transition animation for key-driven wm switches; calls window event fn kind 9 and kind 6 (16 B table)"
+0x200fd42c,wm_key_long_target,data,likely,"wm+0x28 = window id for 0x404 (init 0x89 power off from flash .data image); wm+0x22 = 2 target of 0x406; wm+0x24 = 0x407 target set by wm_set_current 0x2c224d30; wm+0x2a key-capture flag (setter 0x2c224d04) wm+0x30/0x34 key down/up override callbacks (setter 0x2c224d1c)"

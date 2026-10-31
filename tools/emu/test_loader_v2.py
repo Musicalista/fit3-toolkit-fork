@@ -10,6 +10,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.pat
 from probe_lvgl import Probe, A
 IMG = os.path.join(ROOT, "local/re/main-v2.bin")
 CLICKED, GESTURE, HIDDEN = 7, 12, 1
+BACK = 0x14                                                                   # BACK_ANIM of loader_v2.c
 
 class Rig:
     def __init__(self):
@@ -42,6 +43,7 @@ class Rig:
         scr = self.e.call(0x2c1ecc64, 0, 0); self.scr = scr; kids = self.children(scr)
         self.hdr, self.cardA, self.cardB, self.info, self.undo, self.stats, self.ov = kids[:7]
         self.state = self.e.u32(self.e.u32(self.e.u32(scr + 8) + 0xc) + 4)
+        self.e.w32(0x200fbd04, scr); self.e.write(0x200fbcf7, bytes([4]))        # window record 0x2b in RAM: +0x10 the screen, +3 bit 2 "created" (the window manager does this)
         return scr
     def children(self, o):
         spec = self.e.u32(o + 8)
@@ -78,7 +80,7 @@ def main():
     ok = lambda name, cond, obs="": (res.append(bool(cond)), print("%s %s %s" % ("PASS" if cond else "FAIL", name, obs)))
     scr = r.create()
     ok("create returns a screen; 7 children (header, 2 cards, info, 2 pills, overlay)", scr and len(r.children(scr)) == 7, len(r.children(scr)))
-    ok("fresh match: header, points, info", (r.text(r.hdr), r.alltext(r.cardA)[1:], r.text(r.info)) == ("Tennis score", ["0", "0"], "Tap a card: point"), (r.text(r.hdr), r.alltext(r.cardA), r.text(r.info)))
+    ok("fresh match: no header and no hint, points 0", (r.text(r.hdr), r.alltext(r.cardA)[1:], r.text(r.info)) == ("", ["0", "0"], ""), (r.text(r.hdr), r.alltext(r.cardA), r.text(r.info)))
     la = r.alltext(r.cardA); lb = r.alltext(r.cardB)
     ok("card A shows letter A, games 0, point 0", la[0] == "A" and "0" in la, la); ok("card B shows letter B", lb[0] == "B", lb)
     ok("overlay starts hidden", r.hidden(r.ov))
@@ -106,7 +108,17 @@ def main():
     r.tick += 3000; r.timer_cb(); ok("the confirmation expires after 2.5 s", "New" in r.alltext(r.ov), r.alltext(r.ov))
     r.calls.clear(); r.gesture(2); ok("back gesture with the overlay open closes the overlay only", r.hidden(r.ov) and not any(c[0] == "wm_open" for c in r.calls), r.calls)
     r.calls.clear(); r.gesture(3); ok("a left gesture does nothing", not r.calls, r.calls)
-    r.gesture(2); ok("back gesture on the score page leaves the window (wm_open 3,-1,0,0x14)", ("wm_open", 3, 0xffffffff, 0, 0x14) in r.calls, r.calls)
+    r.gesture(2); ok("back gesture on the score page leaves the window (wm_open 3,-1,0,BACK)", ("wm_open", 3, 0xffffffff, 0, BACK) in r.calls, r.calls)
+    # side key (T7): the window manager asks (0,8) for the key policy, then sends (1,6) for a short press
+    ok("key policy (0,8) = 0x284: bit 6 clear, so the short press reaches us", e.call(0x2c1ecd68, 0, 8, 0) == 0x284 and not (0x284 & 0x40))
+    ok("the policy keeps the stock long/double press bits (2, 7, 9)", 0x284 & 0x4 and 0x284 & 0x80 and 0x284 & 0x200)
+    r.click(r.stats); r.calls.clear(); e.call(0x2c1ecd68, 1, 6, 0)
+    ok("side key with the overlay open closes it only", r.hidden(r.ov) and not any(c[0] == "wm_open" for c in r.calls), r.calls)
+    e.call(0x2c1ecd68, 0xabcd0001, 0x12340006, 0)                                 # garbage in the upper bytes: masked
+    ok("side key on the score page goes back (arguments masked to 8 bits)", ("wm_open", 3, 0xffffffff, 0, BACK) in r.calls, r.calls)
+    r.calls.clear(); e.call(0x2c1ecd68, 1, 7, 0); e.call(0x2c1ecd68, 2, 6, 0)
+    ok("other keys and classes do nothing", not r.calls, r.calls)
+    e.write(0x200fbcf7, bytes([0])); e.call(0x2c1ecd68, 1, 6, 0); ok("no window created: the key is ignored (no crash)", not r.calls); e.write(0x200fbcf7, bytes([4]))
     # delete the window: flush (nothing dirty) + free the state, timer deleted
     r.click(r.cardB); ok("a new point makes the state dirty", True)
     log = []; e.hook(0x2c28a448, lambda em: log.append(("timer_del", em.arg(0))) or 0)
@@ -119,7 +131,7 @@ def main():
     ok("after a restart the saved match is shown (advantage A, then a point for B: 40-40)", (a2[-1], b2[-1]) == ("40", "40"), (a2, b2))
     ok("... and its clock continues from the save instead of jumping", r.text(r.hdr).startswith("Match ") and int(r.text(r.hdr).split(" ")[1].split(":")[0]) < 5, r.text(r.hdr))
     # play to the end: A wins two sets 6-0
-    r.click(r.stats); nb = r.children(r.ov)[-2]; r.click(nb); r.click(nb); ok("New twice resets the match", r.alltext(r.cardA)[-1] == "0" and r.text(r.hdr) == "Tennis score", (r.alltext(r.cardA), r.text(r.hdr)))
+    r.click(r.stats); nb = r.children(r.ov)[-2]; r.click(nb); r.click(nb); ok("New twice resets the match", r.alltext(r.cardA)[-1] == "0" and r.text(r.hdr) == "", (r.alltext(r.cardA), r.text(r.hdr)))
     ok("...and closes the overlay", r.hidden(r.ov))
     for _ in range(48): r.click(r.cardA)
     ok("two sets 6-0 win the match: WIN on A, 'Match over'", r.alltext(r.cardA)[-1] == "WIN" and r.text(r.info) == "Match over", (r.alltext(r.cardA), r.text(r.info)))
