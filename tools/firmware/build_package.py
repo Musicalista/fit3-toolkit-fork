@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """build_package.py: roadmap stage 3. Builds a Fit3 firmware package from *your own* stock package (R390XXU0AZA3) and a loader binary.
 
     python3 -I build_package.py <stock.bin> <out.bin> --loader <loader.bin> [options]

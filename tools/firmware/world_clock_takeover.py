@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """world_clock_takeover.py: stage 1 of docs/roadmap.md. Makes the stock *World clock* list entry open the loader's menu on top of its own page, and renames the entry.
 
     python3 -I world_clock_takeover.py <fit3-store-base-spp-flat.bin> <out.bin> [--label Tennis]

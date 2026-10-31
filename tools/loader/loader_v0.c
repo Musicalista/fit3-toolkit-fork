@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /* loader_v0.c: first own loader for R390XXU0AZA3. A diagnostic page, not an app launcher.
  *
  * Runs from the World clock hook (build_package.py): an 80 ms timer calls loader_entry(timer) with the stock page's root object as user data.

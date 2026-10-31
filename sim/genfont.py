@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 import gzip, struct, sys
 d = gzip.open("/usr/lib/kbd/consolefonts/lat1-12.psfu.gz").read()
 if d[:4] == b"\x72\xb5\x4a\x86":

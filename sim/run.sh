@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
 # usage: sim/run.sh <app> [sim_gui.py args]     e.g.  sim/run.sh tenis      sim/run.sh styledemo --data local/assets/fonts
 # builds apps/<app>/<app>.c (or the SDK's own fit3-store/apps/src/<app>.c) for the PC and opens it in a window; the simulated
 # watch's files (saves, and fonts when you point --data at local/assets/fonts) live in the --data folder, default sim/data.

@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /* f3font.h: reads LVGL binary fonts (lv_font_conv --format bin), such as the watch's own /nand/system/font/FONT_ROBOTO_*_GBK_en.bin, and draws
  * anti-aliased text into the RGB565 frame buffer. Header-only, freestanding (no libc), needs f3app.h. See docs/assets.md for the format.
  * Supported: uncompressed glyphs, any bpp (the watch's fonts use 2), cmap formats 0..3, advance in whole pixels or 1/16 px. No kerning. */

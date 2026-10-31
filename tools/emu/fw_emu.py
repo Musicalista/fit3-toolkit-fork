@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """fw_emu.py: run single functions of the Fit3 main image (R390XXU0AZA3) in Unicorn on a PC.
 
     from fw_emu import FwEmu

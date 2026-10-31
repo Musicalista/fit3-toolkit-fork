@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
 # One-time setup of the reverse-engineering toolchain under local/tools (git-ignored, no root needed): the latest Ghidra and the JDK it asks for.
 # Ghidra reads its minimum Java version from Ghidra/application.properties (12.2 needs JDK 25), so the JDK is fetched after Ghidra is unpacked.
 # Idempotent: it only downloads what is missing. About 570 MB + 140 MB. Then: source tools/re/env.sh; tools/re/analyze.sh <name> <main-image.bin> [decomp]

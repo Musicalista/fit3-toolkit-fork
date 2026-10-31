@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """f3_install.py: install, list and remove light apps (.f3a) on a Galaxy Fit3 from this PC over Bluetooth (RFCOMM), for firmware built by make_flat_pkg.py.
 The watch has no /user/apps/ directory, so that firmware keeps everything directly in /user/:  /user/a_index.txt  and  /user/a_<id>.f3a
 Protocol (same as Fit3 Manager / fit3-flasher): write "300","33bin,<path>,<len>", blocks of <=39600 B + CRC32 LE (each acked "310"), "32","34";  read "061<path>\\0", "062" per block.

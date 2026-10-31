@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /* Touch lab: shows what the loader delivers for touches, to tell lost taps from slow frames. Counters: tick interval (frame time), press edges (pressed 0->1 as seen by this app),
  * release edges, `tap` flags (the loader's click event), taps that arrived with no press ever seen (shorter than a tick), presses that never got a click flag.
  * Do 20 taps in the middle, then 10 swipes, then Reset (tap the bottom bar) and read the numbers. Nothing is stored. */

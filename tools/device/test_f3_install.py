@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests f3_install.py against a mock watch that speaks the real protocol (including "open error:-2, 331" for a missing directory). python3 -I test_f3_install.py"""
 import os, socket, sys, threading, zlib
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

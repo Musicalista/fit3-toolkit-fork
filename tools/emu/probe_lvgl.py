@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """probe_lvgl.py: check the LVGL claims of docs/research/T1-lvgl.md by running the real firmware functions in the emulator.
 
     local/venv/bin/python -I tools/emu/probe_lvgl.py [path/to/main-stock.bin]

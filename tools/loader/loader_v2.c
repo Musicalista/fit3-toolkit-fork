@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /* loader_v2.c: the tennis match score tracker as a native LVGL window, replacing the stock World clock window (id 0x2b) like loader_v1.
  *
  * Same take-over as v1 (build_package.py --takeover-create/--takeover-event): world_create builds a fresh screen with LVGL objects styled after the stock pages

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """test_loader_v2.py: the tennis window of loader v2, run on the PATCHED main image of a loader-v2 package (stock addresses 0x2c1ecc64 / 0x2c1ecd68, as the window manager calls them).
 
     python3 -I tools/firmware/fwx.py local/firmware/fit3-loader-v2.bin main local/re/main-v2.bin

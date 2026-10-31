@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /* Live simulator core: reuses the SDK's host_game.c (software F3Api, 256x402 RGB565 frame buffer) and exports a tiny C interface for sim_gui.py (ctypes).
  * Build (see run.sh): gcc -shared -fPIC -I fit3-store/apps -I sim -o sim/libsim_<app>.so sim/sim_live.c fit3-store/apps/src/<app>.c */
 #define main host_main

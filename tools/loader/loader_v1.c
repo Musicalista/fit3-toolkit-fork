@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /* loader_v1.c: replaces the stock World clock window (id 0x2b) completely, instead of drawing on top of its page (v0).
  *
  * build_package.py --takeover-create/--takeover-event puts a `b.w` at the entry of the two stock window functions, so the window manager (record 0x2c3b4a10 / RAM

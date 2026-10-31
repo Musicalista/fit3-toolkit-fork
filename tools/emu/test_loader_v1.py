@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """test_loader_v1.py: runs the PATCHED main image of a loader-v1 package in the emulator and calls the stock addresses of the World clock window functions,
 exactly as the window manager does (0x2c1ecc64 create, 0x2c1ecd68 event): the `b.w` at their entry must land in our world_create / world_event.
 

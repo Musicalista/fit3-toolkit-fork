@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """fwx.py: list or extract the components of a Fit3 FWD firmware package (read-only).
     python3 -I fwx.py <package.bin> list
     python3 -I fwx.py <package.bin> main <out>        the main image (best1502x_b319_user.bin); code is linked at 0x2c080000 + file offset

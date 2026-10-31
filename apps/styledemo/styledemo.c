@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /* Style demo: the watch's own fonts (Roboto, read from /nand/system/font at run time) and widgets in its look: black background, dark rounded cards,
  * a switch, pill buttons. Tap the switch, Start/Stop (the number then moves) or Reset. A line at the bottom shows how many fonts could be opened,
  * and why not (open failed = -1 means the loader does not let apps read /nand). Nothing is copied from the firmware; nothing is written. */

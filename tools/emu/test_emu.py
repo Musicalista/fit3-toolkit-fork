@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests of fw_emu.py and probe_lvgl.py. Needs local/re/main-stock.bin and the unicorn package (local/venv); skipped otherwise.
     local/venv/bin/python -I tools/emu/test_emu.py"""
 import os, sys

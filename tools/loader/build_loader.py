@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """build_loader.py: compile loader_vN.c into a flat binary for build_package.py (--loader), linked at 0x2c3a0524.
 
     python3 -I tools/loader/build_loader.py tools/loader/loader_v0.c local/loader/loader_v0.bin

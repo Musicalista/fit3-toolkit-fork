@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """test_icon.py: the own app-list icon (build_package.py --icon) on the PATCHED main image of a package built with it.
 
     python3 -I tools/firmware/fwx.py local/firmware/fit3-loader-v2.bin main local/re/main-v2.bin

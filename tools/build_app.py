@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """build_app.py <app>: build apps/<app>/ into build/<id>.f3a and build/<id>.meta with the SDK's appcc.py.
 The SDK (Musicalista/fit3-store-apps-games) is an external checkout, by default ./fit3-store; override with F3_SDK=/path/to/its/apps.
 apps/<app>/meta holds the launcher line "id;BGRRGGBB;FGRRGGBB;Name PT;Name EN" (the icon field is optional); apps/include is on the include path.

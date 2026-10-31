@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """fwd.py: read, edit and rebuild Fit3 FWD firmware packages (see docs/firmware.md for the format).
 
     p = Package.load("stock-aza3.bin")

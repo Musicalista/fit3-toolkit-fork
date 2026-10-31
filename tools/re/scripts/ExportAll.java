@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Exports what the other tools need: functions.csv, strings.csv (with the functions that reference each string), calls.csv (direct calls and function-pointer references), and with
 // the argument "decomp" the decompiled C of every function into decomp/<address>.c (16 threads). Arguments: <output directory> [decomp]
 import ghidra.app.script.GhidraScript;

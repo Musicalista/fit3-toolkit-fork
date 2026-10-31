@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Creates Thumb functions at the code pointers found in the image (function-pointer tables, literal pools, the 0x0c... alias used by the registry), before the auto analysis.
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.Address;

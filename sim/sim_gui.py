@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Live window for a Fit3 light app: mouse = finger, the top-right corner is the watch's own close button.
 usage: python3 sim_gui.py <libsim_app.so> [--data DIR] [--scale N] [--shot FILE --script "x,y x,y ..."]"""
 import argparse, ctypes, os, sys, time, tkinter as tk

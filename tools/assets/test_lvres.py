@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests for lvres.py / lvlang.py. Synthetic data always; with local/assets/images/app_worldclock.res and local/re/main-stock.bin
 (your own copies, git-ignored) it also checks the real pack. Run: python3 -I tools/assets/test_lvres.py"""
 import os, struct, sys

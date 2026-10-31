@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /* Tennis match tracker: tap a player's card to give that player a point; the app keeps points, games, sets, who serves, and when the match, each set and each game started and how long it took.
  * Best of 3 sets, tie-break to 7 at 6-6. "Undo" takes back the last points (16 deep, kept in RAM only). The match state (128 bytes) is saved to /user/tenis.sav 3 s after the last change and when the app closes;
  * the watch's file system is slow, so it is never written on every tap (a 2 KB write per tap restarted the watch). */

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """mkicon.py: draws our own app-list icon (a tennis ball on a blue disc) in the style of the stock icons, as the raw body of an LVGL image.
 
     python3 -I tools/assets/mkicon.py build/tennis_icon.bin [build/tennis_icon.png]

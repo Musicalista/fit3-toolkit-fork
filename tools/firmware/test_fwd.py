@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests of fwd.py against the packages in local/firmware (skipped when absent): load+save must reproduce a package exactly. python3 -I tools/firmware/test_fwd.py"""
 import hashlib, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """test_loader_v0.py: runs loader_v0 (tools/loader) on the real LVGL code of the firmware in the emulator.
 
     python3 -I tools/loader/build_loader.py tools/loader/loader_v0.c local/loader/loader_v0.bin

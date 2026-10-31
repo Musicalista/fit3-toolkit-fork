@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """make_flat_pkg.py: derive a firmware package whose app loader keeps its files directly in /user/ (the watch has no /user/apps/ directory and nothing creates it).
 
 Changes exactly two NUL-terminated strings in the main image and repairs the checksums (via fwd.py):

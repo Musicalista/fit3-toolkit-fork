@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """f3_pull.py: copy read-only assets (fonts, images) from the watch to this PC for inspection. Nothing is written to the watch.
     python3 f3_pull.py <out_dir> /nand/system/image/app_worldclock.res [more paths] [--limit BYTES]
 Only paths under /nand/system/font/ and /nand/system/image/ are accepted. The files are Samsung's: keep them local, do not redistribute."""

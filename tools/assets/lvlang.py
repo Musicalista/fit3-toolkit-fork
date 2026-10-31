@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """lvlang.py: reader/editor for the Fit3 language packs (language_<lang>.res; layout in docs/research/T3-resources.md).
 
     python3 -I lvlang.py <language_xx.res> [id ...]       print the strings with the given IDs (or the first 20)

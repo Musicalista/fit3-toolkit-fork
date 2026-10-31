@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
 # usage: tools/re/analyze.sh <name> <main-image.bin> [decomp]
 # Imports a main image (a raw binary linked at 0x2c080000, see tools/firmware/fwx.py) into a Ghidra project in local/re/proj, seeds Thumb functions from the code
 # pointers found in the image, runs the auto analysis and exports functions, strings (with references), calls and, with `decomp`, the decompiled C of every function.

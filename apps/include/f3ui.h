@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /* f3ui.h: colours and small widgets in the style of the watch's own UI (black background, dark rounded cards, pill buttons, switches).
  * Sampled from Samsung's promotional render of the Fit3 UI (reference-images/, not in git): cards #242424, secondary buttons #2c-#34, blue (67,144,246), grey text about 150.
  * They are still estimates, not Samsung's values.

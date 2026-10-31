@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tests of build_package.py against the packages in local/firmware (skipped when absent). python3 -I tools/firmware/test_build_package.py
 
 The loader is cut out of fit3-store-base-spp-flat.bin (main image bytes 0x2c3a0524..0x2c3a4524, with fwx.py) into local/work/, never into the repository.

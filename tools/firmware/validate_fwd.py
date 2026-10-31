@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Independent re-implementation of fit3-flasher's validatePackage (structure + every CRC32 + updater SHA-256). usage: validate_fwd.py file..."""
 import hashlib, io, struct, sys, zipfile, zlib
 STOCK_VER = b"R390XXU0AZA3"; UPD_SHA = "122d0946e0776e9e6b01b300da3be077f47fa97acd44ddf501c302518eb069e4"

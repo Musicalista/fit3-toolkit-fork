@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """build_tennis.py: one command from *your* stock firmware package to a package that has the tennis score tracker in place of World clock.
 
     python3 -I tools/build_tennis.py <stock R390XXU0AZA3 package.bin> <out.bin> [--label "Tennis Score"] [--no-icon]

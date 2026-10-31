@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """lvfont.py: decoder for LVGL binary fonts (lv_font_conv --format bin), the format of /nand/system/font/FONT_ROBOTO_*_GBK_en.bin on the Fit3.
     python3 -I lvfont.py <font.bin> "text" <out.png> [scale]        render text with the font's own glyphs (anti-aliased, light on dark)
 Layout: [u32 length]["head"|"cmap"|"loca"|"glyf"|"kern"][table data]; glyphs are bit-packed (advance, x, y, w, h, then w*h pixels of `bpp` bits)."""
