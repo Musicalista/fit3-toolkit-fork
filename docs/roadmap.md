@@ -8,8 +8,8 @@
 - The stock **World clock** list entry is the slot to take over, not Settings > Extra apps.
 - Keep a loader, so apps stay installable in seconds over Bluetooth. Compiling an app into the firmware would mean an 18 MB over-the-air update for every change.
 - The loader should become **ours** (a small clean-room one): no menu in front of the app, a fix for the page scrolling under the finger, and no dependency on binaries we may not publish.
-- Look and feel comes from drawing into the frame buffer with the watch's own Roboto fonts and a palette sampled from the stock UI (`apps/include/`), not from calling LVGL ourselves.
-  Calling LVGL would need many more firmware addresses and could not be tested without the watch.
+- Look and feel: until now we drew into the frame buffer with the watch's own Roboto fonts and a palette sampled from the stock UI (`apps/include/`). The Ghidra research ([research/](research/),
+  [symbols.csv](symbols.csv)) now gives the LVGL addresses and the stock page recipes, so phase 2 can build native LVGL objects; this is still untested on a watch.
 
 ## Phases
 

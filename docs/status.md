@@ -23,3 +23,8 @@ Legend: **verified** = seen working on a real watch (SM-R390, R390XXU0AZA3); **a
 | Start an app directly from a list entry (no menu) | open | needs changes to the loader itself |
 | Factory file commands (`FI^MKDIR`, `FI^LS`, ...) | open | exist in the firmware, syntax unknown; the same set has `FORMAT`, **do not guess** |
 | Galaxy Wearable after our experiments | observed | once stuck on "Updating info" after aborted transfers; a watch restart cleared it |
+| Ghidra pipeline (`tools/re/`) | verified (PC) | 15,478 functions, 22,390 strings and the decompiled C exported from the stock main image; the flash alias `0x0c......` is mapped (otherwise jump tables fail) |
+| LVGL version and API addresses | analysis | LVGL 8.3.x; 286 functions in [symbols.csv](symbols.csv) ([T1](research/T1-lvgl.md)); `LV_EVENT_DELETE` is **33** |
+| Display and stock UI patterns | analysis | 256 x 402 RGB565; cards, pills, image-based switches and round buttons ([T2](research/T2-ui-patterns.md)) |
+| Image packs (`.res`) and the app-list icon | analysis | two record types decode (`tools/assets/lvres.py`); the World clock row icon is image ID 21 in `app_applist.res` ([T3](research/T3-resources.md)) |
+| Window registry and lifecycle | analysis | 166 records of 48 bytes at `0x2c3b4200`; the app list is a static 12-row table; the restart-after-wake cause is a hypothesis ([T4](research/T4-app-framework.md)) |
