@@ -46,6 +46,13 @@ main page (`param & 0xff == 0x67`) calls `app_worldclock_tile_init(root)` (`0x2c
 that creates the same 80 ms timer would open our menu on the World clock page. The label "World Clock" appears four times in the English language resource
 (inner offsets `0xa8d2 0x11504 0x115c0 0x1d83f`). The list icon is not located yet. None of this has been built or flashed.
 
+## Stage 1 (built by `tools/firmware/world_clock_takeover.py`, not flashed)
+
+The stub at `0x2c3a4530` (16 bytes of code and two literals) is `push {r0-r3,lr}; mov r2,r0; ldr r0,=0x2c3a1ab9; movs r1,#80; ldr r3,=0x2c28a3f1; blx r3; pop {r0-r3,pc}`:
+it passes `root` (still in `r0` at the hook site) as the timer's user data, so the loader's callback opens its menu on that page. Together with the label change ("World Clock" -> "Tennis",
+same length, in `language_en`, `_rUS`, `_rCA` and `_rPH`) that is 31 changed bytes in the main image and four rewritten language files. The packet header's resource size is recomputed
+(it is the sum of the unpacked sizes of the non-firmware components and changes with the language files).
+
 ## Not known
 
 - Which of the loader's hooks run when the list entry of an app is tapped (we only know the registry).

@@ -16,6 +16,7 @@ Legend: **verified** = seen working on a real watch (SM-R390, R390XXU0AZA3); **a
 | An app reads `/nand/...` itself (`styledemo`) | **open** | being tested: the footer of the app says how many fonts opened |
 | Loader page scrolls under the finger | open | taps become drags; a stock list entry with a fresh full-screen root may avoid it |
 | Replace the stock *World clock* entry by our menu | analysis | hook site, helper addresses and free space found, nothing built or flashed ([docs/firmware.md](firmware.md)) |
+| Stage-1 package (World clock -> menu, label "Tennis") | built and checked, **not flashed** | `tools/firmware/world_clock_takeover.py`; 5 of 73 components change, 31 bytes of the main image |
 | Start an app directly from a list entry (no menu) | open | needs changes to the loader itself |
 | Factory file commands (`FI^MKDIR`, `FI^LS`, ...) | open | exist in the firmware, syntax unknown; the same set has `FORMAT`, **do not guess** |
 | Galaxy Wearable after our experiments | observed | once stuck on "Updating info" after aborted transfers; a watch restart cleared it |
