@@ -9,7 +9,8 @@ Protocol (same as Fit3 Manager / fit3-flasher): write "300","33bin,<path>,<len>"
 Only /user/a_index.txt and /user/a_<id>.f3a can be touched; nothing else on the watch is written or read."""
 import argparse, os, re, socket, sys, time, zlib
 
-ADDR, CHANNEL, MAX_APPS = "AA:BB:CC:DD:EE:FF", 29, 12
+CHANNEL, MAX_APPS = 29, 12
+ADDR = os.environ.get("F3_ADDR", "")                  # your watch's Bluetooth address (the name is "Galaxy Fit3 (xxxx)"): pass --addr or set F3_ADDR
 INDEX, PREFIX = "/user/a_index.txt", "/user/a_"
 SAFE_PATH = re.compile(r"^/user/a_(index\.txt|[a-z0-9_-]{1,11}\.f3a)$")
 ID = re.compile(r"^[a-z0-9_-]{1,11}$")
@@ -46,6 +47,7 @@ class Link:
     def close(self): self.s.close()
 
 def open_link(addr=ADDR, channel=CHANNEL, attempts=6):
+    if not re.fullmatch(r"([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}", addr or ""): raise Error("no watch address: pass --addr AA:BB:CC:DD:EE:FF or set the environment variable F3_ADDR")
     """the channel needs a few seconds to be released after a session, so a busy/reset answer is retried"""
     for i in range(attempts):
         s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM); s.settimeout(20)

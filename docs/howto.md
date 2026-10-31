@@ -58,7 +58,7 @@ python3 -I tools/device/f3_install.py list                     # first test of t
 python3 -I tools/device/f3_install.py install build/tenis.f3a
 ```
 
-Close Galaxy Wearable and Fit3 Manager on the phone first. The watch's address is set in `tools/device/f3_install.py` (`ADDR`) or with `--addr`. On the watch the apps are under
+Close Galaxy Wearable and Fit3 Manager on the phone first. Tell the tools your watch's Bluetooth address (the name is "Galaxy Fit3 (xxxx)"): `--addr AA:BB:CC:DD:EE:FF` or `export F3_ADDR=AA:BB:CC:DD:EE:FF`. On the watch the apps are under
 Settings > Extra apps > My apps. Fit3 Manager's own app tab does **not** work with the flat package (it insists on `/user/apps/`); use `f3_install.py`.
 
 ## Simulator
