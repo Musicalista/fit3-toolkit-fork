@@ -24,7 +24,7 @@ from the stock package *you* provide; do not redistribute its output, which cont
 | What | From | Terms as far as we know |
 |---|---|---|
 | Fit3 Manager (the phone app we flash with), the app loader and `.f3a` format (not used here any more), the first firmware patches | **Musicalista**, [fit3-store-apps-games](https://github.com/Musicalista/fit3-store-apps-games), [freemyfit3](https://github.com/Musicalista/freemyfit3) | no licence file in either repository; the packages are marked "private builds ... do not publish the .bin files" |
-| Transfer protocol, package validation rules | **yuriyurin**, [fit3-flasher](https://github.com/yuriyurin/fit3-flasher) | the Fit3 store project notes that it carried no licence |
+| Transfer protocol, package validation rules | **yuriyurin**, [fit3-flasher](https://github.com/yuriyurin/fit3-flasher); the sequence of a flash was also checked against the published source of Fit3 Manager (no licence file: read for interoperability, our code is our own) | the Fit3 store project notes that it carried no licence |
 | Roboto (the shape of the fonts on the watch) | Google | Apache 2.0 for Roboto itself; Samsung's compiled font files are theirs |
 | Fonts and images on the watch | Samsung | proprietary; for inspection on your own watch only |
 

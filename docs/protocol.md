@@ -8,7 +8,7 @@ Messages are plain ASCII commands, no terminator. The same protocol is used by f
 
 ## Writing a file
 
-(The protocol Fit3 Manager uses to send a firmware package. Documented for completeness: the tools of this repository only read.)
+(The protocol Fit3 Manager uses to send a firmware package. `tools/device/f3_flash.py` is the only tool here that writes, and only to `/user/ota/R390_WEB_FOTA.bin`.)
 
 | You send | The watch answers | Meaning |
 |---|---|---|
@@ -18,7 +18,13 @@ Messages are plain ASCII commands, no terminator. The same protocol is used by f
 | `32` | `320` | end of data |
 | `34` (250 ms later) | `340` | close the file |
 
-Writes are only allowed under `/user/` by the clients we know. The firmware package goes to `/user/ota/R390_WEB_FOTA.bin`.
+Writes are only allowed under `/user/` by the clients we know. The firmware package goes to `/user/ota/R390_WEB_FOTA.bin` (about 18 MB, 460 blocks).
+
+**The sequence of a flash, as the phone app does it** (each stage in a session of its own; we checked this against its published source and the strings of its APK, and wrote our own code):
+1. Upload the package as above, then close the session.
+2. About 2.2 s later, in a new session, ask for the file with `061/user/ota/R390_WEB_FOTA.bin\0` (answer within 30 s) and compare the length in the answer with the package. A different length blocks the installation.
+   The optional full read-back then reads the file block by block with `062`, 0.25 s apart, comparing every byte and each block's checksum; a last `062` ends the export.
+3. About 2.2 s later, in a new session, send `00AT^OTA_UPDATE`. The watch answers with 4 bytes within about 6 s, or restarts without answering (both happen). The installation cannot be cancelled.
 
 ## Reading a file
 
@@ -32,7 +38,7 @@ Read to the end. An export left open produces `last export had no end` in the fi
 
 ## Other
 
-- `00AT^OTA_UPDATE` starts the installation of `/user/ota/R390_WEB_FOTA.bin`. The watch restarts and updates itself; it cannot be cancelled.
+- `00AT^OTA_UPDATE` starts the installation of `/user/ota/R390_WEB_FOTA.bin` (see the sequence above). The watch restarts and updates itself; it cannot be cancelled.
 - `30...` answers `300` (a transfer session starts), `07...` answers with an echo of the text. Neither is understood further.
 - The firmware has factory command families `AT^...` (about 300 names) and `FI^...` (`START END FORMAT FORMATFACT MKDIR LS FS RM RMDIR DF CAT VI LOG SPACE NANDUSE BLOCK
   SPP_RX_BUFF FILE_CHECK`). We did not find their framing; the ones we tried (`00FI^LS=/user` and variants) got no answer. **`FORMAT`, `RM` and `RMDIR` exist: do not experiment.**

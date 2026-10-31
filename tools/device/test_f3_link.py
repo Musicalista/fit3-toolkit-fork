@@ -53,6 +53,8 @@ check(seen[-1] == (5120, 5120) and len(seen) == 6, "progress is reported per blo
 b = Watch(); b.fs[path] = bytes(3000); b.mode = "bad-block"; link = b.connect()
 check(raises(lambda: F.read_raw(link, path), "invalid block"), "a block with a wrong header is detected"); link.close()
 check(raises(lambda: F.open_link(""), "no watch address") and raises(lambda: F.open_link("not-a-mac"), "no watch address") and raises(lambda: F.open_link("00:11:22:33:44"), "no watch address"), "a missing or malformed address is refused before any connection")
+a_, b_ = socket.socketpair(); lk = F.Link(a_); b_.close()
+check(raises(lambda: lk.send(b"x" * 100000), "closed the connection") and raises(lambda: lk.read(5, 2), "closed the connection"), "a connection that is gone raises a clear Error on send and on read, not a raw socket exception")
 src = open(os.path.join(HERE, "f3_link.py"), encoding="utf-8").read()
 check("sendall" in src and "33bin" not in src and '"300"' not in src and "def write" not in src, "the module has no write command of the transfer protocol")
 for bad in ("/user/tenis.sav", "/nand/system/font/../../../etc/passwd", "/nand/user/health/hr-last.rec", "/nand/system/image/"):

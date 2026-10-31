@@ -16,7 +16,11 @@ class Error(Exception): pass
 class Link:
     """one RFCOMM session; `sock` is any object with send/recv/settimeout/close (the tests use a socketpair)"""
     def __init__(self, sock): self.s = sock
-    def send(self, data): self.s.settimeout(30); self.s.sendall(data if isinstance(data, bytes) else data.encode())
+    def send(self, data):
+        self.s.settimeout(30)
+        try: self.s.sendall(data if isinstance(data, bytes) else data.encode())
+        except socket.timeout: raise Error("the watch did not take the data in time")
+        except OSError as e: raise Error("the watch closed the connection (%s)" % e.__class__.__name__)
     def read(self, n, timeout=30):
         buf = b""; end = time.monotonic() + timeout
         while len(buf) < n:
@@ -25,6 +29,7 @@ class Link:
             self.s.settimeout(left)
             try: c = self.s.recv(n - len(buf))
             except socket.timeout: raise Error("the watch did not answer in time")
+            except OSError as e: raise Error("the watch closed the connection (%s)" % e.__class__.__name__)
             if not c: raise Error("the watch closed the connection")
             buf += c
         return buf

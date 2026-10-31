@@ -1,6 +1,6 @@
 # tools/
 
-Python 3 (numpy for the icon, Pillow for some tools), `arm-none-eabi-gcc` for the code that runs on the watch. Run with `python3 -I`. **Nothing in this repository writes to the watch**; the only tool that talks to it is read-only.
+Python 3 (numpy for the icon, Pillow for some tools), `arm-none-eabi-gcc` for the code that runs on the watch. Run with `python3 -I`. The tools that talk to the watch: `device/f3_pull.py` only reads; **`device/f3_flash.py` is the only one that writes**, and only the firmware package to `/user/ota/R390_WEB_FOTA.bin`.
 
 | Tool | Does |
 |---|---|
@@ -15,5 +15,6 @@ Python 3 (numpy for the icon, Pillow for some tools), `arm-none-eabi-gcc` for th
 | `assets/lvres.py`, `assets/lvlang.py`, `assets/lvfont.py` | decode the image packs (`.res`), read or edit the language packs, decode the watch's LVGL fonts and render text to a PNG |
 | `assets/mkicon.py` | draw our app-list icon (64 x 64, RGB565 + alpha) |
 | `device/f3_pull.py`, `device/f3_link.py` | copy fonts and images (`/nand/system/font`, `/nand/system/image`) from the watch to the PC, **read-only**; `test_f3_link.py` tests the link against a mock watch |
+| `device/f3_flash.py` | send a package to the watch from the PC, in stages: plan, `--upload` (+ `--verify`), `--start-update`; `test_f3_flash.py` tests it against a mock watch that can fail mid-transfer |
 
 Protocol: [../docs/protocol.md](../docs/protocol.md). Firmware: [../docs/firmware.md](../docs/firmware.md), [../docs/details.md](../docs/details.md).

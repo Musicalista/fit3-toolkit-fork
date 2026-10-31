@@ -25,7 +25,7 @@ python3 -I tools/build_tennis.py <your package>.bin --list-slots                
 python3 -I tools/build_tennis.py <your package>.bin out.bin --slot Calculator --label "Tennis Score"
 ```
 
-Then flash `out.bin` with Fit3 Manager (phone) and open the app list. Full steps, requirements and how to go back to stock: [docs/howto.md](docs/howto.md). You need `arm-none-eabi-gcc`, Python 3 with
+Then flash `out.bin` from the PC (`tools/device/f3_flash.py`, no phone app needed) or with Fit3 Manager on the phone, and open the app list. Full steps, requirements and how to go back to stock: [docs/howto.md](docs/howto.md). You need `arm-none-eabi-gcc`, Python 3 with
 numpy, and **your own stock package**; keep a copy of it.
 
 ## How it works, in short

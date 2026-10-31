@@ -24,7 +24,8 @@ Tested on **one** Galaxy Fit3 (SM-R390) on firmware **R390XXU0AZA3**. Legend: **
 | What | State |
 |---|---|
 | Validate and rebuild firmware packages (`tools/firmware`) | PC: every CRC, byte-identical rebuild of a known package |
-| Copy fonts and images from a watch (`tools/device`) | watch; read-only, nothing in the repository writes to the watch |
+| Copy fonts and images from a watch (`tools/device/f3_pull.py`) | watch; read-only |
+| Flash from the PC (`tools/device/f3_flash.py`) | **mock watch only**: 25 checks incl. failures mid-transfer; **never run on a real watch** (the upload, the size check and the OTA command are those of the phone app, but we have not sent them ourselves) |
 | Decoders for fonts, image packs, language packs (`tools/assets`) | PC |
 | Ghidra pipeline (`tools/re`) | PC: 15,478 functions and the decompiled C of the stock main image |
 | Unicorn harness, loader and icon tests, screenshots (`tools/emu`) | PC: 40 checks on LVGL structures, 40 on the window, 9 on the icon, all 11 slots |
