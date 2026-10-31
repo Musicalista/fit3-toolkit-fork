@@ -24,7 +24,7 @@ Tested on **one** Galaxy Fit3 (SM-R390) on firmware **R390XXU0AZA3**. Legend: **
 | What | State |
 |---|---|
 | Validate and rebuild firmware packages (`tools/firmware`) | PC: every CRC, byte-identical rebuild of a known package |
-| Install apps, copy fonts and images from a watch (`tools/device`) | watch (copy is read-only; install writes only `/user/a_*`) |
+| Copy fonts and images from a watch (`tools/device`) | watch; read-only, nothing in the repository writes to the watch |
 | Decoders for fonts, image packs, language packs (`tools/assets`) | PC |
 | Ghidra pipeline (`tools/re`) | PC: 15,478 functions and the decompiled C of the stock main image |
 | Unicorn harness, loader and icon tests, screenshots (`tools/emu`) | PC: 40 checks on LVGL structures, 40 on the window, 9 on the icon, all 11 slots |
@@ -36,8 +36,3 @@ Tested on **one** Galaxy Fit3 (SM-R390) on firmware **R390XXU0AZA3**. Legend: **
 - Why 2 KB writes after every tap restarted the watch; the app avoids them.
 - The factory file commands (`FI^...`) exist in the firmware and include a `FORMAT`; **do not guess their syntax**.
 - The RTC call, heart-rate and step counters (see [details.md](details.md)).
-
-## The older route: apps for Musicalista's loader
-
-`.f3a` apps built with `sdk/` and `tools/build_app.py`, simulated with `sim/`, installed with `tools/device/f3_install.py`. They ran on the watch with the loader of Musicalista's package
-(`hello`, the older frame-buffer `tenis`); this repository's own package does not contain that loader, so these apps do not run on it. The notes are in [apps.md](apps.md) and [protocol.md](protocol.md).

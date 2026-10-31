@@ -31,46 +31,26 @@ another language shows your name too (untested outside English). `--label` longe
 
 Tests (no watch needed; most need `local/firmware/stock-aza3.bin`): `python3 -I tools/firmware/test_build_package.py`, and the emulator tests of [tools/emu](../tools/emu/README.md).
 
-## Older route: apps for the "light app" loader
+## The pieces you bring (none of them is in this repository)
 
-The rest of this page is about the loader of Musicalista and its `.f3a` apps, which this project used to start with. The app SDK and simulator (`sdk/`, `apps/`, `sim/`) are in this repository and need nothing else.
+- **The stock firmware** `stock-aza3.bin` for R390XXU0AZA3 (SHA-256 `25e692badec82afe111c517c19c5dbdb1d28c8558c2b027143c43f5c8d05998a`), e.g. from the fit3-flasher project. **Keep a copy**: it is the way back.
+- **Fit3 Manager**, the Android app that sends a package to the watch (tab *Firmware*): from the `1.7` release of [Musicalista/freemyfit3](https://github.com/Musicalista/freemyfit3), which ships a `SHA256SUMS.txt`.
+  We use it as it is; nothing of it is in this repository.
 
-## Get the pieces for flashing (none of them is in this repository)
+## Going back, and what can go wrong
 
-- **Stock firmware** `stock-aza3.bin` (SHA-256 `25e692badec82afe111c517c19c5dbdb1d28c8558c2b027143c43f5c8d05998a`), e.g. from the fit3-flasher project. **Keep a copy.**
-- **Patched packages** (`fit3-spp-only.bin`, `fit3-store-base-spp.bin`) and the Android `fit3-manager.apk` from the `1.7` release of `Musicalista/freemyfit3`, which ships a
-  `SHA256SUMS.txt`. The author marks the packages as private builds; do not republish them. Put everything in `local/firmware/`.
-
-## Check, then flash
-
-1. `python3 -I tools/firmware/validate_fwd.py local/firmware/<package>.bin` must pass every line.
-2. `python3 -I tools/firmware/make_flat_pkg.py local/firmware/fit3-store-base-spp.bin local/firmware/fit3-store-base-spp-flat.bin` (the loader needs a directory the watch does not have, see [firmware.md](firmware.md)); validate the result too.
-3. Fit3 Manager (phone): connect, tab *Firmware*, choose the file, accept the warnings, send, then start the installation. It cannot be cancelled; do not switch the watch off.
-   According to the loader's author the serial service is only reachable on the setup screen until the spp patch is installed, so the first package may need a factory reset;
-   flash `fit3-spp-only.bin` first and the loader package second.
-4. Go back to stock with `stock-aza3.bin` the same way. A watch that does not boot cannot be flashed over Bluetooth.
-
-## Apps
-
-```
-python3 -I tools/build_app.py tenis
-python3 -I tools/device/f3_install.py list                     # first test of the connection (read-only)
-python3 -I tools/device/f3_install.py install build/tenis.f3a
-```
-
-Close Galaxy Wearable and Fit3 Manager on the phone first. Tell the tools your watch's Bluetooth address (the name is "Galaxy Fit3 (xxxx)"): `--addr AA:BB:CC:DD:EE:FF` or `export F3_ADDR=AA:BB:CC:DD:EE:FF`. On the watch the apps are under
-Settings > Extra apps > My apps. Fit3 Manager's own app tab does **not** work with the flat package (it insists on `/user/apps/`); use `f3_install.py`.
-
-## Simulator
-
-```
-python3 -I sim/genfont.py sim/kbd_font.h          # once: stand-in 8x12 font (not a copy of anything; see sim/README.md)
-sim/run.sh tenis
-sim/run.sh styledemo --data local/assets/fonts    # the simulated watch's files; fonts pulled with tools/device/f3_pull.py
-```
+Flash `stock-aza3.bin` the same way to go back to stock. A watch that does not boot cannot be flashed over Bluetooth, so never flash a package that did not pass `validate_fwd.py`
+(`build_package.py` runs it for you) and never touch code that runs at boot: nothing of ours does. A mistake in our code shows only when the entry (or, for the icon, the app list) is opened;
+the watch still boots and can be flashed again.
 
 ## Pull fonts and images from your watch (read-only)
 
+For the emulator screenshots (`tools/emu/screenshot.py` needs the Roboto fonts) and for studying the resources:
+
 ```
+export F3_ADDR=AA:BB:CC:DD:EE:FF                    # your watch's Bluetooth address (its name is "Galaxy Fit3 (xxxx)")
 python3 -I tools/device/f3_pull.py local/assets/fonts /nand/system/font/FONT_ROBOTO_22_GBK_en.bin
 ```
+
+Close Galaxy Wearable and Fit3 Manager on the phone first (one client at a time); the watch must be visible and carry the Bluetooth patches of `build_package.py`. Only files under `/nand/system/font/`
+and `/nand/system/image/` are accepted, nothing is written to the watch, and the files are Samsung's: keep them in `local/` and do not redistribute them.

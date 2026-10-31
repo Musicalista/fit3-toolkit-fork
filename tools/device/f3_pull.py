@@ -4,7 +4,7 @@
 Only paths under /nand/system/font/ and /nand/system/image/ are accepted. The files are Samsung's: keep them local, do not redistribute."""
 import argparse, os, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))     # python3 -I does not add the script's folder
-import f3_install as F
+import f3_link as F
 
 ALLOWED = ("/nand/system/font/", "/nand/system/image/")
 ap = argparse.ArgumentParser(); ap.add_argument("out"); ap.add_argument("paths", nargs="+"); ap.add_argument("--limit", type=int, default=2 << 20); ap.add_argument("--addr", default=F.ADDR); a = ap.parse_args()

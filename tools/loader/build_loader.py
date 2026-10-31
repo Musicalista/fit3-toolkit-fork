@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """build_loader.py: compile loader_vN.c into a flat binary for build_package.py (--loader), linked at 0x2c3a0524.
 
-    python3 -I tools/loader/build_loader.py tools/loader/loader_v0.c local/loader/loader_v0.bin
+    python3 -I tools/loader/build_loader.py tools/loader/loader_v2.c local/loader/loader_v2.bin
 
-The first function of the image is the entry (section .text.entry); the addresses of loader_entry (v0, --menu-callback) or world_create / world_event (v1, --takeover-create / --takeover-event) are printed. Refuses libc/libgcc calls, data and bss."""
+The first function of the image is the entry (section .text.entry); the addresses of world_create and world_event (--takeover-create / --takeover-event of build_package.py) are printed. Refuses libc/libgcc calls, data and bss."""
 import os, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 def run(*a):
@@ -26,7 +26,7 @@ def build(src, out, quiet=False, defines=()):
     syms = {l.split()[2]: int(l.split()[0], 16) for l in run("arm-none-eabi-nm", elf).splitlines() if len(l.split()) == 3}
     if not quiet:
         print("wrote %s, %d bytes" % (out, os.path.getsize(out)))
-        for name in ("loader_entry", "world_create", "world_event"):
+        for name in ("world_create", "world_event"):
             if name in syms: print("  %s at %#x (Thumb address %#x)" % (name, syms[name] & ~1, syms[name] | 1))
     return syms
 if __name__ == "__main__":

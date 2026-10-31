@@ -3,7 +3,7 @@
  *
  * Same take-over as v1 (build_package.py --takeover-create/--takeover-event): world_create builds a fresh screen with LVGL objects styled after the stock pages
  * (docs/details.md, section 6): black screen, 254 px cards with radius 26 and colour 0x2124, pill buttons (radius 100, colour 0x5ade), Roboto from the firmware's
- * font tables. The scoring rules, the data and the save format are those of apps/tenis (best of 3 sets, tie-break at 6-6, 16 undo steps, one save of 128 bytes 3 s after
+ * font tables. The scoring rules (best of 3 sets, tie-break at 6-6, 16 undo steps, one save of 132 bytes 3 s after
  * the last change and when the window is deleted).
  *
  * Side key: the stock behaviour (to the watch face), see world_event. Touch: a click on a card is a point for that player; the left strip of a card (the letter) toggles who serves before the first point. "Undo" takes a point back,
@@ -66,7 +66,7 @@ typedef struct lv_obj lv_obj_t; typedef struct lv_timer lv_timer_t; typedef stru
 #define FT_BTN ROBOTO_MEDIUM(7)
 #define FT_SMALL ROBOTO_MEDIUM(8)
 
-/* palette (RGB565; docs/details.md for the UI colours, apps/tenis for the players) */
+/* palette (RGB565; docs/details.md for the UI colours, the players' colours are our choice) */
 #define C_BLACK 0x0000
 #define C_WHITE 0xffff
 #define C_CARD 0x2124
@@ -80,7 +80,7 @@ typedef struct lv_obj lv_obj_t; typedef struct lv_timer lv_timer_t; typedef stru
 #define C_B 0xfd4d
 #define C_WARN 0xc986
 
-/* ---- match logic: the same as apps/tenis/tenis.c (checked by tools/emu and apps/tenis/test_logic.c) ---- */
+/* ---- match logic (tested on the PC by test_score.c and through the real LVGL objects by tools/emu/test_loader_v2.py) ---- */
 #define MAXG 13
 #define UNDO 16
 typedef struct {

@@ -1,7 +1,7 @@
 # Firmware notes (R390XXU0AZA3)
 
-Everything here comes from reading packages with `tools/firmware/` and disassembling the main image (`arm-none-eabi-objdump -D -b binary -marm -Mforce-thumb
---adjust-vma=0x2c080000`). Addresses are for the main image of R390XXU0AZA3; **no other version has been looked at**.
+Everything here comes from reading packages with `tools/firmware/` and disassembling the main image (`arm-none-eabi-objdump -D -b binary -marm -Mforce-thumb --adjust-vma=0x2c080000`).
+Addresses are for the main image of R390XXU0AZA3; **no other version has been looked at**. How the firmware works inside (windows, LVGL, resources, services) is in [details.md](details.md).
 
 ## Package format (FWD, `.bin`)
 
@@ -16,57 +16,25 @@ about 70 `language_*.res`. **Fonts and images are not in the package**; they liv
 ## Main image
 
 Code and data are linked at `0x2c080000 + file offset` (the same bytes are also visible at `0x0c...`; function-pointer tables use that alias). Header at `0x1000`
-(`0x11223344, 0xdeaddead, CRC32, size`); the CRC32 is over the image with bytes 0..3 set to `0xff` and `0x1000..0x100f` zeroed. It is not encrypted; there is no
-sign of a signature check on the watch side (the two modified packages above boot), which we have not proven.
+(`0x11223344, 0xdeaddead, CRC32, size`); the CRC32 is over the image with bytes 0..3 set to `0xff` and `0x1000..0x100f` zeroed. It is not encrypted. There is no sign of a signature check on the watch
+side (packages with changed main images boot), which we have not proven.
 
-## What the known patches change (`fit3-spp-only`: 8 bytes, `fit3-store-base-spp`: about 14.8 KB)
+## What `build_package.py` changes
 
 | Where | What |
 |---|---|
 | `0x2c233820` | `mov r4,r0` -> `movs r4,#3`: Bluetooth access mode always "visible and connectable" |
 | `0x2c227f7a` | `mov r1,r2` -> `movs r1,#1`: RFCOMM channel 29 accepts a connection although another client uses it |
-| `0x2c1d0802` | `bl 0x2c112f58` -> `bl 0x2c3a0524` (loader hook A) |
-| `0x2c1b76a0` | `bl 0x2c2974f8` (a log call in the sub-page opener) -> `bl 0x2c3a0548` (loader hook B) |
-| `0x2c3a0524..0x2c3a4524` | 16 KB of loader code and strings in formerly empty flash; **the block is full** |
-| `.res` | the string "Tips and tutorials" is renamed "Extra apps" in four language files (same length, 36 bytes) |
+| `0x2c3a0524...` | our code, then the icon: the stock image has **62,460 bytes of zeros** here (`0x2c3a0524..0x2c3af920`) |
+| the entry of two window functions | `b.w` into our code (create and window event of the replaced app-list entry); the other functions of its window record become `bx lr` (see [details.md](details.md), section 2) |
+| the app-list row | the icon pointer of the replaced entry points at our image |
+| `language_*.res` | the entry's name (text ID of its row), in the English files or in all 69 |
+| `0x1008` and the container | the image CRC and every checksum of the package |
 
-Free space for more code: `0x2c3a4525..0x2c3af920` (about 46 KB of zeros in the stock image).
-
-Hook B calls `lv_timer_create(cb=0x2c3a1ab9, 80 ms, user_data=root)` (`0x2c28a3f0`); `cb` deletes the timer (`0x2c28a448`) and calls `menu_open(root)` at `0x2c3a1a54`,
-which allocates a state block, builds the menu image on `root` and returns. `lv_timer` keeps its user data at `+12`.
-
-`tools/firmware/make_flat_pkg.py` changes two strings in the block (`/user/apps/index.txt` -> `/user/a_index.txt`, `/user/apps/` -> `/user/a_`) and rebuilds every checksum:
-the loader copies those strings to the NUL, so shorter ones are fine, and the watch has no `/user/apps/` directory.
-
-## App registry and the World clock entry (analysis only)
-
-Apps are described by 48-byte records starting at file offset `0x334a10` (word 0: flags and id; word 7 at `+0x1c`: the `init` function, stored as `0x0c......|1`).
-World clock is id `0x2b`, `app_worldclock_init` at `0x2c1ecc64`: it creates a fresh screen with `lv_obj_create(NULL)` (`0x2c27cb84`), registers an event callback, and for the
-main page (`param & 0xff == 0x67`) calls `app_worldclock_tile_init(root)` (`0x2c1ecbac`) at `0x2c1ecd1c`; any other value takes the full-page branch (see Stage 1). The label "World Clock" appears four times in the English language resource
-(inner offsets `0xa8d2 0x11504 0x115c0 0x1d83f`). The list icon is not located yet. None of this has been built or flashed.
-
-## Stage 1 (built by `tools/firmware/world_clock_takeover.py`)
-
-`app_worldclock_init(param)` builds one of two pages: for `param & 0xff == 0x67` the tile (`app_worldclock_tile_init(root)`, `0x2c1ecbac`), otherwise the full page with the city list
-(`0x2c1ebfdc`, called at `0x2c1ecd30` with `r0 = 0`; it takes its objects from the context `**r4`, where `[ctx]` is the root and `[ctx+4]` a 256 x 402 content object).
-The first package replaced the tile call: the label changed but tapping the list entry still opened the stock page, so **the app list uses the full-page branch**.
-The current package replaces the full-page call by a stub at `0x2c3a4530` (20 bytes of code, two literals):
-`push {r3,lr}; bl 0x2c1ebfdc; ldr r3,[r4]; ldr r2,[r3]; ldr r0,=0x2c3a1ab9; movs r1,#80; ldr r3,=0x2c28a3f1; blx r3; pop {r3,pc}`. It runs the original builder (so the page and its event
-handler, `0x2c1ecd68`, keep a consistent state), then schedules the loader's menu on the page's root, which draws on top. Together with the label change ("World Clock" -> "Tennis",
-same length, in `language_en`, `_rUS`, `_rCA` and `_rPH`) that is 36 changed bytes in the main image and four rewritten language files. The packet header's resource size is recomputed
-(it is the sum of the unpacked sizes of the non-firmware components and changes with the language files).
-
-## How the loader gets touch input (and why it is flaky)
-
-`make_canvas(root, state, dsc, event_cb)` (`0x2c3a0a3c`) creates an LVGL image of the 256 x 402 RGB565 buffer on `root`, adds the clickable flag (`lv_obj_add_flag` at `0x2c27cbb8`, `1<<1`),
-clears the scrollable flag (`lv_obj_clear_flag`, `0x2c27cc5c`, `0x10`) and registers one event callback for all events (`lv_obj_add_event_cb`, `0x2c27d9cc`). The callback takes the event code and
-user data with `0x2c27d988` and `0x2c27d994`. For press events (codes 1 and 2) it calls the loader's `touch_read` (`0x2c3a09f8`), which **calls the touch driver `0x2c0a76d8` itself**
-(a 64-byte event record: type at +1, x at +4, y at +6; it reads the panel, mirrors the coordinates, maps type 4 to 3) and keeps the result only when the type is 1 or 2. The click flag the apps get as
-`tap` comes from the LVGL click event (code 7) and uses the coordinates of the last successful read. The stock UI most likely reads the same driver for LVGL's own pointer, so a second read
-inside the handler can return no touch or a later sample. A loader of our own should take the pointer from LVGL (`lv_indev_get_point` of the active indev) instead; those two functions are not located yet.
+The first two rows are the patches that make the watch's serial service reachable without pairing, which `tools/device/f3_pull.py` needs and Fit3 Manager works with; they were first found by Musicalista
+(see [legal.md](legal.md)). With them, anyone in range can connect to the watch's file service.
 
 ## Not known
 
-- Which of the loader's hooks run when the list entry of an app is tapped (we only know the registry).
-- How to start one app directly instead of showing the menu (needs a changed loader).
 - Whether the updater verifies anything beyond the CRCs we check.
+- The factory command families of the firmware (`AT^...`, `FI^...`); see [protocol.md](protocol.md): **do not experiment, `FORMAT` exists**.

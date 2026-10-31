@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: Apache-2.0 */
-/* loader_v1.c: replaces the stock World clock window (id 0x2b) completely, instead of drawing on top of its page (v0).
+/* loader_v1.c: replaces the stock World clock window (id 0x2b) completely, instead of drawing a page on top of the stock one.
  *
  * build_package.py --takeover-create/--takeover-event puts a `b.w` at the entry of the two stock window functions, so the window manager (record 0x2c3b4a10 / RAM
  * 0x200fb4e4 + 0x2b*0x30) now calls ours:
@@ -7,7 +7,7 @@
  *     nothing of it can show before our page or come back after the screen sleeps (its window-event handler rebuilt it on LCD on; that is replaced too).
  *   world_event  (stock 0x2c1ecd68, +0x24): the stock one only rebuilds the page; ours keeps the one thing it set on entry (window +0x24 = 0x2b via 0x2c224d30).
  * The stock destroy (0x2c1ecee4, +0x2c) stays: with no stock state it only runs null-safe cleanup, then the window manager deletes our screen.
- * The screen shows what v0 showed (uptime, touch counters) plus the back gesture, done like the flashlight page: GESTURE (12) with lv_indev_get_gesture_dir == 2 (right)
+ * The screen shows an uptime counter and touch counters plus the back gesture, done like the flashlight page: GESTURE (12) with lv_indev_get_gesture_dir == 2 (right)
  * -> wm_open(3, -1, 0, 0x14) (0x2c225ddc; the 4th argument is the transition: 0x14 slides the way the finger moves, 0 slid the other way) + ui_gesture_consume (0x2c224f04). DELETE (33) on the screen deletes our timer and frees the state.
  * Not handled (replaced stock behaviour): the World clock tile (param 0x67) and the time-change message (class 2, 0x3b): both are ignored here. */
 typedef unsigned int u32; typedef unsigned short u16; typedef unsigned char u8; typedef int i32;

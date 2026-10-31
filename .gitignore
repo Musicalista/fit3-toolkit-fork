@@ -1,9 +1,6 @@
 # generated or local
 /build/
-sim/kbd_font.h
-sim/data/
 __pycache__/
-
 
 # firmware packages, the phone APK and Samsung assets pulled from a watch: not ours to redistribute
 /local/

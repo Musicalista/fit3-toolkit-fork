@@ -15,7 +15,7 @@ Samsung's: keep your copies in `local/` (git-ignored) and do not redistribute th
 - `glyf`: per glyph a bit stream: advance, x, y (signed), w, h, then w*h pixels of `bpp` bits, MSB first. The glyph is drawn with its bottom at `baseline - y`.
 
 All the fonts we pulled are uncompressed, 2 bits per pixel, ASCII 0x20..0x7a (some also `°`); the big ones are digits only (Bold 60, Medium 86, LED 32). Sizes: 0.9 to 50 KB.
-`tools/assets/lvfont.py` decodes them on a PC; `apps/include/f3font.h` does it on the watch. No kerning is applied.
+`tools/assets/lvfont.py` decodes them on a PC. No kerning is applied.
 
 ## Images: `app_*.res`, `common.res`, ...
 

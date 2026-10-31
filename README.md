@@ -39,12 +39,11 @@ shows only when the entry is opened, and the watch still boots and can be flashe
 | Path | What |
 |---|---|
 | [`tools/build_tennis.py`](tools/README.md) | one command from your stock package to the tennis package |
-| [`tools/loader/`](tools/loader/README.md) | the code that runs on the watch: `loader_v2.c` is the tracker; `loader_v0.c` and `loader_v1.c` are the steps that led to it |
+| [`tools/loader/`](tools/loader/README.md) | the code that runs on the watch: `loader_v2.c` is the tracker; `loader_v1.c` is the smallest example of the technique |
 | [`tools/firmware/`](tools/README.md) | read, validate and rebuild firmware packages (`build_package.py`, `validate_fwd.py`) |
 | [`tools/emu/`](tools/emu/README.md) | a Unicorn harness that runs functions of the real firmware on the PC; the tests of the loader run on it |
-| [`tools/assets/`](tools/README.md), [`tools/re/`](tools/re/README.md), [`tools/device/`](tools/README.md) | decoders for fonts, images and language packs, the icon generator, the Ghidra pipeline, tools that talk to the watch |
+| [`tools/assets/`](tools/README.md), [`tools/re/`](tools/re/README.md), [`tools/device/`](tools/README.md) | decoders for fonts, images and language packs, the icon generator, the Ghidra pipeline, a read-only link to copy fonts and images off the watch |
 | [`docs/`](docs/) | [howto](docs/howto.md), [status](docs/status.md), [details](docs/details.md), [roadmap](docs/roadmap.md), [legal](docs/legal.md), [symbols.csv](docs/symbols.csv) (named firmware addresses) |
-| [`sdk/`](sdk/README.md), [`apps/`](apps/README.md), [`sim/`](sim/README.md) | the older route: apps for Musicalista's loader, an SDK and a PC simulator for them |
 | `local/`, `build/` (not in git) | your firmware packages and assets pulled from your watch; build output |
 
 ## Credits and acknowledgements

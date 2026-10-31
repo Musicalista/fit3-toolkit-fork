@@ -8,6 +8,8 @@ Messages are plain ASCII commands, no terminator. The same protocol is used by f
 
 ## Writing a file
 
+(The protocol Fit3 Manager uses to send a firmware package. Documented for completeness: the tools of this repository only read.)
+
 | You send | The watch answers | Meaning |
 |---|---|---|
 | `300` | `300` | start a transfer |
@@ -38,5 +40,5 @@ Read to the end. An export left open produces `last export had no end` in the fi
 ## On Linux
 
 - Close Galaxy Wearable and Fit3 Manager first; the watch serves one session at a time in practice.
-- Connecting right after closing a session can fail with `EBUSY` or `ECONNRESET` for a few seconds: retry (`tools/device/f3_install.py` does).
+- Connecting right after closing a session can fail with `EBUSY` or `ECONNRESET` for a few seconds: retry (`tools/device/f3_link.py` does).
 - Opening a session and dropping it without finishing (a half-written file, an unfinished read) left Galaxy Wearable stuck on "Updating info" once; restarting the watch fixed it.
