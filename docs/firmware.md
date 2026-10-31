@@ -56,6 +56,15 @@ handler, `0x2c1ecd68`, keep a consistent state), then schedules the loader's men
 same length, in `language_en`, `_rUS`, `_rCA` and `_rPH`) that is 36 changed bytes in the main image and four rewritten language files. The packet header's resource size is recomputed
 (it is the sum of the unpacked sizes of the non-firmware components and changes with the language files).
 
+## How the loader gets touch input (and why it is flaky)
+
+`make_canvas(root, state, dsc, event_cb)` (`0x2c3a0a3c`) creates an LVGL image of the 256 x 402 RGB565 buffer on `root`, adds the clickable flag (`lv_obj_add_flag` at `0x2c27cbb8`, `1<<1`),
+clears the scrollable flag (`lv_obj_clear_flag`, `0x2c27cc5c`, `0x10`) and registers one event callback for all events (`lv_obj_add_event_cb`, `0x2c27d9cc`). The callback takes the event code and
+user data with `0x2c27d988` and `0x2c27d994`. For press events (codes 1 and 2) it calls the loader's `touch_read` (`0x2c3a09f8`), which **calls the touch driver `0x2c0a76d8` itself**
+(a 64-byte event record: type at +1, x at +4, y at +6; it reads the panel, mirrors the coordinates, maps type 4 to 3) and keeps the result only when the type is 1 or 2. The click flag the apps get as
+`tap` comes from the LVGL click event (code 7) and uses the coordinates of the last successful read. The stock UI most likely reads the same driver for LVGL's own pointer, so a second read
+inside the handler can return no touch or a later sample. A loader of our own should take the pointer from LVGL (`lv_indev_get_point` of the active indev) instead; those two functions are not located yet.
+
 ## Not known
 
 - Which of the loader's hooks run when the list entry of an app is tapped (we only know the registry).
