@@ -37,4 +37,9 @@ Before publishing anything derived from the loader, ask its author. Our reading 
 
 ## Licence of this repository
 
-Not chosen yet. Decide before the first public release (MIT or Apache-2.0 would suit the tools and apps; the notes could be CC BY).
+[Apache License 2.0](../LICENSE) for everything in the repository: the code (`tools/`, `apps/`, `sim/`), the notes (`docs/`, `docs/research/`, `docs/symbols.csv`) and our icon
+(`tools/assets/mkicon.py`). One licence on purpose, with the patent grant that Apache-2.0 includes. Source files carry an `SPDX-License-Identifier: Apache-2.0` line.
+
+What the licence does **not** do: it covers what we wrote, nothing else. It does not licence Samsung's firmware, fonts or images (you bring them), the SDK and loader of Musicalista
+(an external checkout, which has no licence of its own; `apps/` and `sim/` are our code but compile against its headers) or the package your build produces (it contains Samsung's firmware).
+Copyright of contributions stays with their authors, who grant the licence by contributing. This is not legal advice.

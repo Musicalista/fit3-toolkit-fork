@@ -47,7 +47,19 @@ The stock firmware calls two functions of the World clock window through a table
 swipe, transition) and keeps its state in one heap block. The research that made this possible is in `docs/research/`; the emulator tests check every claim they rest on
 ([tools/emu](tools/emu/README.md)). The honest limits are in [docs/status.md](docs/status.md).
 
-## Credits
+## Credits and acknowledgements
 
-The patched packages, the app loader, the SDK and the first firmware patches come from **Musicalista**; the transfer protocol and package checks from **yuriyurin/fit3-flasher**.
-Details in [docs/legal.md](docs/legal.md). This repository contains none of their code and no Samsung firmware or assets.
+This project would not exist without **[Musicalista](https://github.com/Musicalista)**. Their [fit3-store-apps-games](https://github.com/Musicalista/fit3-store-apps-games) and
+[freemyfit3](https://github.com/Musicalista/freemyfit3) were the first to get native code running on the Galaxy Fit3: they found the firmware patches that make the watch's Bluetooth
+file service reachable, defined the `.f3a` "light app" format and wrote the app loader and the store. Our first experiments started from their hook points, and the idea of running
+our own code from the free flash behind an entry of the app list is theirs. We later replaced the loader with our own code (the firmware's window manager calls it directly), but we
+started from what they showed was possible. Thank you.
+
+The transfer protocol and the package checks come from **[yuriyurin/fit3-flasher](https://github.com/yuriyurin/fit3-flasher)**. The analysis used the public sources of
+[LVGL](https://lvgl.io), [Ghidra](https://ghidra-sre.org) and [Unicorn](https://www.unicorn-engine.org).
+This repository contains none of their code and no Samsung firmware or assets; details in [docs/legal.md](docs/legal.md).
+
+## Licence
+
+[Apache License 2.0](LICENSE) for everything in this repository (code, notes and the icon). It covers only what we wrote. It gives you no rights to Samsung's
+firmware, fonts or images, which you must bring from your own watch, and it does not change the terms of the projects credited above.
