@@ -19,6 +19,4 @@ All the fonts we pulled are uncompressed, 2 bits per pixel, ASCII 0x20..0x7a (so
 
 ## Images: `app_*.res`, `common.res`, ...
 
-A pack of records without a directory. The type we decoded: `hdr(4) | "IDX8" "IDX8" | width u16 BE | height u16 BE | palette bytes u16 BE | 2 bytes | width*height palette indices | palette (BGRA, 4 bytes per colour)`.
-`app_worldclock.res` starts with the 256 x 189 picture of the globe that is the World clock background (the first record). Other records (some without the `IDX8` tag, some with
-a different header) are **not decoded yet**, and we have not looked at which pack holds the icons of the app list.
+A pack of records without a directory, each `lv_img_header_t (4 bytes) | body`; formats, the ID tables and the app-list icon are in [research/T3-resources.md](research/T3-resources.md); `tools/assets/lvres.py` decodes them.
