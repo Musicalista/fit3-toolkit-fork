@@ -7,6 +7,7 @@ What it changes (every old byte is checked first; nothing is written when someth
      0x2c227f7a `mov r1,r2` -> `movs r1,#1` (RFCOMM channel 29 accepts a second client).
   2. the loader: the bytes of --loader go to --loader-addr (default 0x2c3a0524) in the free flash. Stock has zeros from 0x2c3a0524 to 0x2c3af920 (62460 bytes);
      the range is checked, so is overlap with the stub.
+  3. (v1 takeover instead of the hook: `b.w` at the entry of the stock World clock create (0x2c1ecc64) and window-event (0x2c1ecd68) functions, no stub)
   3. the World clock hook: `bl 0x2c1ebfdc` at 0x2c1ecd30 becomes `bl stub`; the stub (28 bytes at --stub-addr, default: 16-aligned end of the loader) runs the original
      builder and then lv_timer_create(--menu-callback, 80 ms, root). See world_clock_takeover.py for the reasoning.
   4. labels: every "World Clock" in language_en*.res becomes --label (default Tennis, at most 11 characters).
@@ -34,6 +35,15 @@ EXTRA_APPS = [  # (language file, old string, new string); the new string is pad
     (re.compile(r"language_pt_r(PT|BR)\.res$"), b"Dicas e tutoriais", b"Apps extras"),
 ]
 at = lambda vma: vma - BASE
+TAKEOVER = {  # stage 2 (loader v1): `b.w ours` at the entry of the stock World clock window functions: (entry, the stock bytes there, what the function is)
+    "create": (0x2c1ecc64, bytes.fromhex("2de9f341"), "window create fn (record 0x2b +0x1c)"),
+    "event": (0x2c1ecd68, bytes.fromhex("70b58eb0"), "window event fn (record 0x2b +0x24)"),
+}
+
+
+def encode_b(src, dst):
+    """Thumb-2 B.W (T4 encoding), same immediate layout as BL with bit 14 clear"""
+    return struct.pack("<HH", *[a & ~b for a, b in zip(struct.unpack("<HH", wc.encode_bl(src, dst)), (0, 0x4000))])
 
 
 def stub_code(stub, callback, timer_create=TIMER_CREATE, delay=DELAY_MS):
@@ -51,7 +61,7 @@ def check_stock(p):
     return raw
 
 
-def build(stock, out, loader, loader_addr=FREE_START, label="Tennis", stub_addr=None, menu_callback=0x2c3a1ab9, hook_a=None, hook_b=None, extra_apps=False, validate=True, quiet=False):
+def build(stock, out, loader, loader_addr=FREE_START, label="Tennis", stub_addr=None, menu_callback=0x2c3a1ab9, hook_a=None, hook_b=None, extra_apps=False, validate=True, quiet=False, takeover=None):
     log = (lambda *a: None) if quiet else print
     new_label = label.encode("ascii") + b"\0"; old_label = b"World Clock\0"
     assert len(new_label) <= len(old_label), "the label must be at most 11 characters"
@@ -60,10 +70,11 @@ def build(stock, out, loader, loader_addr=FREE_START, label="Tennis", stub_addr=
     lend = loader_addr + len(loader)
     assert loader_addr % 2 == 0 and FREE_START <= loader_addr and lend <= FREE_END, "loader %#x..%#x is outside the free flash %#x..%#x" % (loader_addr, lend, FREE_START, FREE_END)
     if stub_addr is None: stub_addr = (lend + 15) & ~15
-    stub = stub_code(stub_addr, menu_callback); send = stub_addr + len(stub)
+    stub = b"" if takeover else stub_code(stub_addr, menu_callback); send = stub_addr + len(stub)    # takeover = {"create": addr, "event": addr}: no stub, no timer hook
     assert FREE_START <= stub_addr and send <= FREE_END, "stub %#x..%#x is outside the free flash" % (stub_addr, send)
     assert send <= loader_addr or stub_addr >= lend, "the stub overlaps the loader"
-    assert loader_addr <= menu_callback & ~1 < lend, "--menu-callback %#x is not inside the loader" % menu_callback
+    assert takeover or loader_addr <= menu_callback & ~1 < lend, "--menu-callback %#x is not inside the loader" % menu_callback
+    for k, t in (takeover or {}).items(): assert loader_addr <= t & ~1 < lend and t & 1, "--takeover-%s %#x is not a Thumb address inside the loader" % (k, t)
     for a, b in ((loader_addr, lend), (stub_addr, send)):
         assert not any(orig[at(a):at(b)]), "stock flash %#x..%#x is not empty" % (a, b)
     # --- spp patches
@@ -72,8 +83,14 @@ def build(stock, out, loader, loader_addr=FREE_START, label="Tennis", stub_addr=
         raw[at(vma):at(vma) + len(new)] = new
     # --- loader, stub, World clock hook
     raw[at(loader_addr):at(lend)] = loader; raw[at(stub_addr):at(send)] = stub
-    assert wc.decode_bl(orig, WC_SITE) == WC_STOCK_TARGET, "no `bl 0x2c1ebfdc` at the World clock hook site"
-    raw[at(WC_SITE):at(WC_SITE) + 4] = wc.encode_bl(WC_SITE, stub_addr)
+    if takeover:
+        assert set(takeover) == set(TAKEOVER), "takeover needs both create and event"
+        for k, (entry, stock_bytes, what) in TAKEOVER.items():
+            assert orig[at(entry):at(entry) + 4] == stock_bytes, "the %s at %#x does not start with %s (another version?)" % (what, entry, stock_bytes.hex())
+            raw[at(entry):at(entry) + 4] = encode_b(entry, takeover[k] & ~1)
+    else:
+        assert wc.decode_bl(orig, WC_SITE) == WC_STOCK_TARGET, "no `bl 0x2c1ebfdc` at the World clock hook site"
+        raw[at(WC_SITE):at(WC_SITE) + 4] = wc.encode_bl(WC_SITE, stub_addr)
     # --- optional hooks of the old loader
     for (site, stock_target), target in ((HOOK_A, hook_a), (HOOK_B, hook_b)):
         if target is None: continue
@@ -94,7 +111,9 @@ def build(stock, out, loader, loader_addr=FREE_START, label="Tennis", stub_addr=
         if new != inner: p.set_raw(path, fwd.rezip_single(zbytes, new)); changed.append((path.rsplit("/", 1)[1], n, m))
     assert any(c[1] for c in changed), "found no World Clock label"
     p.save(out)
-    log("spp patches: %d; loader %d bytes at %#x..%#x; stub %d bytes at %#x; hook %#x -> bl %#x" % (len(SPP_PATCHES), len(loader), loader_addr, lend, len(stub), stub_addr, WC_SITE, stub_addr))
+    log("spp patches: %d; loader %d bytes at %#x..%#x; %s" % (len(SPP_PATCHES), len(loader), loader_addr, lend,
+        "takeover: " + ", ".join("%s %#x -> b.w %#x" % (k, TAKEOVER[k][0], v & ~1) for k, v in takeover.items()) if takeover else
+        "stub %d bytes at %#x; hook %#x -> bl %#x" % (len(stub), stub_addr, WC_SITE, stub_addr)))
     log("labels -> %r; changed language files: %s" % (label, ", ".join("%s (label x%d, extra-apps x%d)" % c for c in changed)))
     log("wrote", out, os.path.getsize(out), "bytes")
     if validate:
@@ -112,5 +131,8 @@ if __name__ == "__main__":
     ap.add_argument("--loader-addr", type=num, default=FREE_START); ap.add_argument("--stub-addr", type=num, help="default: end of the loader rounded up to 16")
     ap.add_argument("--menu-callback", type=num, default=0x2c3a1ab9, help="Thumb address (bit 0 set) of the loader's timer callback that opens its UI; user data = root object")
     ap.add_argument("--label", default="Tennis"); ap.add_argument("--hook-a", type=num); ap.add_argument("--hook-b", type=num); ap.add_argument("--extra-apps", action="store_true")
+    ap.add_argument("--takeover-create", type=num, help="loader v1: Thumb address of world_create; replaces the stock window create function (needs --takeover-event)")
+    ap.add_argument("--takeover-event", type=num, help="loader v1: Thumb address of world_event")
     a = ap.parse_args()
-    build(a.stock, a.out, open(a.loader, "rb").read(), a.loader_addr, a.label, a.stub_addr, a.menu_callback, a.hook_a, a.hook_b, a.extra_apps)
+    tk = {"create": a.takeover_create, "event": a.takeover_event} if (a.takeover_create or a.takeover_event) else None
+    build(a.stock, a.out, open(a.loader, "rb").read(), a.loader_addr, a.label, a.stub_addr, a.menu_callback, a.hook_a, a.hook_b, a.extra_apps, takeover=tk)
