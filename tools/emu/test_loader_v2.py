@@ -44,7 +44,7 @@ class Rig:
         return 0
     def create(self):
         scr = self.e.call(CREATE, 0, 0); self.scr = scr; kids = self.children(scr)
-        self.hdr, self.cardA, self.cardB, self.info, self.undo, self.stats, self.ov = kids[:7]
+        self.hdr, self.cardA, self.cardB, self.info, self.game, self.sett, self.undo, self.stats, self.ov = kids[:9]
         self.state = self.e.u32(self.e.u32(self.e.u32(scr + 8) + 0xc) + 4)
         self.e.w32(0x200fbd04, scr); self.e.write(0x200fbcf7, bytes([4]))        # window record 0x2b in RAM: +0x10 the screen, +3 bit 2 "created" (the window manager does this)
         return scr
@@ -82,13 +82,18 @@ def main():
     r = Rig(); e = r.e; res = []
     ok = lambda name, cond, obs="": (res.append(bool(cond)), print("%s %s %s" % ("PASS" if cond else "FAIL", name, obs)))
     scr = r.create()
-    ok("create returns a screen; 7 children (header, 2 cards, info, 2 pills, overlay)", scr and len(r.children(scr)) == 7, len(r.children(scr)))
+    ok("create returns a screen; 9 children (header, 2 cards, info, game and set clocks, 2 pills, overlay)", scr and len(r.children(scr)) == 9, len(r.children(scr)))
     ok("fresh match: no header and no hint, points 0", (r.text(r.hdr), r.alltext(r.cardA)[1:], r.text(r.info)) == ("", ["0", "0"], ""), (r.text(r.hdr), r.alltext(r.cardA), r.text(r.info)))
     la = r.alltext(r.cardA); lb = r.alltext(r.cardB)
     ok("card A shows letter A, games 0, point 0", la[0] == "A" and "0" in la, la); ok("card B shows letter B", lb[0] == "B", lb)
     ok("overlay starts hidden", r.hidden(r.ov))
     # points: 15, 30, 40, then game
     r.click(r.cardA); ok("1 click = 15", r.alltext(r.cardA)[-1] == "15", r.alltext(r.cardA)); ok("header shows the match clock", r.text(r.hdr).startswith("Match "), r.text(r.hdr))
+    ok("the game and set clocks are over their buttons, the centred line stays empty", (r.text(r.game), r.text(r.sett), r.text(r.info)) == ("G 0:00", "S 0:00", ""), (r.text(r.game), r.text(r.sett), r.text(r.info)))
+    e.call(A["update_layout"], scr); box = lambda o: [e.i32(o + 0x14 + 4 * k) for k in range(4)]
+    bu, bs, lg, ls = box(r.undo), box(r.stats), box(r.game), box(r.sett)
+    ok("each clock spans exactly the width of its button and lies above it (the gap itself is measured on the rendered page, see screenshot.py)", (lg[0], lg[2]) == (bu[0], bu[2]) and (ls[0], ls[2]) == (bs[0], bs[2]) and lg[3] < bu[1] and ls[3] < bs[1], (bu, bs, lg, ls))
+    pl = box(r.labels(r.undo)[0]); ok("the button caption starts 13 px below the top of the pill (capitals centred)", pl[1] - bu[1] == 13, (pl, bu))
     r.click(r.cardA); r.click(r.cardA); ok("3 clicks = 40", r.alltext(r.cardA)[-1] == "40")
     r.click(r.cardA); a = r.alltext(r.cardA); ok("4th click wins the game: games 1, points 0", a[-1] == "0" and "1" in a, a)
     ok("a game was won: the strong vibration (id 4)", ("motor", 4, 1) in r.calls, r.calls[-2:])
@@ -135,7 +140,7 @@ def main():
     r.click(r.stats); nb = r.children(r.ov)[-2]; r.click(nb); r.click(nb); ok("New twice resets the match", r.alltext(r.cardA)[-1] == "0" and r.text(r.hdr) == "", (r.alltext(r.cardA), r.text(r.hdr)))
     ok("...and closes the overlay", r.hidden(r.ov))
     for _ in range(48): r.click(r.cardA)
-    ok("two sets 6-0 win the match: WIN on A, 'Match over'", r.alltext(r.cardA)[-1] == "WIN" and r.text(r.info) == "Match over", (r.alltext(r.cardA), r.text(r.info)))
+    ok("two sets 6-0 win the match: WIN on A, 'Match over'", r.alltext(r.cardA)[-1] == "WIN" and r.text(r.info) == "Match over" and (r.text(r.game), r.text(r.sett)) == ("", ""), (r.alltext(r.cardA), r.text(r.info), r.text(r.game), r.text(r.sett)))
     r.click(r.cardA); ok("clicks after the end change nothing", r.alltext(r.cardB)[-1] == "")
     r.click(r.stats); ok("stats of a finished match list 2 sets", sum(1 for t in r.alltext(r.ov) if t.startswith("S")) >= 2 and "S2  6-0" in " ".join(r.alltext(r.ov)).replace("  ", "  "), r.alltext(r.ov))
     print("%d/%d passed" % (sum(res), len(res))); return 0 if all(res) else 1

@@ -122,7 +122,7 @@ def main(argv):
     s.seed_txt(); slots = s.load_fonts(); print("font slots loaded:", sum(1 for v in slots if v), "of", len(slots))
     create = int(os.environ.get("F3_CREATE", "0x2c1ecc64"), 0)
     scr = e.call(create, 0, 0); s.show(scr)
-    hdr, card_a, card_b, info, undo, stats, ov = children(e, scr)[:7]
+    hdr, card_a, card_b, info, game, set_, undo, stats, ov = children(e, scr)[:9]
     click = lambda o: e.call(A["event_send"], o, 7, 0)                                 # LV_EVENT_CLICKED, as a tap does
     def shot(name):                                                                    # a whole new frame: the drawing is invalidated first, so the double buffer is complete
         e.call(0x2c2782a8, scr); s.tick += 30; e.call(0x2c28a46c, max_insns=4_000_000_000); s.png(os.path.join(out, name + ".png")); print("wrote", name, "(flushes: %d)" % s.flushes)

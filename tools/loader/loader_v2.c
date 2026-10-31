@@ -93,7 +93,7 @@ typedef struct { u32 magic; Match m; u32 t_save; } SaveFile;      /* 4 + sizeof(
 #define MAGIC 0x54454e33u                                   /* "TEN3" */
 #define SAVE_PATH "/user/tenis.sav"
 
-enum { L_HDR, L_G0, L_G1, L_P0, L_P1, L_INFO, L_ST_TIME, L_ST_S0, L_ST_S1, L_ST_S2, L_NEW, NLAB };
+enum { L_HDR, L_G0, L_G1, L_P0, L_P1, L_INFO, L_GAME, L_SET, L_ST_TIME, L_ST_S0, L_ST_S1, L_ST_S2, L_NEW, NLAB };
 typedef struct {
     Match m, undo[UNDO]; int uhead, ucount;
     u32 shift, dirty_t; u8 dirty, armed, over_shown, pad_; u32 armed_t;
@@ -187,7 +187,9 @@ static lv_obj_t *mk_text(lv_obj_t *parent, i32 x, i32 y, i32 w, const void *font
 }
 static lv_obj_t *mk_pill(State *s, lv_obj_t *parent, i32 x, i32 y, i32 w, const char *text, int lab_id, void (*cb)(lv_event_t *)) {
     lv_obj_t *b = mk_box(parent, x, y, w, 52, 100, C_BTN);
-    lv_obj_t *l = mk_text(b, 0, 9, w, FT_BTN, C_WHITE, 1 + 1, text);          /* LV_TEXT_ALIGN_CENTER = 2 */
+    /* y = 13 puts the capitals in the middle of the 52 px pill: measured on the rendered page (tools/emu/screenshot.py), the label box of this font reserves room for descenders that
+     * none of our words use, so with y = 9 the text had 11 px above and 20 px below; 13 gives 15 and 16 */
+    lv_obj_t *l = mk_text(b, 0, 13, w, FT_BTN, C_WHITE, 1 + 1, text);          /* LV_TEXT_ALIGN_CENTER = 2 */
     if (lab_id >= 0) s->lab[lab_id] = l;
     lv_obj_add_event_cb(b, cb, 0, s);
     return b;
@@ -208,9 +210,15 @@ static void render(State *s) {
         set_bg_color(s->card[w], won ? C_WIN : C_CARD);
         if (!m->over && server(m) == w) lv_obj_clear_flag(s->dot[w], FL_HIDDEN); else lv_obj_add_flag(s->dot[w], FL_HIDDEN);
     }
-    if (m->over) set_txt(s, L_INFO, "Match over");
-    else if (m->started) { e = put(b, "G "); e = fmt_short(e, dur(m->t_game, now)); e = put(e, "   S "); fmt_short(e, dur(m->t_set[m->cur], now)); set_txt(s, L_INFO, b); }
-    else set_txt(s, L_INFO, "");
+    /* the game and set clocks sit right above the two buttons, each centred over its button; a finished match shows one centred line instead */
+    if (m->over) { set_txt(s, L_INFO, "Match over"); set_txt(s, L_GAME, ""); set_txt(s, L_SET, ""); }
+    else {
+        set_txt(s, L_INFO, "");
+        if (m->started) {
+            e = put(b, "G "); fmt_short(e, dur(m->t_game, now)); set_txt(s, L_GAME, b);
+            e = put(b, "S "); fmt_short(e, dur(m->t_set[m->cur], now)); set_txt(s, L_SET, b);
+        } else { set_txt(s, L_GAME, ""); set_txt(s, L_SET, ""); }
+    }
     set_bg_color(s->b_undo, s->ucount ? C_BTN : C_BTN_OFF);
     /* stats overlay */
     e = put(b, "Time "); if (m->started) fmt_dur(e, dur(m->t_match, ref)); else put(e, "-"); set_txt(s, L_ST_TIME, b);
@@ -297,6 +305,8 @@ __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 pa
         s->lab[L_P0 + w] = mk_text(c, 164, 36, 90, FT_POINT, C_WHITE, 2, "");
     }
     s->lab[L_INFO] = mk_text(scr, 0, 312, 256, FT_SMALL, C_MUTED, 2, "");
+    s->lab[L_GAME] = mk_text(scr, 6, 316, 118, FT_SMALL, C_MUTED, 2, "");        /* over the Undo pill (x 6, width 118); y 316 leaves 8 px of text-free space above the pill, measured on the rendered page */
+    s->lab[L_SET] = mk_text(scr, 132, 316, 118, FT_SMALL, C_MUTED, 2, "");       /* over the Stats pill (x 132, width 118) */
     s->b_undo = mk_pill(s, scr, 6, 344, 118, "Undo", -1, on_button);
     s->b_stats = mk_pill(s, scr, 132, 344, 118, "Stats", -1, on_button);
     /* stats overlay: hidden until "Stats" */
