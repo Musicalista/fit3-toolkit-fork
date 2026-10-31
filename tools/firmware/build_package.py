@@ -10,6 +10,8 @@ What it changes (every old byte is checked first; nothing is written when someth
   3. (v1 takeover instead of the hook: `b.w` at the entry of the stock World clock create (0x2c1ecc64) and window-event (0x2c1ecd68) functions, no stub)
   3. the World clock hook: `bl 0x2c1ebfdc` at 0x2c1ecd30 becomes `bl stub`; the stub (28 bytes at --stub-addr, default: 16-aligned end of the loader) runs the original
      builder and then lv_timer_create(--menu-callback, 80 ms, root). See world_clock_takeover.py for the reasoning.
+  3b. --icon: our own 64 x 64 image after the loader in the free flash, and the app-list row of the replaced entry points at it instead of the stock image ID "21" (a pointer to an
+     lv_img_dsc_t is a "variable" source for LVGL; the firmware's own decoder rejects it and the built-in one draws it)
   4. labels: every "World Clock" in language_en*.res becomes --label (default Tennis) when it fits in 11 characters; a longer label replaces only the app-list string (ID 181),
      which wraps onto two lines like the longer stock names
   5. optional loader hooks of the old (Musicalista) loader: --hook-a / --hook-b retarget the `bl` at 0x2c1d0802 / 0x2c1b76a0; --extra-apps renames "Tips and tutorials"
@@ -37,6 +39,8 @@ EXTRA_APPS = [  # (language file, old string, new string); the new string is pad
     (re.compile(r"language_pt_r(PT|BR)\.res$"), b"Dicas e tutoriais", b"Apps extras"),
 ]
 at = lambda vma: vma - BASE
+ICON_ROW_PTR, ICON_STOCK_PTR = 0x2c30028c, 0x2c2e4390        # app-list template row 9 (World clock): 0x2c30021c + 9*12 + 4 = the char* "21", the image ID string of the stock icon
+ICON_SIZE = 64 * 64 * 3                                       # body of a 64 x 64 LV_IMG_CF_TRUE_COLOR_ALPHA image, 16-bit colour: RGB565 LE + alpha (tools/assets/mkicon.py)
 APPLIST_TEXT_ID = 181                                   # "World Clock" in the app list (T3/T4); the same words under other IDs (page titles, complications) stay as they are
 TAKEOVER = {  # stage 2 (loader v1): `b.w ours` at the entry of the stock World clock window functions: (entry, the stock bytes there, what the function is)
     "create": (0x2c1ecc64, bytes.fromhex("2de9f341"), "window create fn (record 0x2b +0x1c)"),
@@ -64,7 +68,7 @@ def check_stock(p):
     return raw
 
 
-def build(stock, out, loader, loader_addr=FREE_START, label="Tennis", stub_addr=None, menu_callback=0x2c3a1ab9, hook_a=None, hook_b=None, extra_apps=False, validate=True, quiet=False, takeover=None):
+def build(stock, out, loader, loader_addr=FREE_START, label="Tennis", stub_addr=None, menu_callback=0x2c3a1ab9, hook_a=None, hook_b=None, extra_apps=False, validate=True, quiet=False, takeover=None, icon=None):
     log = (lambda *a: None) if quiet else print
     new_label = label.encode("ascii") + b"\0"; old_label = b"World Clock\0"
     long_label = len(new_label) > len(old_label)            # longer than "World Clock": only the app-list string (text ID 181) is replaced, via lvlang.Lang.set_string
@@ -78,6 +82,12 @@ def build(stock, out, loader, loader_addr=FREE_START, label="Tennis", stub_addr=
     assert send <= loader_addr or stub_addr >= lend, "the stub overlaps the loader"
     assert takeover or loader_addr <= menu_callback & ~1 < lend, "--menu-callback %#x is not inside the loader" % menu_callback
     for k, t in (takeover or {}).items(): assert loader_addr <= t & ~1 < lend and t & 1, "--takeover-%s %#x is not a Thumb address inside the loader" % (k, t)
+    if icon is not None:
+        assert len(icon) == ICON_SIZE, "the icon must be %d bytes (64 x 64, RGB565 + alpha), see tools/assets/mkicon.py" % ICON_SIZE
+        icon_addr = (max(lend, send) + 15) & ~15; icon_end = icon_addr + 16 + len(icon)
+        assert icon_end <= FREE_END, "the icon (%#x..%#x) is outside the free flash" % (icon_addr, icon_end)
+        assert not any(orig[at(icon_addr):at(icon_end)]), "stock flash %#x..%#x is not empty" % (icon_addr, icon_end)
+        assert struct.unpack_from("<I", orig, at(ICON_ROW_PTR))[0] == ICON_STOCK_PTR, "the World clock row of the app list is not as expected at %#x" % ICON_ROW_PTR
     for a, b in ((loader_addr, lend), (stub_addr, send)):
         assert not any(orig[at(a):at(b)]), "stock flash %#x..%#x is not empty" % (a, b)
     # --- spp patches
@@ -94,6 +104,10 @@ def build(stock, out, loader, loader_addr=FREE_START, label="Tennis", stub_addr=
     else:
         assert wc.decode_bl(orig, WC_SITE) == WC_STOCK_TARGET, "no `bl 0x2c1ebfdc` at the World clock hook site"
         raw[at(WC_SITE):at(WC_SITE) + 4] = wc.encode_bl(WC_SITE, stub_addr)
+    if icon is not None:    # lv_img_dsc_t (header cf 5 | w << 10 | h << 21, data size, data pointer, 4 bytes of padding: the firmware copies 16) + the pixels; the row's icon pointer now points at it
+        raw[at(icon_addr):at(icon_addr) + 16] = struct.pack("<IIII", 5 | 64 << 10 | 64 << 21, len(icon), icon_addr + 16, 0)
+        raw[at(icon_addr) + 16:at(icon_end)] = icon
+        raw[at(ICON_ROW_PTR):at(ICON_ROW_PTR) + 4] = struct.pack("<I", icon_addr)
     # --- optional hooks of the old loader
     for (site, stock_target), target in ((HOOK_A, hook_a), (HOOK_B, hook_b)):
         if target is None: continue
@@ -137,8 +151,9 @@ if __name__ == "__main__":
     ap.add_argument("--loader-addr", type=num, default=FREE_START); ap.add_argument("--stub-addr", type=num, help="default: end of the loader rounded up to 16")
     ap.add_argument("--menu-callback", type=num, default=0x2c3a1ab9, help="Thumb address (bit 0 set) of the loader's timer callback that opens its UI; user data = root object")
     ap.add_argument("--label", default="Tennis"); ap.add_argument("--hook-a", type=num); ap.add_argument("--hook-b", type=num); ap.add_argument("--extra-apps", action="store_true")
+    ap.add_argument("--icon", help="raw 64 x 64 RGB565+alpha body from tools/assets/mkicon.py: the app-list icon of the replaced entry (placed after the loader in the free flash)")
     ap.add_argument("--takeover-create", type=num, help="loader v1: Thumb address of world_create; replaces the stock window create function (needs --takeover-event)")
     ap.add_argument("--takeover-event", type=num, help="loader v1: Thumb address of world_event")
     a = ap.parse_args()
     tk = {"create": a.takeover_create, "event": a.takeover_event} if (a.takeover_create or a.takeover_event) else None
-    build(a.stock, a.out, open(a.loader, "rb").read(), a.loader_addr, a.label, a.stub_addr, a.menu_callback, a.hook_a, a.hook_b, a.extra_apps, takeover=tk)
+    build(a.stock, a.out, open(a.loader, "rb").read(), a.loader_addr, a.label, a.stub_addr, a.menu_callback, a.hook_a, a.hook_b, a.extra_apps, takeover=tk, icon=open(a.icon, "rb").read() if a.icon else None)

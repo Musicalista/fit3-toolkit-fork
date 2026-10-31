@@ -69,6 +69,16 @@ for k in fwd.Package.load(lp).paths():
     assert Lnew.string(181) == "Tennis match score" and all(Lnew.string(i) == Lold.string(i) for i in range(Lold.count) if i != 181), k
 print("  ok   a long label replaces only text ID 181 in every English language file"); ok += 1
 refuses("hook target outside the loader", hook_a=0x2c3a8000)
+refuses("an icon of the wrong size", icon=bytes(100))
+# an icon: the app-list row of the replaced entry points at a descriptor after the loader, and nothing else of the table changes
+ip = os.path.join(WORK, "icon.bin"); fake = bytes(range(256)) * 48; assert len(fake) == bp.ICON_SIZE
+bp.build(P("stock-aza3.bin"), ip, loader, icon=fake, quiet=True, validate=False)
+mi = fwd.Package.load(ip).raw(fwd.MAIN); ptr = struct.unpack_from("<I", mi, bp.ICON_ROW_PTR - bp.BASE)[0]
+hdr, size, data, pad = struct.unpack_from("<IIII", mi, ptr - bp.BASE)
+assert ptr % 16 == 0 and ptr >= 0x2c3a0524 + len(loader) and (hdr, size, data) == (5 | 64 << 10 | 64 << 21, bp.ICON_SIZE, ptr + 16) and mi[data - bp.BASE:data - bp.BASE + bp.ICON_SIZE] == fake
+sm = stock.raw(fwd.MAIN); rows = [struct.unpack_from("<I", mi, 0x2c30021c - bp.BASE + 12 * k + 4)[0] == struct.unpack_from("<I", sm, 0x2c30021c - bp.BASE + 12 * k + 4)[0] for k in range(12)]
+assert rows == [True] * 9 + [False] + [True] * 2, rows
+print("  ok   an icon is placed after the loader and only row 9 (the replaced entry) points at it"); ok += 1
 try: bp.build(P("fit3-worldclock-stage1b.bin"), os.path.join(WORK, "refused.bin"), loader, quiet=True, validate=False); sys.exit("FAIL: patched package accepted as stock")
 except AssertionError: print("  ok   refused: an already patched package as the stock input"); ok += 1
 big = bytes(0xf000)                                                       # a loader that fits only at the start; its stub then lands inside the same region
