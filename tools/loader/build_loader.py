@@ -10,10 +10,10 @@ def run(*a):
     r = subprocess.run(a, capture_output=True, text=True)
     if r.returncode: sys.exit("FAILED: %s\n%s%s" % (" ".join(a[:2]), r.stdout, r.stderr))
     return r.stdout
-def build(src, out, quiet=False):
+def build(src, out, quiet=False, defines=()):
     d = tempfile.mkdtemp(prefix="f3loader_"); o, elf = os.path.join(d, "l.o"), os.path.join(d, "l.elf")
     run("arm-none-eabi-gcc", "-mcpu=cortex-m4", "-mthumb", "-mfloat-abi=soft", "-Os", "-Wall", "-Werror", "-ffreestanding", "-fno-builtin", "-fno-pic", "-fno-stack-protector", "-fno-exceptions",
-        "-fno-tree-loop-distribute-patterns", "-ffunction-sections", "-fdata-sections", "-c", src, "-o", o)
+        "-fno-tree-loop-distribute-patterns", "-ffunction-sections", "-fdata-sections", *("-D" + d for d in defines), "-c", src, "-o", o)
     run("arm-none-eabi-ld", "--gc-sections", "-T", os.path.join(HERE, "loader.ld"), "-o", elf, o)
     und = run("arm-none-eabi-nm", "-u", elf).strip()
     if und: sys.exit("undefined symbols: " + und.replace("\n", " "))

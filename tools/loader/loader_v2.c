@@ -51,6 +51,9 @@ typedef struct lv_obj lv_obj_t; typedef struct lv_timer lv_timer_t; typedef stru
 #define set_pad_all(o, v)           do { F(0x2c27d500, void, (lv_obj_t *, i32, u32))(o, v, 0); F(0x2c27d50a, void, (lv_obj_t *, i32, u32))(o, v, 0); \
                                          F(0x2c27d514, void, (lv_obj_t *, i32, u32))(o, v, 0); F(0x2c27d51e, void, (lv_obj_t *, i32, u32))(o, v, 0); } while (0)
 
+#ifndef WINDOW_ID
+#define WINDOW_ID 0x2b                                           /* the window this build replaces (build_tennis.py --slot passes it); 0x2b = World clock */
+#endif
 #define FL_HIDDEN (1u << 0)
 #define FL_SCROLLABLE (1u << 4)
 #define EV_CLICKED 7
@@ -318,7 +321,7 @@ __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 pa
  * The arguments arrive without sign or zero extension, so they are masked. */
 __attribute__((section(".text.entry.event"))) u32 world_event(u32 cls, u32 kind, void *data) {
     (void)data; cls &= 0xff; kind &= 0xff;
-    if (cls == 0 && kind == 0) { wm_set_current(0x2b); return 0; }
+    if (cls == 0 && kind == 0) { wm_set_current(WINDOW_ID); return 0; }
     if (cls == 0 && kind == 8) return 0x2c4;
     return 0;
 }

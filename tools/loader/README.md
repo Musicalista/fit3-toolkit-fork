@@ -19,3 +19,10 @@ Each version is a small, working example of one step of the technique; `loader_v
 - Arguments of that function arrive unmasked: use only the low byte.
 - A screen is `lv_obj_create(NULL)` returned from the create function; the manager loads it, and deletes it (sending `LV_EVENT_DELETE` = 33) when the window is left. Free your timer and state there.
 - Everything runs in the LVGL task: no `osDelay`, no `rm -rf` (`0x2c1437f0`), small and rare file writes (128 bytes 3 s after a change; 2 KB writes after every tap restarted the watch).
+
+## Which window is replaced (`WINDOW_ID`)
+
+`loader_v2.c` is the same code for every slot: `build_tennis.py --slot <entry>` compiles it with `-DWINDOW_ID=<window id>` (it enters its own id with `wm_set_current`), and
+`build_package.py` puts the branches at the entry of that entry's stock create and event functions. The other functions of the window record (post-enter `+0x20`, `+0x28`, destroy
+`+0x2c`) become `bx lr`: they would run on stock state that never exists, except World clock's destroy, which is null-safe and was verified as it ships. The 11 replaceable
+windows have no direct callers of these functions (checked with the Ghidra call graph of R390XXU0AZA3); `tools/emu/test_slots.py` builds and tests them all.

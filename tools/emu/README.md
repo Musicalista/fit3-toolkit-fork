@@ -40,3 +40,9 @@ A display is needed before widgets exist: see `Probe._display` (draw buffer + dr
 - Jumps into the peripheral range (`0x40000000..0x5fffffff`) fault (execute-never).
 - Code written into RAM after it ran needs `write_code()` (translation cache flush).
 - It checks what the firmware code writes into memory, not how the real watch behaves; a PASS here is "the function does this on a fresh LVGL state".
+
+## Tests of the loader
+
+`test_loader_v2.py` (the tennis window; `F3_WINDOW`, `F3_CREATE`, `F3_EVENT`, `F3_IMAGE` select another replaced window), `test_icon.py` (the app-list icon), `test_slots.py` (builds a package for
+every replaceable app-list entry and runs the window test on each; run it with the system `python3 -I`, it starts the emulator's venv itself). The window tests need the patched main image:
+`python3 -I tools/firmware/fwx.py local/firmware/<package>.bin main local/re/main-v2.bin`.

@@ -20,6 +20,7 @@
 | 3 | `build_package.py` / `build_tennis.py`: stock package + patches + loader + label + icon, all checksums repaired, nothing third-party in the repository | **done** (the result is identical to the hand-built package; the only third-party input is your stock package) |
 | 4 | Label and icon: a longer name (`--label`, text ID 181), our own 64 x 64 icon (`mkicon.py`, `--icon`: the list row points at an `lv_img_dsc_t` in the free flash) | **done and verified** (label and icon on the watch) |
 | 5 | The tennis app as native LVGL objects: cards, Undo, Stats, save | **done and verified** |
+| 5b | Choose the replaced entry (`--slot`), other languages (`--languages all`) | built and tested in the emulator for all 11 slots; World clock verified on the watch |
 | 6 | A hub for `.f3a` apps behind the same entry: our loader implements the old frame-buffer API (so existing apps run), `mkdir_p("/user/apps")`, start apps directly, installs from the PC | open |
 | 7 | Our own API for new apps: native LVGL objects from apps, fonts and images of the firmware, vibration, files | open |
 
@@ -29,7 +30,7 @@ boots, so a package can be flashed over Bluetooth again. A package that does not
 ## Ideas, not planned
 
 - A 13th row in the app list instead of replacing an entry (needs patches to the row count and the order normaliser; the phone's app list may not accept it; see T4).
-- Other languages for the label (only the English language files are changed today).
+- Checking on a watch what replacing each other stock app breaks (Alarm, Timer and Stopwatch keep state outside their window), and a non-English watch for `--languages all`.
 - Using the RTC for wall-clock times (its signature is unknown; the tracker uses ticks plus a stored shift).
 - Heart rate and step counter access (getters not found yet, see T5).
 

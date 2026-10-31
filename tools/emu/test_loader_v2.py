@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""test_loader_v2.py: the tennis window of loader v2, run on the PATCHED main image of a loader-v2 package (stock addresses 0x2c1ecc64 / 0x2c1ecd68, as the window manager calls them).
+"""test_loader_v2.py: the tennis window of loader v2, run on the PATCHED main image of a loader-v2 package (the stock addresses of the replaced window, 0x2c1ecc64 / 0x2c1ecd68 for World clock, as the window manager calls them).
 
     python3 -I tools/firmware/fwx.py local/firmware/fit3-loader-v2.bin main local/re/main-v2.bin
     local/venv/bin/python -I tools/emu/test_loader_v2.py
@@ -9,7 +9,9 @@ a settable clock); the vibration, gesture and window-manager calls are recorded.
 import os, struct, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE)); sys.path.insert(0, HERE)
 from probe_lvgl import Probe, A
-IMG = os.path.join(ROOT, "local/re/main-v2.bin")
+IMG = os.path.join(ROOT, os.environ.get("F3_IMAGE", "local/re/main-v2.bin"))
+# the window this image replaces; the defaults are World clock (window 0x2b). For another slot: F3_WINDOW, F3_CREATE, F3_EVENT, F3_DESTROY (the stock addresses, see build_package.py --list-slots)
+WIN = int(os.environ.get("F3_WINDOW", "0x2b"), 0); CREATE = int(os.environ.get("F3_CREATE", "0x2c1ecc64"), 0); EVENT = int(os.environ.get("F3_EVENT", "0x2c1ecd68"), 0)
 CLICKED, GESTURE, HIDDEN = 7, 12, 1
 BACK = 0x14                                                                   # BACK_ANIM of loader_v2.c
 
@@ -41,7 +43,7 @@ class Rig:
         if self.mode == "w": self.file = self.buf; self.writes.append(self.buf)
         return 0
     def create(self):
-        scr = self.e.call(0x2c1ecc64, 0, 0); self.scr = scr; kids = self.children(scr)
+        scr = self.e.call(CREATE, 0, 0); self.scr = scr; kids = self.children(scr)
         self.hdr, self.cardA, self.cardB, self.info, self.undo, self.stats, self.ov = kids[:7]
         self.state = self.e.u32(self.e.u32(self.e.u32(scr + 8) + 0xc) + 4)
         self.e.w32(0x200fbd04, scr); self.e.write(0x200fbcf7, bytes([4]))        # window record 0x2b in RAM: +0x10 the screen, +3 bit 2 "created" (the window manager does this)
@@ -111,12 +113,13 @@ def main():
     r.calls.clear(); r.gesture(3); ok("a left gesture does nothing", not r.calls, r.calls)
     r.gesture(2); ok("back gesture on the score page leaves the window (wm_open 3,-1,0,BACK)", ("wm_open", 3, 0xffffffff, 0, BACK) in r.calls, r.calls)
     # side key (T7): the manager asks (0,8) for the key policy; 0x2c4 (bit 6 set) lets the manager itself send the short press to the watch face, as the stock windows do
-    ok("key policy (0,8) = 0x2c4, the stock windows' answer", e.call(0x2c1ecd68, 0, 8, 0) == 0x2c4, hex(e.call(0x2c1ecd68, 0, 8, 0)))
-    ok("the garbage-free arguments: upper bytes are masked", e.call(0x2c1ecd68, 0xabcd0000, 0x12340008, 0) == 0x2c4)
+    r.calls.clear(); e.call(EVENT, 0, 0, 0); ok("entering the window sets its own id (wm_set_current)", ("set_current", WIN) in r.calls, r.calls)
+    ok("key policy (0,8) = 0x2c4, the stock windows' answer", e.call(EVENT, 0, 8, 0) == 0x2c4, hex(e.call(EVENT, 0, 8, 0)))
+    ok("the garbage-free arguments: upper bytes are masked", e.call(EVENT, 0xabcd0000, 0x12340008, 0) == 0x2c4)
     # T8: the manager asks (0, 7) and (0, 9) whether it should run its own swipe-back and which animation; a garbage answer made it animate to the wrong side
-    ok("window queries 6, 7 and 9 answer 0, so the manager runs no swipe of its own", all(e.call(0x2c1ecd68, 0, k, 0) == 0 for k in (6, 7, 9)), [e.call(0x2c1ecd68, 0, k, 0) for k in (6, 7, 9)])
-    ok("every window event answers a defined value (0 except the policy)", all(e.call(0x2c1ecd68, c, k, 0) == (0x2c4 if (c, k) == (0, 8) else 0) for c in (0, 1, 2) for k in range(12)))
-    r.calls.clear(); e.call(0x2c1ecd68, 1, 6, 0); ok("the short press of the side key is left to the manager (we do not call wm)", not r.calls, r.calls)
+    ok("window queries 6, 7 and 9 answer 0, so the manager runs no swipe of its own", all(e.call(EVENT, 0, k, 0) == 0 for k in (6, 7, 9)), [e.call(EVENT, 0, k, 0) for k in (6, 7, 9)])
+    ok("every window event answers a defined value (0 except the policy)", all(e.call(EVENT, c, k, 0) == (0x2c4 if (c, k) == (0, 8) else 0) for c in (0, 1, 2) for k in range(12)))
+    r.calls.clear(); e.call(EVENT, 1, 6, 0); ok("the short press of the side key is left to the manager (we do not call wm)", not r.calls, r.calls)
     # delete the window: flush (nothing dirty) + free the state, timer deleted
     r.click(r.cardB); ok("a new point makes the state dirty", True)
     log = []; e.hook(0x2c28a448, lambda em: log.append(("timer_del", em.arg(0))) or 0)

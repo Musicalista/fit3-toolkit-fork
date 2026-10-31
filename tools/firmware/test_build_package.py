@@ -70,6 +70,30 @@ for k in fwd.Package.load(lp).paths():
     assert Lnew.string(181) == "Tennis match score" and all(Lnew.string(i) == Lold.string(i) for i in range(Lold.count) if i != 181), k
 print("  ok   a long label replaces only text ID 181 in every English language file"); ok += 1
 refuses("hook target outside the loader", hook_a=0x2c3a8000)
+
+# slots: which entry of the app list is replaced
+en = next(lvlang.Lang(stock.raw(k)) for k in stock.paths() if k.endswith("/language_en.res")); table = bp.slot_table(stock.raw(fwd.MAIN), en)
+assert [r["name"] for r in table] == ["Health", "Media Controller", "Find My Phone", "Weather", "Calendar", "Settings", "Timer", "Alarm", "Stopwatch", "World Clock", "Camera Remote", "Calculator"], [r["name"] for r in table]
+assert all(r["create"] and r["event"] for r in table) and len({r["create"] for r in table}) == 12 and len({r["event"] for r in table}) == 12
+print("  ok   the app list has 12 entries, each with its own create and event function"); ok += 1
+assert bp.find_slot(table, "world clock")["window"] == bp.find_slot(table, "WorldClock")["window"] == bp.find_slot(table, "0x2b")["window"] == bp.find_slot(table, 43)["window"] == 0x2b and bp.find_slot(table, "calc")["window"] == 0x8c
+print("  ok   a slot is found by name (case, spaces, a prefix) or by window id"); ok += 1
+for bad, why in (("ca", "ambiguous prefix"), ("nothing", "unknown name"), (0x02, "a window that is not in the app list")):
+    try: bp.find_slot(table, bad); sys.exit("FAIL: not refused: slot " + why)
+    except AssertionError: print("  ok   refused: slot", why); ok += 1
+refuses("Settings without force_slot", slot="Settings")
+# another slot, every language: the entry's own text is replaced everywhere and nothing else of the language files
+ap_ = os.path.join(WORK, "calc.bin"); bp.build(P("stock-aza3.bin"), ap_, loader, label="Tennis Score", slot="Calculator", languages="all", quiet=True)     # validate_fwd runs inside
+pc = fwd.Package.load(ap_); calc = bp.find_slot(table, "Calculator"); n_changed = 0
+for k in stock.paths():
+    if not bp.ALL_LANG.match(k): continue
+    Lo, Ln = lvlang.Lang(stock.raw(k)), lvlang.Lang(pc.raw(k))
+    assert Ln.string(calc["text_id"]) == "Tennis Score" and Ln.count == Lo.count and all(Ln.string(i) == Lo.string(i) for i in range(Lo.count) if i != calc["text_id"]), k
+    assert [f[2] for f in Ln.fonts] == [f[2] for f in Lo.fonts] and all(Ln.d[o:o + sz] == Lo.d[o0:o0 + sz] for (o, sz, _), (o0, _, _) in zip(Ln.fonts, Lo.fonts)), "fonts of " + k
+    n_changed += 1
+assert n_changed > 50, n_changed
+assert pc.raw(fwd.MAIN) != stock.raw(fwd.MAIN)
+print("  ok   slot Calculator, languages=all: the entry is renamed in %d language files, no other string and no font changes; the package validates" % n_changed); ok += 1
 refuses("an icon of the wrong size", icon=bytes(100))
 # an icon: the app-list row of the replaced entry points at a descriptor after the loader, and nothing else of the table changes
 ip = os.path.join(WORK, "icon.bin"); fake = bytes(range(256)) * 48; assert len(fake) == bp.ICON_SIZE
