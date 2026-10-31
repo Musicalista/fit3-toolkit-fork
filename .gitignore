@@ -1,0 +1,12 @@
+
+# third-party binaries: firmware packages contain Samsung code, the author asks not to publish them
+*.bin
+*.apk
+*.so
+flash-kit/*.meta
+flash-kit/AUTHOR_README_1.7.md
+
+# generated or local
+sim/kbd_font.h
+sim/data/
+__pycache__/
