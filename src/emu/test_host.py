@@ -3,7 +3,7 @@
 like a stock app. The emulator has no window manager, so this test plays its part: it reads the window record the hub writes into the RAM table, calls its create function with the argument the
 hub passed to wm_open, and calls its event function. What it cannot show is the slide itself and what the real manager does with the record: that is for the watch.
 
-    python3 -I src/build_tennis.py local/firmware/stock-aza3.bin local/firmware/fit3-hubhost.bin --hub counter,dice
+    python3 -I src/build_firmware.py local/firmware/stock-aza3.bin local/firmware/fit3-hubhost.bin --hub counter,dice
     python3 -I src/firmware/fwx.py local/firmware/fit3-hubhost.bin main local/re/main-hubhost.bin
     local/venv/bin/python -I src/emu/test_host.py"""
 import os, struct, sys, tempfile

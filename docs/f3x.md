@@ -3,27 +3,14 @@
 An `.f3x` file is one app: compiled code, its icon and a list of the addresses inside it that must be moved. You put it on the watch with `src/device/f3x_install.py`, **without flashing the firmware**;
 the Application Hub (`--hub`, [src/watch/README.md](../src/watch/README.md)) lists it next to the apps built into the firmware and loads it into RAM when you open it.
 
-Status: **works on the watch** (2026-11-01): eight apps installed over Bluetooth into a hub that has none built in (the counter, dice and tennis as files, plus renamed copies); the list scrolls, every app
-opens from the heap, runs, saves and closes, repeated opening and closing breaks nothing. Also tested on the PC and in the emulator (`src/emu/test_f3x.py`). The format is our own, unrelated to Musicalista's `.f3a` (no code or format of theirs is used).
+Status and what was seen on the watch: [status.md](status.md). The format is our own, unrelated to Musicalista's `.f3a`.
 
 ## Using it
 
-```
-python3 -I src/build_tennis.py <stock>.bin out.bin --hub tennis,counter           # the hub with the loader (default for --hub); --no-install leaves it out; --hub none = installed apps only
-# flash out.bin, open the Application Hub once (it creates /user/hub), then:
-python3 -I src/f3x/build_f3x.py src/watch/apps/dice.c local/f3x/dice.f3x --icon-kind dice     # compile an app: any C file that uses ui.h and APP_EXPORT
-python3 -I src/f3x/build_f3x.py --check local/f3x/dice.f3x                                       # validate a file
-python3 -I src/device/f3x_install.py list                                                        # the sixteen slots (read only)
-python3 -I src/device/f3x_install.py install local/f3x/dice.f3x                                  # first free slot; the same name updates in place; --slot N, --force
-python3 -I src/device/f3x_install.py remove --slot 3                                             # overwrites with a tombstone
-```
-
-`--addr AA:BB:CC:DD:EE:FF` or `F3_ADDR` as for the other tools. The watch needs the Bluetooth patches of `build_package.py`: **a package built with `--no-bluetooth-patches` cannot receive apps** (apps already
-installed keep working). The installer checks the file on the PC, writes it, reconnects, reads it back and compares. The app appears in the hub the next time you open the hub window.
-
-An app that you write yourself: copy `src/watch/apps/counter.c`, change it, end it with `APP_EXPORT(id, "Name", &ICON, create, back, destroy)` (the icon argument is ignored in a file build) and pass your own
-`--icon my.png` (64 x 64, transparent background; reduced to 15 colours + transparent) or one of the drawn `--icon-kind`s. The rules are in [src/watch/README.md](../src/watch/README.md): no globals, no libc,
-only the firmware functions of `ui.h`. The builder refuses an app that has `.data`/`.bss` or calls libc/libgcc.
+Commands: [howto.md](howto.md), section 3 (`build_f3x.py`, `f3x_install.py list | install | remove`; a long press on an installed app's row in the hub removes it too). Writing an app:
+[src/watch/apps/README.md](../src/watch/apps/README.md). Two things concern the format itself: the hub needs the loader (default for `--hub`, `--no-install` leaves it out), and the installer needs the
+Bluetooth patches, so **a package built with `--no-bluetooth-patches` cannot receive apps** (apps already installed keep working). The installer checks the file on the PC, writes it, reconnects, reads it back
+and compares; the app appears the next time you open the hub.
 
 ## The file
 

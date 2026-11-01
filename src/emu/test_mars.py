@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """test_mars.py: the Mars Production app (src/watch/apps/mars.c) as the only app of the window, on the real LVGL code in the emulator.
 
-    python3 -I src/build_tennis.py local/firmware/stock-aza3.bin local/firmware/fit3-mars.bin --app mars
+    python3 -I src/build_firmware.py local/firmware/stock-aza3.bin local/firmware/fit3-mars.bin --app mars
     python3 -I src/firmware/fwx.py local/firmware/fit3-mars.bin main local/re/main-mars.bin
     local/venv/bin/python -I src/emu/test_mars.py
 

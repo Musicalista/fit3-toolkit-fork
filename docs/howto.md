@@ -1,107 +1,85 @@
 # How to
 
-**Read [legal.md](legal.md) first.** You need: a Galaxy Fit3 (SM-R390) on exactly `R390XXU0AZA3` (Settings > About > Software information), Linux with Bluetooth and Python 3
-(numpy, Pillow), `arm-none-eabi-gcc`, a Bluetooth adapter on the PC for flashing, and a watch charged to 50 % or more.
+**Read [legal.md](legal.md) first.** You need a Galaxy Fit3 (SM-R390) on exactly `R390XXU0AZA3` (Settings > About > Software information), charged to 50 % or more; Linux with a Bluetooth adapter, Python 3
+(numpy, Pillow) and `arm-none-eabi-gcc`; and **the stock package** `stock-aza3.bin` (SHA-256 `25e692badec82afe111c517c19c5dbdb1d28c8558c2b027143c43f5c8d05998a`, e.g. from the fit3-flasher project).
+Keep a copy of it: flashing it is the way back.
 
-## The tennis score tracker (the current route)
-
-1. Get the stock package `stock-aza3.bin` (SHA-256 `25e692badec82afe111c517c19c5dbdb1d28c8558c2b027143c43f5c8d05998a`), e.g. from the fit3-flasher project, and **keep a copy**.
-2. Build: `python3 -I src/build_tennis.py stock-aza3.bin out.bin` (options: `--label "Tennis Score"`, `--slot`, `--languages`, `--no-icon`, see below). It compiles the loader, draws the icon, patches your stock
-   package and runs `validate_fwd.py` on the result. It refuses to build when the stock package is not exactly R390XXU0AZA3.
-3. Check what changed: `python3 -I src/firmware/fwx.py list out.bin`, and compare the main image with the stock one (the differences are the image CRC, two spp patches,
-   two 4-byte branches at `0x2c1ecc64` and `0x2c1ecd68`, the loader and the icon in the free flash from `0x2c3a0524`, and the label in the English language files).
-4. Flash `out.bin` from this PC with `src/device/f3_flash.py`, see "Flash from the PC" below. The installation cannot be cancelled: do not switch the watch off.
-5. Open the app list: the entry that used to be *World clock* has your label and icon. Flash the stock package the same way to go back.
-
-### Replace another entry than World clock
-
-If you use World clock, choose any other entry of the app list: `python3 -I src/build_tennis.py stock-aza3.bin --list-slots` shows them (Health, Media Controller, Find My Phone,
-Weather, Calendar, Timer, Alarm, Stopwatch, World Clock, Camera Remote, Calculator; Settings is refused because it would lock you out of the watch's settings), then for example
+## 1. Build a package
 
 ```
-python3 -I src/build_tennis.py stock-aza3.bin out.bin --slot "Calculator"        # by name (a prefix is enough) or by window id: --slot 0x8c
-python3 -I src/build_tennis.py stock-aza3.bin out.bin --slot Weather --label "Tennis" --languages all
+python3 -I src/build_firmware.py stock-aza3.bin out.bin --hub none                          # Application Hub, no apps built in (install them later as .f3x)
+python3 -I src/build_firmware.py stock-aza3.bin out.bin --hub tennis,counter,dice,mars      # the hub with these apps built in (order = list order)
+python3 -I src/build_firmware.py stock-aza3.bin out.bin --app tennis                        # one app owns the entry, no hub (the default build)
 ```
 
-Things to know: only **World clock** has been tried on a real watch; the others are built and tested on the emulator (all eleven, `src/emu/test_slots.py`). The entry you replace is gone:
-Alarm, Timer and Stopwatch may keep timers or alarms running in the background, and Weather, Media Controller and Health get data from the phone. The entry must be **visible** in the app
-list (World clock and Camera Remote are shown only when enabled in the phone app). `--languages all` renames the entry in every language file instead of the English ones, so a watch set to
-another language shows your name too (untested outside English). `--label` longer than 11 characters wraps onto two lines in the list.
+Options: `--label "..."` (the name in the app list; more than 11 characters wraps onto two lines), `--slot` (see below), `--languages all` (rename the entry in every language file; untested outside English),
+`--no-icon`, `--no-install` (a hub without the loader of `.f3x` apps), `--no-native-transitions` (apps open inside the hub's window, without the slide: the fallback), `--no-bluetooth-patches` (see section 4).
+The build compiles the watch code, draws the icons, patches your stock package, repairs every checksum, runs `validate_fwd.py` on the result and prints how much of the free flash it used. It refuses a stock
+package that is not exactly R390XXU0AZA3. To see what changed: `python3 -I src/firmware/fwx.py list out.bin`.
 
-Tests (no watch needed; most need `local/firmware/stock-aza3.bin`): `python3 -I src/firmware/test_build_package.py`, and the emulator tests of [src/emu](../src/emu/README.md).
+**Which entry is replaced:** World Clock unless you pass `--slot`. `--list-slots` shows the choices (Health, Media Controller, Find My Phone, Weather, Calendar, Timer, Alarm, Stopwatch, World Clock, Camera Remote,
+Calculator; Settings is refused because it would lock you out of the watch's settings), e.g. `--slot Calculator` or `--slot 0x8c`. Only World Clock was tried on a real watch; the others are built and tested in
+the emulator. The entry you replace is gone (Alarm, Timer and Stopwatch may keep timers running; Weather, Media Controller and Health get data from the phone), and it must be visible in the app list (World Clock
+and Camera Remote are shown only when enabled in the phone app).
 
-## Install apps without flashing: the hub and `.f3x`
+## 2. Flash it from the PC: `src/device/f3_flash.py`
 
-Build the package with `--hub tennis,counter,dice` (the Application Hub replaces the chosen entry; the loader of installable apps and the native slide when an app opens are on by default, `--no-install` and `--no-native-transitions` turn them off), flash it as above, open the hub once, then put apps on
-the watch from the PC with `src/device/f3x_install.py`. A few kB per app, about a second per install, no restart. Full description, the file format and the limits: [f3x.md](f3x.md). It needs the
-Bluetooth patches, so a final package built with `--no-bluetooth-patches` cannot receive apps (the ones already installed keep working).
-
-## Flash from the PC: `src/device/f3_flash.py`
-
-No phone app needed. It talks to the watch over Bluetooth with the protocol of [protocol.md](protocol.md), in stages you start one by one:
+No phone app needed. The protocol is in [protocol.md](protocol.md); each stage is a separate command:
 
 ```
-export F3_ADDR=AA:BB:CC:DD:EE:FF                       # your watch's Bluetooth address
-python3 -I src/device/f3_flash.py out.bin                       # 1. plan: checks the package on the PC, touches nothing
-python3 -I src/device/f3_flash.py out.bin --upload --verify     # 2. copies it to the watch, checks the size and reads it all back; installs nothing
-python3 -I src/device/f3_flash.py out.bin --upload --verify --start-update    # 3. also starts the installation (you type FLASH)
+export F3_ADDR=AA:BB:CC:DD:EE:FF                                              # your watch's Bluetooth address (its name is "Galaxy Fit3 (xxxx)")
+python3 -I src/device/f3_flash.py out.bin                                     # plan: checks the package on the PC, touches nothing
+python3 -I src/device/f3_flash.py out.bin --upload --verify                   # copies it to the watch, checks the size, reads it all back; installs nothing
+python3 -I src/device/f3_flash.py out.bin --upload --verify --start-update    # also starts the installation (you type FLASH); it cannot be cancelled
 ```
 
-- The package must pass `validate_fwd.py` or nothing is sent. Without `--start-update` nothing is installed: the file only waits on the watch, so an interrupted upload is harmless, run it again.
-- **`--verify` is optional but recommended.** Without it the tool checks only that the file on the watch has the right *length*. With it, the whole file is read back and compared byte by byte:
-  the only check that the *content* arrived intact. It is slow, because the watch hands the file back at about 18 kB/s: on a real watch the 18 MB upload took under 2 minutes and the read-back 17 minutes.
-  Use it at least the first time and after changing anything in the tool.
-- Requirements: the watch visible, charged to 50 % or more, Samsung's Galaxy Wearable app closed on the phone (one client at a time), and **it must already carry our Bluetooth patches** (any package built here has them).
-  A watch that never had them is a different case: see "The very first flash" below.
-- **Logs:** the tool prints the progress (bytes and percent) and writes a time-stamped log of the protocol events to `local/logs/f3_flash-<time>.log` (every command and answer, every 20th block, sizes, durations, the watch's
-  reply to the OTA command; never the package's bytes). `--log PATH` picks the file, `--no-log` writes none.
-- Status: tested against a mock watch (45 checks, including failures in the middle of a transfer); see [status.md](status.md) for what has been tried on a real watch.
+- The package must pass `validate_fwd.py` or nothing is sent. Without `--start-update` nothing is installed, so an interrupted upload is harmless: run it again.
+- `--verify` reads the whole file back and compares it: the only check that the *content* arrived intact (without it only the length is checked). It takes about 17 minutes against 2 for the upload.
+- The watch must be visible, Samsung's Galaxy Wearable app closed on the phone (one client at a time), and it must already carry our Bluetooth patches (any package built here has them by default). Do not touch the
+  watch during the installation.
+- A time-stamped log of the protocol events (never the package's bytes) goes to `local/logs/f3_flash-<time>.log`; `--log PATH` and `--no-log` change that.
 
-## The Bluetooth patches, and closing the door when you are done
+## 3. Install apps without flashing (the hub)
 
-Every package built here carries two one-instruction **Bluetooth patches** (`build_package.py`, [firmware.md](firmware.md)). They are what lets this PC flash the watch, and they have a price: the watch is
-**always visible and connectable, and its file service on RFCOMM channel 29 accepts a connection without pairing from anyone in range**. The protocol behind it can read files (we use it for fonts and images; which other
-paths are readable we have not tested) and write `/user` files and a firmware package, and we saw no signature check on the firmware (only CRCs). So treat a watch with these patches as open to anyone near it.
-
-When your work with the watch is finished, build the **final package without them** and flash it last:
+Open the hub once after flashing (it creates `/user/hub`), then:
 
 ```
-python3 -I src/build_tennis.py stock-aza3.bin final.bin --no-bluetooth-patches ...
-python3 -I src/device/f3_flash.py final.bin --upload --verify --start-update
+python3 -I src/f3x/build_f3x.py src/watch/apps/dice.c dice.f3x --icon-kind dice      # build an app as a file (or your own .c file)
+python3 -I src/device/f3x_install.py list                                            # the sixteen slots, read only
+python3 -I src/device/f3x_install.py install dice.f3x                                # first free slot; the same name updates in place
+python3 -I src/device/f3x_install.py remove --slot 3                                 # or: long press the app's row in the hub
 ```
 
-The watch then behaves as it did from the factory (Bluetooth visible and connectable only where Samsung's firmware allows it), with your app in it. The price on the other side: **to flash it again you need the serial service, which stock firmware offers only on the setup screen after a reset** (that is a factory reset of the watch). Flashing the genuine `stock-aza3.bin` also removes the patches (and your app).
-Keep a patched build for development and make the final one last. Samsung's own phone app is not affected by any of this.
+The format, how to write an app and the limits: [f3x.md](f3x.md).
 
-## The very first flash: expect a factory reset
+## 4. The Bluetooth patches, and closing the door when you are done
 
-On a watch that has only ever run Samsung's firmware, **the serial service that every tool here talks to is reachable only on the watch's setup screen, the screen it shows after a factory reset**.
-So the first time you put any package on such a watch, you have to **reset it to factory settings** (everything on it is erased and it must be paired with the phone again afterwards), connect while it shows the
-setup screen, and flash that first package from there with `f3_flash.py` (we have not tried it on a setup screen). If that package carries the Bluetooth patches (the default), later flashes need no reset. If you build the final
-package with `--no-bluetooth-patches`, the next flash needs a reset again (see above).
+Every package built here carries two one-instruction **Bluetooth patches** ([firmware.md](firmware.md)). They let this PC flash the watch, and they have a price: the watch is **always visible and
+connectable, and its file service accepts a connection without pairing from anyone in range**. It can read files and write `/user` files and a firmware package, and we saw no signature check on the firmware
+(only CRCs). Treat a watch with these patches as open to anyone near it.
 
-This comes from the notes of the author of the first patches (Musicalista); **we have not tried it ourselves**, because the watch we work with was patched before this project began.
-If you reset a watch for this, please report what you saw.
+When you are finished, build the **final package without them** and flash it last: `python3 -I src/build_firmware.py stock-aza3.bin final.bin --hub none --no-bluetooth-patches`. The watch then behaves as from the
+factory. The price: **to flash it again you need the serial service, which stock firmware offers only on the setup screen after a factory reset**, and nothing more can be installed from the PC. Apps already
+installed keep working. Flashing the genuine `stock-aza3.bin` also removes the patches (and our code). A package without the patches was built and validated but **has not been flashed**.
 
-## The pieces you bring (none of them is in this repository)
+## 5. The very first flash: expect a factory reset
 
-- **The stock firmware** `stock-aza3.bin` for R390XXU0AZA3 (SHA-256 `25e692badec82afe111c517c19c5dbdb1d28c8558c2b027143c43f5c8d05998a`), e.g. from the fit3-flasher project. **Keep a copy**: it is the way back.
-- **A way to send the package**: our `src/device/f3_flash.py` (above); on Linux it needs BlueZ and a Bluetooth adapter.
+On a watch that has only ever run Samsung's firmware, the serial service every tool here talks to is reachable only on the **setup screen shown after a factory reset**. So the first package must be flashed from
+there (everything on the watch is erased; pair it with the phone again afterwards). Later flashes need no reset as long as the package carries the Bluetooth patches. This comes from the notes of the author of
+the first patches (Musicalista); **we have not tried it ourselves**, because our watch was patched before this project began. If you do, please report what you saw.
 
-## Going back, and what can go wrong
+## 6. Going back, and what can go wrong
 
-Flash `stock-aza3.bin` the same way to go back to stock. A watch that does not boot cannot be flashed over Bluetooth, so never flash a package that did not pass `validate_fwd.py`
-(`build_package.py` runs it for you) and never touch code that runs at boot: nothing of ours does. A mistake in our code shows only when the entry (or, for the icon, the app list) is opened;
-the watch still boots and can be flashed again.
+Flash `stock-aza3.bin` the same way. A watch that does not boot cannot be flashed over Bluetooth, so never flash a package that did not pass `validate_fwd.py` (the build runs it) and never touch code that runs
+at boot: nothing of ours does. A mistake in our code shows only when the entry is opened; the watch still boots and can be flashed again.
 
-## Pull fonts and images from your watch (read-only)
+## Pull fonts and images from your watch (read-only, optional)
 
 For the emulator screenshots (`src/emu/screenshot.py` needs the Roboto fonts) and for studying the resources:
+`python3 -I src/device/f3_pull.py local/assets/fonts /nand/system/font/FONT_ROBOTO_22_GBK_en.bin`. Only files under `/nand/system/font/` and `/nand/system/image/` are accepted, nothing is written to the watch,
+and the files are Samsung's: keep them in `local/` and do not redistribute them.
 
-```
-export F3_ADDR=AA:BB:CC:DD:EE:FF                    # your watch's Bluetooth address (its name is "Galaxy Fit3 (xxxx)")
-python3 -I src/device/f3_pull.py local/assets/fonts /nand/system/font/FONT_ROBOTO_22_GBK_en.bin
-```
+## Tests
 
-Close Samsung's Galaxy Wearable app on the phone first (one client at a time); the watch must be visible and carry the Bluetooth patches of `build_package.py`. Only files under `/nand/system/font/`
-and `/nand/system/image/` are accepted, nothing is written to the watch, and the files are Samsung's: keep them in `local/` and do not redistribute them.
+No watch needed. `src/firmware/test_build_package.py`, `src/device/test_f3_flash.py`, `src/device/test_f3x_install.py`, `src/f3x/test_f3x_format.py` and the emulator tests of [src/emu](../src/emu/README.md)
+(they need `local/firmware/stock-aza3.bin`; the emulator needs its venv).

@@ -4,7 +4,7 @@
     python3 -I build_package.py <stock.bin> <out.bin> --loader <loader.bin> --takeover-create <addr> --takeover-event <addr> [options]
     python3 -I build_package.py <stock.bin> --list-slots
 
-(`src/build_tennis.py` compiles the loader and calls this: use that unless you write your own loader.)
+(`src/build_firmware.py` compiles the loader and calls this: use that unless you write your own loader.)
 
 What it changes (every old byte is checked first; nothing is written when something is not as expected):
   1. Bluetooth patches: 0x2c233820 `mov r4,r0` -> `movs r4,#3` (the watch is always visible and connectable),

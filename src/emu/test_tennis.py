@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""test_tennis.py: the tennis app as the only app of the window, run on the PATCHED main image of a package built with `build_tennis.py --app tennis` (the stock addresses of the replaced window, 0x2c1ecc64 / 0x2c1ecd68 for World clock, as the window manager calls them).
+"""test_tennis.py: the tennis app as the only app of the window, run on the PATCHED main image of a package built with `build_firmware.py --app tennis` (the stock addresses of the replaced window, 0x2c1ecc64 / 0x2c1ecd68 for World clock, as the window manager calls them).
 
     python3 -I src/firmware/fwx.py local/firmware/fit3-tennis.bin main local/re/main-tennis.bin
     local/venv/bin/python -I src/emu/test_tennis.py

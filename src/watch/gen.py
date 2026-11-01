@@ -4,7 +4,7 @@
     icons.h      the 64 x 64 four-bit icons (the size of the stock app-list icons, 2,112 bytes each) of the apps (src/assets/mkicon.py draws them: our own artwork)
     gen_apps.h   HUB_MODE (0: one app owns the window, 1: a list of apps), HOST_MODE (1: each app is a window of its own, opened by the window manager with the stock slide), and the apps' sources included in the order of the list: APPS[] / NAPPS
 
-Used by src/build_tennis.py and by the emulator tests (src/emu/mkimage.py)."""
+Used by src/build_firmware.py and by the emulator tests (src/emu/mkimage.py)."""
 import os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, os.path.join(os.path.dirname(HERE), "assets"))
 import mkicon

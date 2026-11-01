@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """build_loader.py: compile hub.c into a flat binary for build_package.py (--loader), linked at 0x2c3a0524.
 
-    python3 -I src/watch/build_loader.py src/watch/hub.c local/loader/hub.bin   # needs gen_apps.h and icons.h: src/watch/gen.py; build_tennis.py does all of it
+    python3 -I src/watch/build_loader.py src/watch/hub.c local/loader/hub.bin   # needs gen_apps.h and icons.h: src/watch/gen.py; build_firmware.py does all of it
 
 The first function of the image is the entry (section .text.entry); the addresses of world_create and world_event (--takeover-create / --takeover-event of build_package.py) are printed. Refuses libc/libgcc calls, data and bss."""
 import os, subprocess, sys, tempfile

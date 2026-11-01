@@ -41,11 +41,28 @@ A display is needed before widgets exist: see `Probe._display` (draw buffer + dr
 - Code written into RAM after it ran needs `write_code()` (translation cache flush).
 - It checks what the firmware code writes into memory, not how the real watch behaves; a PASS here is "the function does this on a fresh LVGL state".
 
-## Tests of the loader
+## Tests
 
-`test_tennis.py` (the tennis app as the only app of the window; `test_hub.py`: the Application Hub with tennis, counter and dice; `rig.py` is their common rig; `F3_WINDOW`, `F3_CREATE`, `F3_EVENT`, `F3_IMAGE` select another replaced window), `test_icon.py` (the app-list icon), `test_slots.py` (builds a package for
-every replaceable app-list entry and runs the window test on each; run it with the system `python3 -I`, it starts the emulator's venv itself). The window tests need the patched main image:
-`python3 -I src/firmware/fwx.py local/firmware/<package>.bin main local/re/main-tennis.bin` (and `main-hub.bin` for `test_hub.py`; `build_tennis.py --hub tennis,counter,dice` builds that package).
+Run with `local/venv/bin/python -I src/emu/<test>.py`. They need your stock main image `local/re/main-stock.bin` and skip without it. The tests of the code that runs on the watch run on the **patched** main
+image of a package you build first; the recipe is in each test's header and is always the same two steps:
+
+```
+python3 -I src/build_firmware.py local/firmware/stock-aza3.bin local/firmware/<name>.bin <build options>
+python3 -I src/firmware/fwx.py local/firmware/<name>.bin main local/re/main-<name>.bin
+```
+
+| Test | What it checks | Build options | Image |
+|---|---|---|---|
+| `test_emu.py` | the harness and the structure claims of `probe_lvgl.py` | none | `main-stock.bin` |
+| `test_tennis.py` | Tennis Score as the only app of the window: matches played by tapping the real LVGL objects | `--app tennis` | `main-tennis.bin` |
+| `test_mars.py` | Mars Production as the only app | `--app mars` | `main-mars.bin` |
+| `test_hub.py` | the hub with apps built in, apps inside the hub's own window | `--hub tennis,counter,dice --no-native-transitions` | `main-hub.bin` |
+| `test_f3x.py` | installed `.f3x` apps: good, damaged, for another firmware, bad magic; removal | `--hub counter --no-native-transitions` | `main-hubtest.bin` (and `main-hubempty.bin`) |
+| `test_host.py` | the default mode: each app is a window of its own (id `0x10`); plays the window manager's part | `--hub counter,dice` | `main-hubhost.bin` |
+| `test_icon.py` | the app-list icon of the replaced entry | `--app tennis` | `main-tennis.bin` |
+| `test_slots.py` | builds a package for every replaceable app-list entry and runs the window test on each (minutes; run it with the system `python3 -I`) | (builds its own) | |
+
+`rig.py` is the rig they share. `F3_WINDOW`, `F3_CREATE`, `F3_EVENT` and `F3_IMAGE` select another replaced window. What no test here can show: the slide animation, real timing, the look of rounded cards with children; those are judged on the watch ([docs/status.md](../../docs/status.md)).
 
 ## Screenshots of the tennis window (`screenshot.py`)
 

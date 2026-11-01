@@ -1,7 +1,6 @@
 # src/re/
 
-Reverse-engineering helpers around **Ghidra** (headless). The ad-hoc scripts used so far were `arm-none-eabi-objdump` plus Python scans (see [docs/firmware.md](../../docs/firmware.md)); this replaces them
-with a real analysis: automatic function discovery, cross references, a call graph and decompiled C for every function.
+Reverse-engineering helpers around **Ghidra** (headless): automatic function discovery, cross references, a call graph and decompiled C for every function of the main image. The findings are in [docs/details.md](../../docs/details.md) and [docs/symbols.csv](../../docs/symbols.csv).
 
 | File | What |
 |---|---|
@@ -11,5 +10,7 @@ with a real analysis: automatic function discovery, cross references, a call gra
 | `scripts/SeedFunctions.java` | before the analysis: creates Thumb functions at code pointers found in the image (function tables, literal pools, the `0x0c......` flash alias) |
 | `scripts/ExportAll.java` | after the analysis: the exports above (decompilation on 16 threads) |
 
-**Status: runs.** On the stock main image (about 15k functions, 22k strings, 114k call edges; 16 threads for the decompilation, a few minutes) after three fixes: Ghidra 12.2 needs JDK 25, `DefinedDataIterator.definedStrings` is gone, and the flash alias `0x0c......` must be mapped (`SeedFunctions.java` does it) so jump tables resolve.
-Keep the outputs in `local/` (they are derived from Samsung's firmware); share findings as notes and address/name lists, not as dumps.
+On the stock main image (about 15k functions, 22k strings, 114k call edges) the analysis takes a few minutes, the decompilation runs on 16 threads. `setup.sh` fetches the latest Ghidra and the JDK it asks for (12.2 asked for JDK 25); `SeedFunctions.java` maps the flash alias `0x0c......` so that jump tables resolve.
+
+> [!CAUTION]
+> The outputs are derived from Samsung's firmware: keep them in `local/` (git-ignored). Share findings as notes and address/name lists, never as dumps.

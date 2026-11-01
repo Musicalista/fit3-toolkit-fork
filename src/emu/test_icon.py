@@ -4,7 +4,7 @@
     python3 -I src/firmware/fwx.py local/firmware/fit3-tennis.bin main local/re/main-tennis.bin
     local/venv/bin/python -I src/emu/test_icon.py
 
-Route B (docs/roadmap.md): the app-list row of the replaced entry points at an lv_img_dsc_t in the free flash instead of the image ID string "21". Checks, on the real firmware code:
+The app-list row of the replaced entry points at an lv_img_dsc_t in the free flash instead of the image ID string "21". Checks, on the real firmware code:
 the row and the descriptor are as built; the firmware's own decoder (0x2c210e04, the one that reads ID strings) refuses a non-string source without touching it; lv_img_set_src on
 an image object takes the descriptor and the object gets the size 64 x 64; the built-in decoder can open it and returns our pixels. Limits: the real list builder (needs the language
 state) and the display are not run, so how the icon looks in the list is only known from the PNG preview."""

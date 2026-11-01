@@ -48,7 +48,7 @@ and `wm_open(3, -1, 0, 0x14)` from the app's back gesture slides it out. With th
 
 World Clock and Camera Remote are listed only when enabled in the phone app. [code]
 
-**The window manager asks questions and uses the answers.** This is the rule that cost us the most time. The event function is not only a notification: the manager calls it and acts on the return value. [emu, watch]
+**The window manager asks questions and uses the answers.** This is the rule to know first. The event function is not only a notification: the manager calls it and acts on the return value. [emu, watch]
 
 | Query `(class 0, kind)` | What the manager does with the return value |
 |---|---|
