@@ -1,6 +1,6 @@
 # The watch's fonts and images
 
-These files are on the watch (`/nand/system/font/`, `/nand/system/image/`), not in firmware packages. Read them with `tools/device/f3_pull.py` (read-only). They are
+These files are on the watch (`/nand/system/font/`, `/nand/system/image/`), not in firmware packages. Read them with `src/device/f3_pull.py` (read-only). They are
 Samsung's: keep your copies in `local/` (git-ignored) and do not redistribute them; see [legal.md](legal.md).
 
 ## Fonts: LVGL binary fonts
@@ -15,8 +15,8 @@ Samsung's: keep your copies in `local/` (git-ignored) and do not redistribute th
 - `glyf`: per glyph a bit stream: advance, x, y (signed), w, h, then w*h pixels of `bpp` bits, MSB first. The glyph is drawn with its bottom at `baseline - y`.
 
 All the fonts we pulled are uncompressed, 2 bits per pixel, ASCII 0x20..0x7a (some also `°`); the big ones are digits only (Bold 60, Medium 86, LED 32). Sizes: 0.9 to 50 KB.
-`tools/assets/lvfont.py` decodes them on a PC. No kerning is applied.
+`src/assets/lvfont.py` decodes them on a PC. No kerning is applied.
 
 ## Images: `app_*.res`, `common.res`, ...
 
-A pack of records without a directory, each `lv_img_header_t (4 bytes) | body`; formats, the ID tables and the app-list icon are in [details.md](details.md); `tools/assets/lvres.py` decodes them.
+A pack of records without a directory, each `lv_img_header_t (4 bytes) | body`; formats, the ID tables and the app-list icon are in [details.md](details.md); `src/assets/lvres.py` decodes them.

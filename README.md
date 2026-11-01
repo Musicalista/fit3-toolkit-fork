@@ -20,16 +20,16 @@ Tested on one SM-R390 with firmware **R390XXU0AZA3** only; the build refuses any
 ## Quick start
 
 ```
-python3 -I tools/build_tennis.py <your R390XXU0AZA3 package>.bin out.bin                      # builds, checks every CRC
-python3 -I tools/build_tennis.py <your package>.bin --list-slots                              # which entries can be replaced
-python3 -I tools/build_tennis.py <your package>.bin out.bin --slot Calculator --label "Tennis Score"
+python3 -I src/build_tennis.py <your R390XXU0AZA3 package>.bin out.bin                      # builds, checks every CRC
+python3 -I src/build_tennis.py <your package>.bin --list-slots                              # which entries can be replaced
+python3 -I src/build_tennis.py <your package>.bin out.bin --slot Calculator --label "Tennis Score"
 ```
 
 **Heads-up 1:** on a watch that has only ever run Samsung's firmware the first flash needs a **factory reset** (the serial service is reachable only on the setup screen); see [docs/howto.md](docs/howto.md).
 
 **Heads-up 2:** the default build carries two Bluetooth patches that let you flash from here but also let anyone in range connect to the watch without pairing; build the final package with `--no-bluetooth-patches` (see [docs/howto.md](docs/howto.md)).
 
-Then flash `out.bin` from the PC with `tools/device/f3_flash.py` (Bluetooth, no phone app) and open the app list. Full steps, requirements and how to go back to stock: [docs/howto.md](docs/howto.md). You need `arm-none-eabi-gcc`, Python 3 with
+Then flash `out.bin` from the PC with `src/device/f3_flash.py` (Bluetooth, no phone app) and open the app list. Full steps, requirements and how to go back to stock: [docs/howto.md](docs/howto.md). You need `arm-none-eabi-gcc`, Python 3 with
 numpy, and **your own stock package**; keep a copy of it.
 
 ## How it works, in short
@@ -42,11 +42,11 @@ shows only when the entry is opened, and the watch still boots and can be flashe
 
 | Path | What |
 |---|---|
-| [`tools/build_tennis.py`](tools/README.md) | one command from your stock package to the tennis package |
-| [`tools/loader/`](tools/loader/README.md) | the code that runs on the watch: `loader_v2.c` is the tracker; `loader_v1.c` is the smallest example of the technique |
-| [`tools/firmware/`](tools/README.md) | read, validate and rebuild firmware packages (`build_package.py`, `validate_fwd.py`) |
-| [`tools/emu/`](tools/emu/README.md) | a Unicorn harness that runs functions of the real firmware on the PC; the tests of the loader run on it |
-| [`tools/assets/`](tools/README.md), [`tools/re/`](tools/re/README.md), [`tools/device/`](tools/README.md) | decoders for fonts, images and language packs, the icon generator, the Ghidra pipeline, a read-only link to copy fonts and images off the watch |
+| [`src/build_tennis.py`](src/README.md) | one command from your stock package to the tennis package |
+| [`src/loader/`](src/loader/README.md) | the code that runs on the watch: `loader_v2.c` is the tracker; `loader_v1.c` is the smallest example of the technique |
+| [`src/firmware/`](src/README.md) | read, validate and rebuild firmware packages (`build_package.py`, `validate_fwd.py`) |
+| [`src/emu/`](src/emu/README.md) | a Unicorn harness that runs functions of the real firmware on the PC; the tests of the loader run on it |
+| [`src/assets/`](src/README.md), [`src/re/`](src/re/README.md), [`src/device/`](src/README.md) | decoders for fonts, images and language packs, the icon generator, the Ghidra pipeline, a read-only link to copy fonts and images off the watch |
 | [`docs/`](docs/) | [howto](docs/howto.md), [status](docs/status.md), [details](docs/details.md), [roadmap](docs/roadmap.md), [legal](docs/legal.md), [symbols.csv](docs/symbols.csv) (named firmware addresses) |
 | `local/`, `build/` (not in git) | your firmware packages and assets pulled from your watch; build output |
 

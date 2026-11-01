@@ -3,7 +3,7 @@
 For the Samsung Galaxy Fit3 (SM-R390), firmware **R390XXU0AZA3** only. Addresses are those of its main image (linked at `0x2c080000`: the offset in the file is the address minus `0x2c080000`;
 pointers stored in tables often use the alias `0x0c......`, add `0x20000000`). Named addresses are in [symbols.csv](symbols.csv). These are our findings, meant for interoperability; they quote no Samsung code.
 
-Confidence marks: **watch** = seen working on a real watch, **emu** = the real firmware code run on the PC (`tools/emu`), **code** = read from the disassembly, **?** = unknown.
+Confidence marks: **watch** = seen working on a real watch, **emu** = the real firmware code run on the PC (`src/emu`), **code** = read from the disassembly, **?** = unknown.
 
 ## 1. The platform
 
@@ -71,7 +71,7 @@ state that never exists. None of the 11 replaceable windows has other callers of
 
 **Image packs** `/nand/system/image/*.res` have no directory. An image `src` is a decimal ID string (`"21"`); two flash tables map it: `0x2c300a84` (52 packs: path, first ID, last ID) and `0x2c300cf4`
 (per ID: offset and size). A record is `lv_img_header_t` (4 bytes: `cf:5`, width and height, 11 bits each) plus a body. Formats seen: `cf 0x1b` Samsung IDX8 (`"IDX8"`, size, palette, indices, BGRA palette) and `cf 5`
-(3 bytes per pixel: RGB565 little endian + alpha). `tools/assets/lvres.py` decodes both. The app-list icons are IDs 10..21 of `app_applist.res`, **64 x 64** each; World Clock's is ID 21. [watch, code]
+(3 bytes per pixel: RGB565 little endian + alpha). `src/assets/lvres.py` decodes both. The app-list icons are IDs 10..21 of `app_applist.res`, **64 x 64** each; World Clock's is ID 21. [watch, code]
 
 **Small icons.** LVGL's built-in decoder draws indexed images too: a 40 x 40 icon with 16 colours (`cf 9`, `INDEXED_4BIT`: a 64-byte palette of B, G, R, A entries, then 4 bits per pixel) takes 864 bytes against 4.8 KB
 as RGB565 with alpha (checked by rendering it with the firmware's own LVGL code). [emu]
@@ -80,7 +80,7 @@ as RGB565 with alpha (checked by rendering it with the firmware's own LVGL code)
 (first check: the source type), so LVGL's built-in decoder handles it. [watch]
 
 **Language packs** `language_xx.res` (69 of them, a ZIP with one entry, unzipped by the firmware to `/user/language.res`): a 0x18-byte header, `count x {string offset, font key}`, the strings, and the UI fonts embedded
-in the file. `tools/assets/lvlang.py` reads and edits them; `set_string` appends a string and fixes every later offset. The app-list name is text ID 181 for World Clock. [watch]
+in the file. `src/assets/lvlang.py` reads and edits them; `set_string` appends a string and fixes every later offset. The app-list name is text ID 181 for World Clock. [watch]
 
 **Fonts.** The watch-face fonts (`/nand/system/font/FONT_ROBOTO_*.bin`) are loaded once at boot by `fonts_init` (`0x2c1006b0`) into RAM tables of `lv_font_t*`: Roboto at `0x2010b130`
 (86, 50, 48, 40, 36, 34, 32, 30, 28, 26, 24, 22, 20 px), Roboto Medium at `0x2010b0e0` (86, 48, 44, 40, 36, 32, 30, 28, 24, 23, 20 px), plus Bold 60 and a LED digit font. Use `*(lv_font_t**)(table + 4*index)`; do not load
@@ -114,7 +114,7 @@ Children set `EVENT_BUBBLE` so the screen sees their events. [code]
 
 ## 7. The emulator and its limits
 
-`tools/emu` runs real functions of the firmware in Unicorn. It confirmed the structure sizes above, the whole window lifecycle and the answers to the manager's queries, and renders the app's screens with the firmware's
+`src/emu` runs real functions of the firmware in Unicorn. It confirmed the structure sizes above, the whole window lifecycle and the answers to the manager's queries, and renders the app's screens with the firmware's
 own drawing code (`screenshot.py`). It does **not** model the display, touch, the RTOS or the C start-up: `.data` is not initialised, so the lv_txt function pointers are installed by the harness; and a filled box that is the
 child of a card with rounded corners is drawn black (the serve dot and divider are drawn right on the watch), so judge such details on the watch.
 

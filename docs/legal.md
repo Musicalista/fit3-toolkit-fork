@@ -15,8 +15,8 @@ The Bluetooth patch used here leaves the watch visible and its file service open
 - none of the code of Musicalista's SDK, loader and phone app (we neither contain nor need them: our code on the watch and our flasher are our own);
 - no Samsung fonts or images (the notes describe the formats; `local/` is git-ignored).
 
-What it does contain: our own code (the code that runs on the watch in `tools/loader/`, the tools), our own icon artwork (`tools/assets/mkicon.py` draws it), and notes on how the firmware works with the
-addresses and function names we found (`docs/details.md`, `docs/symbols.csv`). Those are our analysis for interoperability; they quote no Samsung code. `tools/build_tennis.py` builds a package
+What it does contain: our own code (the code that runs on the watch in `src/loader/`, the tools), our own icon artwork (`src/assets/mkicon.py` draws it), and notes on how the firmware works with the
+addresses and function names we found (`docs/details.md`, `docs/symbols.csv`). Those are our analysis for interoperability; they quote no Samsung code. `src/build_tennis.py` builds a package
 from the stock package *you* provide; do not redistribute its output, which contains Samsung's firmware.
 
 ## Credits and third-party terms
@@ -35,8 +35,8 @@ We do not use or contain their loader any more: our code is called by the firmwa
 
 ## Licence of this repository
 
-[Apache License 2.0](../LICENSE) for everything in the repository: the code (`tools/`), the notes (`docs/`, `docs/symbols.csv`) and our icon
-(`tools/assets/mkicon.py`). One licence on purpose, with the patent grant that Apache-2.0 includes. Source files carry an `SPDX-License-Identifier: Apache-2.0` line.
+[Apache License 2.0](../LICENSE) for everything in the repository: the code (`src/`), the notes (`docs/`, `docs/symbols.csv`) and our icon
+(`src/assets/mkicon.py`). One licence on purpose, with the patent grant that Apache-2.0 includes. Source files carry an `SPDX-License-Identifier: Apache-2.0` line.
 
 What the licence does **not** do: it covers what we wrote, nothing else. It does not licence Samsung's firmware, fonts or images (you bring them), the SDK, loader and Fit3 Manager of Musicalista
 (which have no licence of their own; we neither contain nor need their code) or the package your build produces (it contains Samsung's firmware).

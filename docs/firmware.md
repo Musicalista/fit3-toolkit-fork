@@ -1,13 +1,13 @@
 # Firmware notes (R390XXU0AZA3)
 
-Everything here comes from reading packages with `tools/firmware/` and disassembling the main image (`arm-none-eabi-objdump -D -b binary -marm -Mforce-thumb --adjust-vma=0x2c080000`).
+Everything here comes from reading packages with `src/firmware/` and disassembling the main image (`arm-none-eabi-objdump -D -b binary -marm -Mforce-thumb --adjust-vma=0x2c080000`).
 Addresses are for the main image of R390XXU0AZA3; **no other version has been looked at**. How the firmware works inside (windows, LVGL, resources, services) is in [details.md](details.md).
 
 ## Package format (FWD, `.bin`)
 
 `header(92) | updater | CRC32 | packet | CRC32`. Header: magic `0x7e5a5a60`, source version string at 4, flags at 72 (=2), then header size (92), updater size, packet offset,
 packet size. The packet has its own header (magic `0x7e5a5a5a`, target version, component count at byte 70), a table of 128-byte entries (kind, attribute, offset,
-stored size, path on the watch) and then each component as a single-file ZIP (deflate) followed by the CRC32 of its content. `tools/firmware/validate_fwd.py`
+stored size, path on the watch) and then each component as a single-file ZIP (deflate) followed by the CRC32 of its content. `src/firmware/validate_fwd.py`
 checks all of it; fit3-flasher refuses a package whose updater differs from the stock one, so the updater is never modified.
 
 Components of the stock package (73): the main image `/user/ota/app/best1502x_b319_user.bin` (3.37 MB), sensor hub, touch panel firmware, `version.ini` and
@@ -31,7 +31,7 @@ side (packages with changed main images boot), which we have not proven.
 | `language_*.res` | the entry's name (text ID of its row), in the English files or in all 69 |
 | `0x1008` and the container | the image CRC and every checksum of the package |
 
-The first two rows are the patches that make the watch's serial service reachable without pairing, which `tools/device/f3_pull.py` and `f3_flash.py` need; they were first found by Musicalista
+The first two rows are the patches that make the watch's serial service reachable without pairing, which `src/device/f3_pull.py` and `f3_flash.py` need; they were first found by Musicalista
 (see [legal.md](legal.md)). With them, **anyone in range can connect to the watch's file service**; `--no-bluetooth-patches` leaves them out (see [howto.md](howto.md)).
 
 ## Not known

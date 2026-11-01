@@ -22,7 +22,7 @@
 | 6 | Choose the replaced entry (`--slot`), other languages (`--languages all`) | built and tested in the emulator for all 11 slots; World clock verified on the watch |
 
 Why a faulty window is not a brick: nothing of ours runs at boot. A broken function restarts the watch when someone opens the entry (or, for the icon, the app list); the watch still
-boots, so a package can be flashed over Bluetooth again. A package that does not pass `tools/firmware/validate_fwd.py`, or that touches code that runs at boot, is what can brick a watch.
+boots, so a package can be flashed over Bluetooth again. A package that does not pass `src/firmware/validate_fwd.py`, or that touches code that runs at boot, is what can brick a watch.
 
 ## Ideas, not planned
 

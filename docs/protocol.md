@@ -8,7 +8,7 @@ Messages are plain ASCII commands, no terminator. The protocol is that of the co
 
 ## Writing a file
 
-(The protocol that sends a firmware package. `tools/device/f3_flash.py` is the only tool here that writes, and only to `/user/ota/R390_WEB_FOTA.bin`.)
+(The protocol that sends a firmware package. `src/device/f3_flash.py` is the only tool here that writes, and only to `/user/ota/R390_WEB_FOTA.bin`.)
 
 | You send | The watch answers | Meaning |
 |---|---|---|
@@ -46,5 +46,5 @@ Read to the end. An export left open produces `last export had no end` in the fi
 ## On Linux
 
 - Close Samsung's Galaxy Wearable app first; the watch serves one session at a time in practice.
-- Connecting right after closing a session can fail with `EBUSY` or `ECONNRESET` for a few seconds: retry (`tools/device/f3_link.py` does).
+- Connecting right after closing a session can fail with `EBUSY` or `ECONNRESET` for a few seconds: retry (`src/device/f3_link.py` does).
 - Opening a session and dropping it without finishing (a half-written file, an unfinished read) left Galaxy Wearable stuck on "Updating info" once; restarting the watch fixed it.
