@@ -9,7 +9,7 @@ import os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, os.path.join(os.path.dirname(HERE), "assets"))
 import mkicon
 
-APPS = {"tennis": "app_tennis", "counter": "app_counter", "dice": "app_dice"}       # name -> the App symbol in src/watch/apps/<name>.c
+APPS = {"tennis": "app_tennis", "counter": "app_counter", "dice": "app_dice", "mars": "app_mars"}       # name -> the App symbol in src/watch/apps/<name>.c
 
 
 def icons_h():

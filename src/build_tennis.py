@@ -36,7 +36,7 @@ def main():
     if install and a.no_bluetooth_patches: print("note: the hub can load installed apps, but without the Bluetooth patches nothing can be installed from the PC")
     work = tempfile.mkdtemp(prefix="tennis_"); loader = os.path.join(work, "loader.bin")
     syms = build_loader.build(os.path.join(HERE, "watch", "hub.c"), loader, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]], include_dirs=[gen.generate(apps, hub, os.path.join(work, "gen"), install)])
-    label = a.label or ("Application Hub" if hub else {"tennis": "Tennis Score", "counter": "Counter", "dice": "Dice"}[apps[0]])
+    label = a.label or ("Application Hub" if hub else {"tennis": "Tennis Score", "counter": "Counter", "dice": "Dice", "mars": "Mars Production"}[apps[0]])
     icon = None if a.no_icon else mkicon.encode(*mkicon.draw("hub" if hub else apps[0]))
     build_package.build(a.stock, a.out, open(loader, "rb").read(), label=label, icon=icon, slot=sl["window"], languages=a.languages, force_slot=a.force_slot, bluetooth_patches=not a.no_bluetooth_patches,
                         takeover={"create": syms["world_create"] | 1, "event": syms["world_event"] | 1})

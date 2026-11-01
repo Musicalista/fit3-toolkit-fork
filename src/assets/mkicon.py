@@ -18,7 +18,8 @@ SIZE, SS = 64, 8                                    # the app-list icon: 64 x 64
 KINDS = {"tennis": ((46, 128, 222), (30, 93, 182)),     # court blue
          "hub": ((64, 196, 150), (28, 140, 108)),       # green
          "counter": ((250, 168, 44), (226, 118, 22)),   # orange
-         "dice": ((154, 104, 232), (104, 60, 190))}     # purple
+         "dice": ((154, 104, 232), (104, 60, 190)),     # purple
+         "mars": ((214, 96, 52), (150, 52, 30))}        # rust red
 WHITE = (255, 255, 255)
 
 
@@ -54,7 +55,16 @@ def _glyph_dice(x, y, rgb):
     return np.where(dots[..., None], np.array(KINDS["dice"][1], float), rgb)
 
 
-GLYPHS = {"tennis": _glyph_tennis, "hub": _glyph_hub, "counter": _glyph_counter, "dice": _glyph_dice}
+def _glyph_mars(x, y, rgb):
+    planet = ((x - 32) ** 2 + (y - 32) ** 2) <= 20.0 ** 2                      # a pale planet with two craters and a green patch (terraforming)
+    rgb = np.where(planet[..., None], np.array((255, 214, 178), float), rgb)
+    for cx, cy, r in ((24, 26, 4.5), (40, 40, 3.5)):
+        rgb = np.where((planet & (((x - cx) ** 2 + (y - cy) ** 2) <= r * r))[..., None], np.array((222, 160, 120), float), rgb)
+    patch = planet & (((x - 38) ** 2 + (y - 25) ** 2) <= 6.5 ** 2)
+    return np.where(patch[..., None], np.array((86, 190, 98), float), rgb)
+
+
+GLYPHS = {"mars": _glyph_mars, "tennis": _glyph_tennis, "hub": _glyph_hub, "counter": _glyph_counter, "dice": _glyph_dice}
 
 
 def draw(kind="tennis", size=SIZE):
