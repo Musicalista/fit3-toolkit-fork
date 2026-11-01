@@ -2,11 +2,10 @@
 
 Freestanding C (no libc, no libgcc, no static data) linked at `0x2c3a0524`, the start of the zeros in the stock image (`0x2c3a0524..0x2c3af920`). `build_loader.py` compiles one
 source into a flat binary; `src/firmware/build_package.py` places it and patches the firmware to call it. All firmware addresses used are in `docs/symbols.csv`.
-`loader_v1.c` is the smallest working example of the technique (a diagnostic page); `loader_v2.c` is the product.
+`loader_v2.c` is the product.
 
 | File | What it is |
 |---|---|
-| `loader_v1.c` | takes over the World clock **window**: `b.w` at the entry of the stock create (`0x2c1ecc64`) and window-event (`0x2c1ecd68`) functions, own screen. |
 | `loader_v2.c` | the tennis score tracker as native LVGL objects, with the right answers to the window manager (key policy, swipe queries), a save file, the back gesture. |
 | `loader.ld` | linker script: `.text.entry` first (`world_create` is the first function), `.text.entry.*` kept, no `.data`/`.bss`. |
 

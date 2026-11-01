@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
-/* loader_v2.c: the tennis match score tracker as a native LVGL window, replacing the stock World clock window (id 0x2b) like loader_v1.
+/* loader_v2.c: the tennis match score tracker as a native LVGL window, replacing the stock World clock window (id 0x2b) (take-over via build_package.py --takeover-create/--takeover-event).
  *
- * Same take-over as v1 (build_package.py --takeover-create/--takeover-event): world_create builds a fresh screen with LVGL objects styled after the stock pages
+ * world_create builds a fresh screen with LVGL objects styled after the stock pages
  * (docs/details.md, section 6): black screen, 254 px cards with radius 26 and colour 0x2124, pill buttons (radius 100, colour 0x5ade), Roboto from the firmware's
  * font tables. The scoring rules (best of 3 sets, tie-break at 6-6, 16 undo steps, one save of 132 bytes 3 s after
  * the last change and when the window is deleted).

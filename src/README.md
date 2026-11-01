@@ -9,7 +9,7 @@ Python 3 (numpy for the icon, Pillow for some tools), `arm-none-eabi-gcc` for th
 | `firmware/validate_fwd.py` | re-implements fit3-flasher's checks: layout, every CRC32, main image header, stock updater SHA-256 |
 | `firmware/fwd.py`, `firmware/fwx.py` | read, edit and rebuild a package (load and save reproduce a package byte for byte); list and extract components (`list`, `main <out>`, `get <path> <out>`) |
 | `firmware/test_build_package.py`, `firmware/test_fwd.py` | their tests (need `local/firmware/stock-aza3.bin`, skipped without it) |
-| `loader/build_loader.py` | compile a loader source (`loader_v1.c`, `loader_v2.c`) into a flat binary linked at `0x2c3a0524`; `loader/test_score.c` tests the scoring logic on the PC |
+| `loader/build_loader.py` | compile a loader source (`loader_v2.c`) into a flat binary linked at `0x2c3a0524`; `loader/test_score.c` tests the scoring logic on the PC |
 | `emu/` | Unicorn harness: run functions of the real firmware on the PC; tests of the loaders, the icon and every slot; screenshots ([README](emu/README.md)) |
 | `re/` | the Ghidra pipeline ([README](re/README.md)) |
 | `assets/lvres.py`, `assets/lvlang.py`, `assets/lvfont.py` | decode the image packs (`.res`), read or edit the language packs, decode the watch's LVGL fonts and render text to a PNG |
