@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: Apache-2.0 */
-/* Logic test of loader_v2.c on the PC: scoring, serve rotation, tie-break, undo, the save file and the time formats. The calls into the firmware are never executed here: only the plain functions.
- *   gcc -O1 -fsanitize=address,undefined -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -o /tmp/test_score src/loader/test_score.c && /tmp/test_score
- * (the same rules are also played through the real LVGL objects by src/emu/test_loader_v2.py) */
+/* Logic test of apps/tennis.c on the PC: scoring, serve rotation, tie-break, undo, the save file and the time formats. The calls into the firmware are never executed here: only the plain functions.
+ *   python3 -I -c "import sys; sys.path.insert(0, 'src/watch'); import gen; gen.generate(['tennis'], False, '/tmp/f3gen')"
+ *   gcc -O1 -fsanitize=address,undefined -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -I src/watch -I <dir with icons.h> -o /tmp/test_score src/watch/test_score.c && /tmp/test_score
+ * (the same rules are also played through the real LVGL objects by src/emu/test_tennis.py) */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "loader_v2.c"
+#include "apps/tennis.c"
 
 static int fails;
 #define CHECK(c) do { if (!(c)) { printf("FAIL line %d: %s\n", __LINE__, #c); fails++; } } while (0)

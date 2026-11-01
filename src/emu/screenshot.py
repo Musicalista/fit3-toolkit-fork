@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 """screenshot.py: render the tennis window with the firmware's own LVGL code on the PC, and save PNG screenshots.
 
-    python3 -I src/firmware/fwx.py local/firmware/fit3-tennis.bin main local/re/main-v2.bin
+    python3 -I src/firmware/fwx.py local/firmware/fit3-tennis.bin main local/re/main-tennis.bin
+    (with --hub: the hub package, main-hub.bin; draws the list and each app)
     local/venv/bin/python -I src/emu/screenshot.py <outdir> [--fonts local/assets/fonts]
 
 The real firmware code runs in the emulator: `fonts_init` loads the Roboto fonts from the files you pulled from your watch (src/device/f3_pull.py), our window is created by the
 patched stock address, and LVGL's software renderer draws it into a 256 x 402 RGB565 buffer through the display driver's flush callback. Screens: the empty score page, a match in progress,
-the stats overlay, a finished match. Needs the unicorn venv (src/emu/README.md), local/re/main-v2.bin and the fonts. Not modelled: the real display, touch, the status of other windows.
+the stats overlay, a finished match. Needs the unicorn venv (src/emu/README.md), local/re/main-tennis.bin and the fonts. Not modelled: the real display, touch, the status of other windows.
 The fonts are Samsung's files, but a rendered picture contains no font file; the layout, colours and drawing are what the watch does (the text is the loader's own)."""
 import os, struct, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE)); sys.path.insert(0, HERE)
@@ -26,6 +27,7 @@ class Screen:
         e.hook(0x2c0c575c, lambda em: 0xfffffffe)                                      # fopen: no save file
         e.hook(0x2c1423f8, lambda em: 1)                                               # motor_once
         e.hook(0x2c224d30, lambda em: 0); e.hook(0x2c224f04, lambda em: 0); e.hook(0x2c225ddc, lambda em: 0)
+        e.hook(0x2c279240, lambda em: 0x20000400); e.hook(0x2c279336, lambda em: 2)           # the active indev and its gesture: always "swipe right" (back)
         self.fonts = fonts; self.handles = {}
         e.hook(0x2c28c544, self._fs_open); e.hook(0x2c28c274, self._fs_read); e.hook(0x2c28c424, self._fs_seek); e.hook(0x2c28c234, lambda em: 0)
         # replace the display's flush callback (the Probe installed a no-op one) by one that keeps the pixels
@@ -116,16 +118,18 @@ def children(e, o):
 
 
 def main(argv):
-    out = argv[0] if argv else "build/shots"; fonts = argv[argv.index("--fonts") + 1] if "--fonts" in argv else FONT_DIR
-    image = os.path.join(ROOT, os.environ.get("F3_IMAGE", "local/re/main-v2.bin"))
+    out = argv[0] if argv and not argv[0].startswith("--") else "build/shots"; fonts = argv[argv.index("--fonts") + 1] if "--fonts" in argv else FONT_DIR
+    hub = "--hub" in argv
+    image = os.path.join(ROOT, os.environ.get("F3_IMAGE", "local/re/main-hub.bin" if hub else "local/re/main-tennis.bin"))
     s = Screen(image, fonts); e = s.e; os.makedirs(out, exist_ok=True)
     s.seed_txt(); slots = s.load_fonts(); print("font slots loaded:", sum(1 for v in slots if v), "of", len(slots))
     create = int(os.environ.get("F3_CREATE", "0x2c1ecc64"), 0)
     scr = e.call(create, 0, 0); s.show(scr)
-    hdr, card_a, card_b, info, game, set_, undo, stats, ov = children(e, scr)[:9]
-    click = lambda o: e.call(A["event_send"], o, 7, 0)                                 # LV_EVENT_CLICKED, as a tap does
+    click = lambda o: e.call(A["event_send"], o, 7, 0, max_insns=400_000_000)                                 # LV_EVENT_CLICKED, as a tap does
     def shot(name):                                                                    # a whole new frame: the drawing is invalidated first, so the double buffer is complete
         e.call(0x2c2782a8, scr); s.tick += 30; e.call(0x2c28a46c, max_insns=4_000_000_000); s.png(os.path.join(out, name + ".png")); print("wrote", name, "(flushes: %d)" % s.flushes)
+    if hub: return hub_shots(s, e, scr, click, shot)
+    hdr, card_a, card_b, info, game, set_, undo, stats, ov = children(e, scr)[:9]
     shot("score-empty")
     for _ in range(4): click(card_a)                                                   # A wins the first game (serve passes to B)
     click(card_b); click(card_b); click(card_a)                                        # B 30, A 15
@@ -136,4 +140,22 @@ def main(argv):
     shot("score-finished")
     return 0
 
-sys.exit(main(sys.argv[1:]))
+
+def hub_shots(s, e, scr, click, shot):
+    """the Application Hub: the list, then each app (the screen is the same object; an app is a child container opened by a click on its row)"""
+    rows = children(e, children(e, scr)[1]); shot("hub-list")
+    for i, name in ((1, "counter"), (2, "dice"), (0, "tennis")):
+        click(rows[i]); root = children(e, scr)[2]; kids = children(e, root); s.settle(3)
+        if name == "counter":
+            card = kids[1]
+            for _ in range(7): click(card)
+            shot("counter"); click(kids[3]); shot("counter-sure")
+        elif name == "dice":
+            shot("dice-1"); click(kids[5]); s.settle(2); shot("dice-2")
+        else:
+            for _ in range(4): click(kids[1])
+            click(kids[2]); click(kids[2]); click(kids[1]); s.tick += 65000; shot("tennis")
+        e.call(A["event_send"], scr, 12, 0)                                            # the back gesture: the hub closes the app (deletes its widgets, destroys its state)
+    return 0
+
+if __name__ == "__main__": sys.exit(main(sys.argv[1:]))

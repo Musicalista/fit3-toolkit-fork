@@ -43,9 +43,9 @@ A display is needed before widgets exist: see `Probe._display` (draw buffer + dr
 
 ## Tests of the loader
 
-`test_loader_v2.py` (the tennis window; `F3_WINDOW`, `F3_CREATE`, `F3_EVENT`, `F3_IMAGE` select another replaced window), `test_icon.py` (the app-list icon), `test_slots.py` (builds a package for
+`test_tennis.py` (the tennis app as the only app of the window; `test_hub.py`: the Application Hub with tennis, counter and dice; `rig.py` is their common rig; `F3_WINDOW`, `F3_CREATE`, `F3_EVENT`, `F3_IMAGE` select another replaced window), `test_icon.py` (the app-list icon), `test_slots.py` (builds a package for
 every replaceable app-list entry and runs the window test on each; run it with the system `python3 -I`, it starts the emulator's venv itself). The window tests need the patched main image:
-`python3 -I src/firmware/fwx.py local/firmware/<package>.bin main local/re/main-v2.bin`.
+`python3 -I src/firmware/fwx.py local/firmware/<package>.bin main local/re/main-tennis.bin` (and `main-hub.bin` for `test_hub.py`; `build_tennis.py --hub tennis,counter,dice` builds that package).
 
 ## Screenshots of the tennis window (`screenshot.py`)
 

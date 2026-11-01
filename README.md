@@ -43,7 +43,7 @@ shows only when the entry is opened, and the watch still boots and can be flashe
 | Path | What |
 |---|---|
 | [`src/build_tennis.py`](src/README.md) | one command from your stock package to the tennis package |
-| [`src/loader/`](src/loader/README.md) | the code that runs on the watch: `loader_v2.c` is the tracker |
+| [`src/watch/`](src/watch/README.md) | the code that runs on the watch: the hub, the shared UI header and the apps (tennis, counter, dice) |
 | [`src/firmware/`](src/README.md) | read, validate and rebuild firmware packages (`build_package.py`, `validate_fwd.py`) |
 | [`src/emu/`](src/emu/README.md) | a Unicorn harness that runs functions of the real firmware on the PC; the tests of the loader run on it |
 | [`src/assets/`](src/README.md), [`src/re/`](src/re/README.md), [`src/device/`](src/README.md) | decoders for fonts, images and language packs, the icon generator, the Ghidra pipeline, a read-only link to copy fonts and images off the watch |

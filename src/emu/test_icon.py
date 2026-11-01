@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """test_icon.py: the own app-list icon (build_package.py --icon) on the PATCHED main image of a package built with it.
 
-    python3 -I src/firmware/fwx.py local/firmware/fit3-loader-v2.bin main local/re/main-v2.bin
+    python3 -I src/firmware/fwx.py local/firmware/fit3-tennis.bin main local/re/main-tennis.bin
     local/venv/bin/python -I src/emu/test_icon.py
 
 Route B (docs/roadmap.md): the app-list row of the replaced entry points at an lv_img_dsc_t in the free flash instead of the image ID string "21". Checks, on the real firmware code:
@@ -11,10 +11,10 @@ state) and the display are not run, so how the icon looks in the list is only kn
 import os, struct, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE)); sys.path.insert(0, HERE)
 from probe_lvgl import Probe, A
-IMG = os.path.join(ROOT, "local/re/main-v2.bin"); ICON = os.path.join(ROOT, "build/tennis_icon.bin")
+IMG = os.path.join(ROOT, "local/re/main-tennis.bin"); ICON = os.path.join(ROOT, "build/tennis_icon.bin")
 
 def main():
-    if not (os.path.exists(IMG) and os.path.exists(ICON)): print("SKIP: need local/re/main-v2.bin and build/tennis_icon.bin (see the docstring)"); return 0
+    if not (os.path.exists(IMG) and os.path.exists(ICON)): print("SKIP: need local/re/main-tennis.bin and build/tennis_icon.bin (see the docstring)"); return 0
     p = Probe(IMG); e = p.e; res = []; data = open(ICON, "rb").read()
     ok = lambda name, cond, obs="": (res.append(bool(cond)), print("%s %s %s" % ("PASS" if cond else "FAIL", name, obs)))
     row = 0x2c300288 + 4; dsc = e.u32(row)

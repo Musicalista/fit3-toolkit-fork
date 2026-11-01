@@ -15,7 +15,7 @@
 | # | What | State |
 |---|---|---|
 | 1 | Hook the World clock page builder, rename the entry | done (stage 1b), superseded by 2 |
-| 2 | Own loader in the free flash: take over the window's create/event functions with `b.w` branches, own screen, own back gesture, no stock page | **done and verified** (`loader_v2`) |
+| 2 | Own loader in the free flash: take over the window's create/event functions with `b.w` branches, own screen, own back gesture, no stock page | **done and verified** (`src/watch`) |
 | 3 | `build_package.py` / `build_tennis.py`: stock package + patches + loader + label + icon, all checksums repaired, nothing third-party in the repository | **done** (the result is identical to the hand-built package; the only third-party input is your stock package) |
 | 4 | Label and icon: a longer name (`--label`, text ID 181), our own 64 x 64 icon (`mkicon.py`, `--icon`: the list row points at an `lv_img_dsc_t` in the free flash) | **done and verified** (label and icon on the watch) |
 | 5 | The tennis app as native LVGL objects: cards, Undo, Stats, save | **done and verified** |

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-"""build_loader.py: compile loader_vN.c into a flat binary for build_package.py (--loader), linked at 0x2c3a0524.
+"""build_loader.py: compile hub.c into a flat binary for build_package.py (--loader), linked at 0x2c3a0524.
 
-    python3 -I src/loader/build_loader.py src/loader/loader_v2.c local/loader/loader_v2.bin
+    python3 -I src/watch/build_loader.py src/watch/hub.c local/loader/hub.bin   # needs gen_apps.h and icons.h: src/watch/gen.py; build_tennis.py does all of it
 
 The first function of the image is the entry (section .text.entry); the addresses of world_create and world_event (--takeover-create / --takeover-event of build_package.py) are printed. Refuses libc/libgcc calls, data and bss."""
 import os, subprocess, sys, tempfile
@@ -10,10 +10,10 @@ def run(*a):
     r = subprocess.run(a, capture_output=True, text=True)
     if r.returncode: sys.exit("FAILED: %s\n%s%s" % (" ".join(a[:2]), r.stdout, r.stderr))
     return r.stdout
-def build(src, out, quiet=False, defines=()):
+def build(src, out, quiet=False, defines=(), include_dirs=()):
     d = tempfile.mkdtemp(prefix="f3loader_"); o, elf = os.path.join(d, "l.o"), os.path.join(d, "l.elf")
     run("arm-none-eabi-gcc", "-mcpu=cortex-m4", "-mthumb", "-mfloat-abi=soft", "-Os", "-Wall", "-Werror", "-ffreestanding", "-fno-builtin", "-fno-pic", "-fno-stack-protector", "-fno-exceptions",
-        "-fno-tree-loop-distribute-patterns", "-ffunction-sections", "-fdata-sections", *("-D" + d for d in defines), "-c", src, "-o", o)
+        "-fno-tree-loop-distribute-patterns", "-ffunction-sections", "-fdata-sections", *("-D" + d for d in defines), "-I" + HERE, *("-I" + i for i in include_dirs), "-c", src, "-o", o)
     run("arm-none-eabi-ld", "--gc-sections", "-T", os.path.join(HERE, "loader.ld"), "-o", elf, o)
     und = run("arm-none-eabi-nm", "-u", elf).strip()
     if und: sys.exit("undefined symbols: " + und.replace("\n", " "))

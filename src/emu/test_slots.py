@@ -5,11 +5,11 @@
 
 For each slot: the package is built (build_package.py, window id compiled into the loader), the main image gets exactly the expected patches (a `b.w` at the entry of the
 stock create and event functions, `bx lr` in the other window functions that are not already no-ops, the icon pointer of the slot's own row, nothing else), and the full
-window test of test_loader_v2.py (run with the emulator's venv, local/venv) runs against the stock addresses of that slot. Takes a few minutes. Needs local/firmware/stock-aza3.bin and local/re/main-stock.bin."""
+window test of test_tennis.py (run with the emulator's venv, local/venv) runs against the stock addresses of that slot. Takes a few minutes. Needs local/firmware/stock-aza3.bin and local/re/main-stock.bin."""
 import os, struct, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
-for d in ("firmware", "loader", "assets"): sys.path.insert(0, os.path.join(ROOT, "src", d))
-import fwd, build_package as bp, build_loader, mkicon, lvlang
+for d in ("firmware", "watch", "assets"): sys.path.insert(0, os.path.join(ROOT, "src", d))
+import fwd, build_package as bp, build_loader, gen, mkicon, lvlang
 
 STOCK = os.path.join(ROOT, "local/firmware/stock-aza3.bin")
 EMU_PY = os.path.join(ROOT, "local/venv/bin/python")                  # Unicorn lives there; this script itself only needs numpy (the icon)
@@ -22,7 +22,7 @@ def main(argv):
     icon = mkicon.encode(*mkicon.draw()); bad = 0
     for sl in chosen:
         name = "%s (window %#x, row %d)" % (sl["name"], sl["window"], sl["row"]); print("== " + name)
-        lo = os.path.join(work, "loader_%x.bin" % sl["window"]); syms = build_loader.build(os.path.join(ROOT, "src/loader/loader_v2.c"), lo, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]])
+        lo = os.path.join(work, "loader_%x.bin" % sl["window"]); syms = build_loader.build(os.path.join(ROOT, "src/watch/hub.c"), lo, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]], include_dirs=[gen.generate(["tennis"], False, os.path.join(work, "gen"))])
         out = os.path.join(work, "slot_%x.bin" % sl["window"])
         bp.build(STOCK, out, open(lo, "rb").read(), label="Tennis Score", icon=icon, slot=sl["window"], quiet=True, validate=False,
                  takeover={"create": syms["world_create"] | 1, "event": syms["world_event"] | 1})
@@ -47,7 +47,7 @@ def main(argv):
         if not (0x2c3a0524 <= icon_ptr < 0x2c3af920 and others): ok = False; print("FAIL the icon pointers are wrong")
         img = os.path.join(work, "main_%x.bin" % sl["window"]); open(img, "wb").write(new)
         env = dict(os.environ, F3_IMAGE=os.path.relpath(img, ROOT), F3_WINDOW=hex(sl["window"]), F3_CREATE=hex(sl["create"]), F3_EVENT=hex(sl["event"]))
-        r = subprocess.run([EMU_PY if os.path.exists(EMU_PY) else sys.executable, "-I", os.path.join(HERE, "test_loader_v2.py")], capture_output=True, text=True, env=env, cwd=ROOT)
+        r = subprocess.run([EMU_PY if os.path.exists(EMU_PY) else sys.executable, "-I", os.path.join(HERE, "test_tennis.py")], capture_output=True, text=True, env=env, cwd=ROOT)
         last = [l for l in r.stdout.splitlines() if "passed" in l or "FAIL" in l]
         if r.returncode: ok = False; print("\n".join(last[:6]) or r.stderr[-400:])
         print("   %s: %s" % ("ok" if ok else "FAILED", last[-1] if last else "no output")); bad += not ok
