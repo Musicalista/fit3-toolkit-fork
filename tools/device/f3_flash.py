@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-"""f3_flash.py: send a firmware package to a Galaxy Fit3 from this PC over Bluetooth, instead of with the phone app (Fit3 Manager). **The only tool of this repository that writes to the watch.**
+"""f3_flash.py: send a firmware package to a Galaxy Fit3 from this PC over Bluetooth, from the command line. **The only tool of this repository that writes to the watch.**
 
     python3 -I tools/device/f3_flash.py out.bin --addr AA:BB:CC:DD:EE:FF                       # 1. plan only: checks the package on the PC, does not touch the watch
     python3 -I tools/device/f3_flash.py out.bin --addr AA:BB:CC:DD:EE:FF --upload              # 2. copies the package to the watch and checks its size; installs nothing
     python3 -I tools/device/f3_flash.py out.bin --addr AA:BB:CC:DD:EE:FF --upload --verify     #    the same, and reads the whole file back to compare it (recommended)
     python3 -I tools/device/f3_flash.py out.bin --addr AA:BB:CC:DD:EE:FF --upload --verify --start-update    # 3. then starts the installation (asks you to type FLASH)
 
-What happens, in order (protocol: docs/protocol.md; the order and the pauses are those of the phone app, each stage in a session of its own):
+What happens, in order (protocol: docs/protocol.md; the order and the pauses are those of the existing flashers, each stage in a session of its own):
   * the package must pass tools/firmware/validate_fwd.py (every CRC, the stock updater, version R390XXU0AZA3), otherwise nothing is sent;
   * `--upload` writes the package to /user/ota/R390_WEB_FOTA.bin in blocks of 39600 bytes, each with a CRC32 that the watch acknowledges. A partly written file is never installed by itself: only
     `--start-update` does that, so an interrupted upload is harmless, just run it again;
@@ -17,7 +17,7 @@ What happens, in order (protocol: docs/protocol.md; the order and the pauses are
     It needs your explicit confirmation.
 What you see: progress on the screen (bytes and percent), and a time-stamped log file of the protocol events (every command sent and answer received, every 20th block with its CRC, sizes, durations, the watch's
 reply to the OTA command) in local/logs/f3_flash-<time>.log, never the package's bytes; `--log PATH` chooses the file, `--no-log` writes none.
-Only /user/ota/R390_WEB_FOTA.bin can be written. The watch must be visible, charged to at least 50 %, Galaxy Wearable and Fit3 Manager closed, and it must carry the Bluetooth patches of
+Only /user/ota/R390_WEB_FOTA.bin can be written. The watch must be visible, charged to at least 50 %, Samsung's Galaxy Wearable app closed, and it must carry the Bluetooth patches of
 build_package.py (without them the serial service is reachable only on the setup screen). Keep the stock package at hand: it is the way back. Status: tested against a mock watch; see docs/status.md
 for what has been tried on a real one."""
 import argparse, hashlib, os, subprocess, sys, time, zlib
@@ -164,7 +164,7 @@ def main(argv=None, connect=None, confirm=None, say=print):
                 t1 = time.monotonic(); read_back(link, data, total, progress=prog("read-back"), trace=j.trace)
                 j("read back %d bytes in %.0f s: the file on the watch is identical to the package" % (total, time.monotonic() - t1))
         session("check", check)
-        if not a.start_update: j("done. The package waits in %s; nothing is installed. Start the installation with --start-update, or with Fit3 Manager." % OTA_PATH); return 0
+        if not a.start_update: j("done. The package waits in %s; nothing is installed. Start the installation with --start-update." % OTA_PATH); return 0
         wait(2.2)
         reply = session("ota", lambda link: start_update(link, trace=j.trace))
         j("OTA command sent; the watch answered %r. It now restarts and installs: do not touch it until it is back (several minutes)." % (reply,))

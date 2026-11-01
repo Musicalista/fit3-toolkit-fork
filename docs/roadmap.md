@@ -34,4 +34,4 @@ boots, so a package can be flashed over Bluetooth again. A package that does not
 
 ## Dependencies on third-party code
 
-None in the code. The build needs your stock package, `arm-none-eabi-gcc` and Python with numpy; flashing needs Fit3 Manager, the Android app of Musicalista (see [howto.md](howto.md)).
+None in the code. The build needs your stock package, `arm-none-eabi-gcc` and Python with numpy; flashing from this PC needs only a Bluetooth adapter (see [howto.md](howto.md)).

@@ -86,7 +86,7 @@ w = Watch(); pauses.clear(); code, text = run(w, "--upload")
 check(code == 0 and w.fs.get(F.OTA_PATH) == PKG, "--upload stores the package byte for byte at the OTA path")
 check(w.paths == {F.OTA_PATH}, "the only path ever written is %s" % F.OTA_PATH)
 check("OTA" not in w.log and "installs nothing" in text or "nothing is installed" in text, "--upload alone never sends the OTA command")
-check(w.connections == 2 and pauses[:1] == [2.2], "the upload and the size check run in separate sessions, 2.2 s apart (as the phone app does)")
+check(w.connections == 2 and pauses[:1] == [2.2], "the upload and the size check run in separate sessions, 2.2 s apart (the sequence of the existing flashers)")
 check(w.log.count("block") == 3 and w.log[:2] == ["300", "33bin"] and w.log[w.log.index("block") + 3:w.log.index("block") + 5] == ["32", "34"], "the protocol order is 300, 33bin, 3 blocks, 32, 34")
 check("062" not in w.log, "without --verify the file is not read back (only the 5-byte header is asked for)")
 check(all(not m.startswith("UNKNOWN") and m != "BAD-CRC" for m in w.log), "every message the watch received was a known one, every block CRC correct")
@@ -94,7 +94,7 @@ check(all(not m.startswith("UNKNOWN") and m != "BAD-CRC" for m in w.log), "every
 # 3. --verify reads everything back
 w = Watch(); code, text = run(w, "--upload", "--verify")
 check(code == 0 and "identical to the package" in text and "062" in w.log, "--verify reads the file back and finds it identical")
-check(0.25 in pauses, "the read-back pauses between blocks as the phone app does")
+check(0.25 in pauses, "the read-back pauses between blocks")
 
 # 4. what must stop the process before anything is installed
 for mode, flags, needle, label in (("short", ("--upload", "--start-update", "--yes-flash"), "NOT installing", "a file of the wrong size stops the update (the quick check)"),

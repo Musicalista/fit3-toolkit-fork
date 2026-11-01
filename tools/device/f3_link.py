@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """f3_link.py: a read-only link to a Galaxy Fit3 over Bluetooth (RFCOMM channel 29) for tools that copy files from the watch to this PC (f3_pull.py). Nothing here can write to the watch.
 
-Protocol (the one Fit3 Manager and fit3-flasher use for reading, see docs/protocol.md): send "061<path>\\0"; the watch answers 0x40 + a 4-byte big-endian length (or an "AT^FI..." text when the file
-does not exist); then "062" asks for the next block (0x40, 4-byte length, data, 4 bytes of checksum); a last "062" closes the export. The watch must be visible, Galaxy Wearable and Fit3 Manager
-closed (one client at a time), and the Bluetooth patches of build_package.py installed (they make the serial service reachable without pairing)."""
+Protocol (see docs/protocol.md): send "061<path>\\0"; the watch answers 0x40 + a 4-byte big-endian length (or an "AT^FI..." text when the file
+does not exist); then "062" asks for the next block (0x40, 4-byte length, data, 4 bytes of checksum); a last "062" closes the export. The watch must be visible, Samsung's Galaxy Wearable app
+closed on the phone (one client at a time), and the Bluetooth patches of build_package.py installed (they make the serial service reachable without pairing)."""
 import os, re, socket, time
 
 CHANNEL = 29
@@ -49,7 +49,7 @@ def open_link(addr=ADDR, channel=CHANNEL, attempts=6):
         try: s.connect((addr, channel)); time.sleep(0.5); return Link(s)
         except OSError as e:
             s.close()
-            if i == attempts - 1: raise Error("cannot connect to the watch at %s: %s (close Galaxy Wearable and Fit3 Manager, restart the watch)" % (addr, e))
+            if i == attempts - 1: raise Error("cannot connect to the watch at %s: %s (close Samsung's Galaxy Wearable app on the phone, restart the watch)" % (addr, e))
             time.sleep(4)
 
 

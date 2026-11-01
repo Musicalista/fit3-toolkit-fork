@@ -4,7 +4,7 @@
 > Read [docs/legal.md](docs/legal.md) before you do anything, and keep the stock firmware at hand.
 
 The Galaxy Fit3 has no SDK and no way to install apps. This project puts **your own native app on it**: a tennis match score tracker that takes the place of an entry of the stock app list (World clock by
-default) and looks and behaves like a stock app. You build the package from your own stock firmware with one command and flash it with the phone app; nothing of Samsung's is in this repository.
+default) and looks and behaves like a stock app. You build the package from your own stock firmware with one command and flash it from your PC over Bluetooth; nothing of Samsung's is in this repository.
 
 <!-- screenshots: docs/images/ (photos of the watch): the app list with the new entry, the score page, the stats page -->
 
@@ -29,7 +29,7 @@ python3 -I tools/build_tennis.py <your package>.bin out.bin --slot Calculator --
 
 **Heads-up 2:** the default build carries two Bluetooth patches that let you flash from here but also let anyone in range connect to the watch without pairing; build the final package with `--no-bluetooth-patches` (see [docs/howto.md](docs/howto.md)).
 
-Then flash `out.bin` from the PC (`tools/device/f3_flash.py`, no phone app needed) or with Fit3 Manager on the phone, and open the app list. Full steps, requirements and how to go back to stock: [docs/howto.md](docs/howto.md). You need `arm-none-eabi-gcc`, Python 3 with
+Then flash `out.bin` from the PC with `tools/device/f3_flash.py` (Bluetooth, no phone app) and open the app list. Full steps, requirements and how to go back to stock: [docs/howto.md](docs/howto.md). You need `arm-none-eabi-gcc`, Python 3 with
 numpy, and **your own stock package**; keep a copy of it.
 
 ## How it works, in short

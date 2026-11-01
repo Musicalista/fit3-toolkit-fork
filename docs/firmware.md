@@ -31,7 +31,7 @@ side (packages with changed main images boot), which we have not proven.
 | `language_*.res` | the entry's name (text ID of its row), in the English files or in all 69 |
 | `0x1008` and the container | the image CRC and every checksum of the package |
 
-The first two rows are the patches that make the watch's serial service reachable without pairing, which `tools/device/f3_pull.py` and `f3_flash.py` need and Fit3 Manager works with; they were first found by Musicalista
+The first two rows are the patches that make the watch's serial service reachable without pairing, which `tools/device/f3_pull.py` and `f3_flash.py` need; they were first found by Musicalista
 (see [legal.md](legal.md)). With them, **anyone in range can connect to the watch's file service**; `--no-bluetooth-patches` leaves them out (see [howto.md](howto.md)).
 
 ## Not known

@@ -7,7 +7,7 @@ Tested on **one** Galaxy Fit3 (SM-R390) on firmware **R390XXU0AZA3**. Legend: **
 
 | What | State | Notes |
 |---|---|---|
-| Build a package from your own stock package | watch | `tools/build_tennis.py`; the result passes `validate_fwd.py`; flashed with Fit3 Manager |
+| Build a package from your own stock package | watch | `tools/build_tennis.py`; the result passes `validate_fwd.py`; flashed on the watch |
 | The app in the World clock slot | watch | native LVGL window, no menu in front of it, nothing of ours runs at boot |
 | Score, Undo, Stats, "New" with a second tap | watch | best of 3 sets, tie-break at 6-6, 16 undo steps |
 | Save and restore | emulator | 132 bytes in `/user/tenis.sav`, 3 s after a change and when the window closes; restoring after a restart (with the clock continuing) is tested in the emulator, **not explicitly tried on the watch** |
@@ -26,8 +26,8 @@ Tested on **one** Galaxy Fit3 (SM-R390) on firmware **R390XXU0AZA3**. Legend: **
 |---|---|
 | Validate and rebuild firmware packages (`tools/firmware`) | PC: every CRC, byte-identical rebuild of a known package |
 | Copy fonts and images from a watch (`tools/device/f3_pull.py`) | watch; read-only |
-| Flash from the PC: upload, size check, read-back (`tools/device/f3_flash.py --upload --verify`) | **watch** (first run 2026-11-01): the 18,263,450-byte package went in 104 s (175 kB/s, 462 blocks, all acknowledged), the watch reported the right size, and the read-back (446 blocks, 1015 s) found the file identical. Also 45 checks on a mock watch, incl. failures mid-transfer |
-| Flash from the PC: `--start-update` (the OTA command and the installation) | **not tried**: the command is the phone app's (`00AT^OTA_UPDATE`, answer of 4 bytes or none), but we have not sent it ourselves yet |
+| Flash from the PC: upload, size check, read-back (`tools/device/f3_flash.py --upload --verify`) | **watch** (2026-11-01): the 18,263,450-byte package went in 104 s (175 kB/s, 462 blocks, all acknowledged), the watch reported the right size, and the read-back (446 blocks, 1015 s) found the file identical. Also 45 checks on a mock watch, incl. failures mid-transfer |
+| Flash from the PC: `--start-update` (the OTA command and the installation) | **watch** (2026-11-01): upload 121 s, size check, then `00AT^OTA_UPDATE` in a session of its own; the watch gave no answer within 6 s (it restarts), came back after the installation, and ran the new build (the new layout of the captions and clocks was there) |
 | Decoders for fonts, image packs, language packs (`tools/assets`) | PC |
 | Ghidra pipeline (`tools/re`) | PC: 15,478 functions and the decompiled C of the stock main image |
 | Unicorn harness, loader and icon tests, screenshots (`tools/emu`) | PC: 40 checks on LVGL structures, 40 on the window, 9 on the icon, all 11 slots |

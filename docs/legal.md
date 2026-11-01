@@ -12,7 +12,7 @@ The Bluetooth patch used here leaves the watch visible and its file service open
 ## What this repository does not contain
 
 - no Samsung firmware, no firmware package of any kind, no firmware-derived binary;
-- none of the code of Musicalista's SDK, loader and phone app (we neither contain nor need them: our code on the watch is our own, and Fit3 Manager, which you use to flash, is theirs and stays theirs);
+- none of the code of Musicalista's SDK, loader and phone app (we neither contain nor need them: our code on the watch and our flasher are our own);
 - no Samsung fonts or images (the notes describe the formats; `local/` is git-ignored).
 
 What it does contain: our own code (the code that runs on the watch in `tools/loader/`, the tools), our own icon artwork (`tools/assets/mkicon.py` draws it), and notes on how the firmware works with the
@@ -23,7 +23,7 @@ from the stock package *you* provide; do not redistribute its output, which cont
 
 | What | From | Terms as far as we know |
 |---|---|---|
-| Fit3 Manager (the phone app we flash with), the app loader and `.f3a` format (not used here any more), the first firmware patches | **Musicalista**, [fit3-store-apps-games](https://github.com/Musicalista/fit3-store-apps-games), [freemyfit3](https://github.com/Musicalista/freemyfit3) | no licence file in either repository; the packages are marked "private builds ... do not publish the .bin files" |
+| Fit3 Manager (their phone app), the app loader and `.f3a` format (not used here any more), the first firmware patches | **Musicalista**, [fit3-store-apps-games](https://github.com/Musicalista/fit3-store-apps-games), [freemyfit3](https://github.com/Musicalista/freemyfit3) | no licence file in either repository; the packages are marked "private builds ... do not publish the .bin files" |
 | Transfer protocol, package validation rules | **yuriyurin**, [fit3-flasher](https://github.com/yuriyurin/fit3-flasher); the sequence of a flash was also checked against the published source of Fit3 Manager (no licence file: read for interoperability, our code is our own) | the Fit3 store project notes that it carried no licence |
 | Roboto (the shape of the fonts on the watch) | Google | Apache 2.0 for Roboto itself; Samsung's compiled font files are theirs |
 | Fonts and images on the watch | Samsung | proprietary; for inspection on your own watch only |
