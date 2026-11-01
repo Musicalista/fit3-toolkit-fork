@@ -3,7 +3,7 @@
 
     python3 -I src/assets/mkicon.py build/tennis_icon.bin [build/tennis_icon.png] [--kind tennis|hub|counter|dice]
 
-`draw(kind, size)` + `encode` give the 64 x 64 app-list icon; `draw(kind, 40)` + `encode_indexed4` give the 40 x 40 four-bit icons of the hub list (864 bytes each).
+`draw(kind, size)` + `encode` give the 64 x 64 app-list icon; `draw(kind, 64)` + `encode_indexed4` give the 64 x 64 four-bit icons of the hub list (2,112 bytes each).
 
 Stock icons of the app list (docs/details.md, measured on a watch; nothing of Samsung's is stored here): 64 x 64, a disc that touches the four edges, a
 soft vertical gradient (the top is about 16/11/35 steps lighter than the bottom in R/G/B), a flat glyph, anti-aliased. This drawing is original artwork.

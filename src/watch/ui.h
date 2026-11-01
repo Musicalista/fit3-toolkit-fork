@@ -16,6 +16,9 @@ typedef struct lv_obj lv_obj_t; typedef struct lv_timer lv_timer_t; typedef stru
 #define lv_obj_set_pos(o, x, y)     F(0x2c277a24, void, (lv_obj_t *, i32, i32))(o, x, y)
 #define lv_obj_add_flag(o, f)       F(0x2c27cbb8, void, (lv_obj_t *, u32))(o, f)
 #define lv_obj_clear_flag(o, f)     F(0x2c27cc5c, void, (lv_obj_t *, u32))(o, f)
+#define lv_obj_update_layout(o)     F(0x2c278d2c, void, (lv_obj_t *))(o)
+#define lv_obj_align_to(o, base, align, x, y) F(0x2c27908c, void, (lv_obj_t *, lv_obj_t *, u32, i32, i32))(o, base, align, x, y)
+#define ALIGN_OUT_RIGHT_MID 0x14
 #define lv_obj_set_scrollbar_mode(o, m) F(0x2c27b5c8, void, (lv_obj_t *, u32))(o, m)       /* 0 = off */
 #define lv_obj_add_event_cb(o, cb, code, ud) F(0x2c27d9cc, void *, (lv_obj_t *, void (*)(lv_event_t *), u32, void *))(o, cb, code, ud)
 #define lv_event_get_code(e)        F(0x2c27d988, u32, (lv_event_t *))(e)
@@ -92,7 +95,7 @@ typedef struct {
 #define ICON_HDR_I4(w, h) (9u | ((u32)(w) << 10) | ((u32)(h) << 21))     /* LV_IMG_CF_INDEXED_4BIT */
 typedef struct {
     const char *name;                                                   /* shown in the hub's list */
-    const Icon *icon;                                                   /* 40 x 40, four-bit indexed (src/assets/mkicon.py); 0 = none */
+    const Icon *icon;                                                   /* 64 x 64, four-bit indexed (src/assets/mkicon.py); 0 = none */
     void *(*create)(lv_obj_t *root);                                    /* build the app's page as children of root (a full-screen black container, or the screen itself), return its state */
     int (*back)(void *state);                                           /* the back gesture: return 1 if the app used it (closed an overlay), 0 to leave the app */
     void (*destroy)(void *state);                                       /* the app is closed or the window deleted: stop timers, save, free the state. Its widgets are deleted by the host */

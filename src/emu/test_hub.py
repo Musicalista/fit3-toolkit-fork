@@ -28,15 +28,15 @@ def main():
     ok("the window has a title and a list, nothing else", len(r.children(scr)) == 2 and r.alltext(r.title) == [] and r.text(r.children(scr)[0]) == "Applications", [len(r.children(scr))])
     ok("the list has one row per app, in order, each with the app's name", [r.alltext(x) for x in r.rows] == [["Tennis Score"], ["Counter"], ["Dice"]], [r.alltext(x) for x in r.rows])
     ok("no app is open yet (state 0)", r.app_state() == 0)
-    # the icons: each row has an image object that took our 40 x 40 four-bit descriptor
+    # the icons: each row has an image object that took our 64 x 64 four-bit descriptor
     e.call(A["update_layout"], scr); box = lambda o: [e.i32(o + 0x14 + 4 * k) for k in range(4)]
     imgs = [[k for k in r.children(x) if k not in r.labels(x)] for x in r.rows]
     ok("every row has exactly one image child", all(len(i) == 1 for i in imgs), imgs)
     sizes = [(box(i[0])[2] - box(i[0])[0] + 1, box(i[0])[3] - box(i[0])[1] + 1) for i in imgs]
-    ok("the images are 40 x 40", all(s == (40, 40) for s in sizes), sizes)
+    ok("the images are 64 x 64", all(s == (64, 64) for s in sizes), sizes)
     cf = [struct.unpack_from("<I", e.read(i[0] + 0x50, 4))[0] & 31 for i in imgs]
     ok("the images took four-bit indexed descriptors (cf 9)", cf == [9, 9, 9], cf)
-    rb = [box(x) for x in r.rows]; ok("rows are cards one below the other, 64 px high", all(b[3] - b[1] + 1 == 64 for b in rb) and rb[0][3] < rb[1][1] < rb[2][1], rb)
+    rb = [box(x) for x in r.rows]; ok("rows are cards one below the other, 90 px high", all(b[3] - b[1] + 1 == 90 for b in rb) and rb[0][3] < rb[1][1] < rb[2][1], rb)
     # --- counter
     r.click(r.rows[1]); root = r.root(); ok("a click on the Counter row opens the app in its own container", root is not None and r.app_state() != 0 and ("motor", 1, 1) in r.calls, r.calls)
     st = r.app_state(); t = r.alltext(root); ok("the counter starts at 0", "0" in t and "Counter" in t, t)

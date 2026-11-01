@@ -9,7 +9,7 @@ All firmware addresses used are in `docs/symbols.csv`.
 | `hub.c` | the window that replaces one entry of the app list: **single-app mode** (one app owns the window) or the **Application Hub** (a native-style list; a tap opens an app, the back gesture closes it). The window manager's answers (key policy, swipe queries) and the back gesture live here, once, for every app. |
 | `ui.h` | what the code shares: the firmware functions we call, colours, fonts, text helpers, small file helpers (`blob_save`/`blob_load`), widgets (`mk_box`, `mk_text`, `mk_pill`), and the `App` interface. |
 | `apps/tennis.c`, `apps/counter.c`, `apps/dice.c` | the apps. `counter.c` is the smallest complete one: copy it to start a new app. |
-| `gen.py` | writes the two generated headers into a build directory (never into the repository): `icons.h` (the 40 x 40 four-bit icons, drawn by `src/assets/mkicon.py`) and `gen_apps.h` (`HUB_MODE`, which apps, in which order). |
+| `gen.py` | writes the two generated headers into a build directory (never into the repository): `icons.h` (the 64 x 64 four-bit icons, drawn by `src/assets/mkicon.py`) and `gen_apps.h` (`HUB_MODE`, which apps, in which order). |
 | `build_loader.py` | compiles `hub.c` (arm-none-eabi-gcc, `-Os`, freestanding), refuses libc/libgcc calls and any `.data`/`.bss`. |
 | `loader.ld` | linker script: `.text.entry` first (`world_create` is the first function), `.text.entry.*` kept, no `.data`/`.bss`. |
 | `test_score.c` | the scoring rules of `apps/tennis.c` on the PC (with sanitizers). |
@@ -21,8 +21,7 @@ python3 -I src/build_tennis.py <stock.bin> <out.bin> --app tennis               
 python3 -I src/build_tennis.py <stock.bin> <out.bin> --hub tennis,counter,dice    # the Application Hub; the list follows the order given
 ```
 
-The build prints how much of the free flash it used. Measured: tennis alone 5.1 kB of code, hub with the three apps 9.5 kB (counter 2.6 kB and dice 2.7 kB each alone, 0.9 kB of every
-size is the app's 40 x 40 icon), plus 12.3 kB for the 64 x 64 app-list icon; 40 kB are left.
+The build prints how much of the free flash it used (the numbers are printed, not promised here: they change with every app). Each app adds its code plus its 64 x 64 four-bit icon, 2,112 bytes.
 
 ## Writing an app
 
@@ -31,7 +30,7 @@ An app is a file `apps/<name>.c` that includes `ui.h` and defines a `static cons
 ```c
 typedef struct {
     const char *name;                       // shown in the hub's list
-    const Icon *icon;                       // 40 x 40, four-bit indexed
+    const Icon *icon;                       // 64 x 64, four-bit indexed
     void *(*create)(lv_obj_t *root);        // build the page as children of root, return the state (app_malloc)
     int (*back)(void *state);               // the back gesture: 1 if you used it (closed an overlay), 0 to let the host leave the app
     void (*destroy)(void *state);           // stop timers, save, app_free the state; the host deletes the widgets

@@ -12,8 +12,8 @@
 #define WINDOW_ID 0x2b                                           /* the window this build replaces (build_tennis.py --slot passes it); 0x2b = World clock */
 #endif
 #define MAX_APPS 12
-#define ROW_H 64
-#define ROW_GAP 6
+#define ROW_H 90                                                 /* the stock app list: rows 254 x 90, radius 26, 10 px apart, the first 6 px from the top; icon 64 x 64 at x 12; name 8 px right of it, 152 wide */
+#define ROW_GAP 10
 
 typedef struct {
     lv_obj_t *scr, *list, *root;                                 /* the screen, the list of apps (hub mode), the open app's container (the screen itself in single mode) */
@@ -63,10 +63,11 @@ __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 pa
         lv_obj_set_size(l, SCREEN_W, SCREEN_H - 50); lv_obj_set_pos(l, 0, 50);
         set_bg_opa(l, 0); set_border_width(l, 0); set_radius(l, 0); set_pad_all(l, 0); lv_obj_set_scrollbar_mode(l, 0);
         for (int i = 0; i < (int)NAPPS && i < MAX_APPS; i++) {
-            lv_obj_t *r = w->row[i] = mk_box(l, 1, i * (ROW_H + ROW_GAP), 254, ROW_H, 24, C_CARD);
+            lv_obj_t *r = w->row[i] = mk_box(l, 1, 6 + i * (ROW_H + ROW_GAP), 254, ROW_H, 26, C_CARD);
             lv_obj_add_event_cb(r, on_row, 0, w);
-            if (APPS[i]->icon) { lv_obj_t *im = lv_img_create(r); lv_img_set_src(im, APPS[i]->icon); lv_obj_set_pos(im, 12, (ROW_H - 40) / 2); }
-            mk_text(r, 64, 15, 180, FT_BTN, C_WHITE, ALIGN_LEFT, APPS[i]->name);
+            lv_obj_t *im = lv_img_create(r); lv_img_set_src(im, APPS[i]->icon); lv_obj_set_pos(im, 12, (ROW_H - 64) / 2);
+            lv_obj_t *nm = mk_text(r, 0, 0, 152, FT_BTN, C_WHITE, ALIGN_LEFT, APPS[i]->name);          /* like the stock list: 152 wide, wraps onto a second line, centred beside the icon */
+            lv_obj_update_layout(nm); lv_obj_align_to(nm, im, ALIGN_OUT_RIGHT_MID, 8, 0);
         }
     } else open_app(w, APPS[0]);
     lv_obj_add_event_cb(scr, on_screen, 0, w);                   /* 0 = LV_EVENT_ALL: gesture and DELETE (33) */
