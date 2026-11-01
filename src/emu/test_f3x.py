@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-"""test_f3x.py: installed apps (.f3x files in /user/hub) in the Application Hub, on the real firmware code in the emulator.
+"""test_f3x.py: installed apps (.f3x files in /user/hub) in the Application Hub (fallback mode, apps in the hub's own window; test_host.py covers the default), on the real firmware code in the emulator.
 
-    python3 -I src/build_tennis.py local/firmware/stock-aza3.bin local/firmware/fit3-hubtest.bin --hub counter
+    python3 -I src/build_tennis.py local/firmware/stock-aza3.bin local/firmware/fit3-hubtest.bin --hub counter --no-native-transitions
     python3 -I src/firmware/fwx.py local/firmware/fit3-hubtest.bin main local/re/main-hubtest.bin
     local/venv/bin/python -I src/emu/test_f3x.py
 

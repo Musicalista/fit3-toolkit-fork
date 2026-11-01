@@ -11,6 +11,7 @@
 #ifndef WINDOW_ID
 #define WINDOW_ID 0x2b                                           /* the window this build replaces (build_tennis.py --slot passes it); 0x2b = World clock */
 #endif
+#define HOST_ID 0x10                                             /* a window id nobody uses (its record is all zeros in the flash): the window of the open app, with the stock slide */
 #define MAX_ROWS 28                                              /* bundled apps (at most 12) and installed ones (F3X_SLOTS) */
 #define ROW_H 90                                                 /* the stock app list: rows 254 x 90, radius 26, 10 px apart, the first 6 px from the top; icon 64 x 64 at x 12; name 8 px right of it, 152 wide */
 #define ROW_GAP 10
@@ -41,8 +42,8 @@ static Inst *inst_scan(int slot) {
     f_close(fd); return in;
 }
 /* loads the app of `in` into the heap: checks the CRC over everything after the header, relocates the image to where it landed. Returns the block (free it after destroy) and the App in *app, or 0 */
-static void *inst_load(const Inst *in, const App **app) {
-    char path[32]; F3xHeader h; u8 chunk[128]; u32 crc = 0; void *blk = 0; slot_path(path, in->slot);
+static void *inst_load(int slot, const App **app) {
+    char path[32]; F3xHeader h; u8 chunk[128]; u32 crc = 0; void *blk = 0; slot_path(path, slot);
     i32 fd = f_open(path, "r"); if (fd < 0) return 0;
     if (!read_all(fd, &h, sizeof h) || !hdr_ok(&h)) goto fail;
     for (u32 left = F3X_ICON_SIZE; left;) { u32 n = left < sizeof chunk ? left : (u32)sizeof chunk; if (!read_all(fd, chunk, n)) goto fail; crc = crc32_update(crc, chunk, n); left -= n; }
@@ -66,6 +67,7 @@ typedef struct {
     lv_obj_t *scr, *list, *root;                                 /* the screen, the list of apps (hub mode), the open app's container (the screen itself in single mode) */
     const App *cur; void *st;                                    /* the open app and its state (offset 16: src/emu tests read it) */
     void *blk;                                                   /* the loaded image of an installed app that is open */
+    u8 busy;                                                     /* a push to the app window has been asked for: ignore more taps */
     lv_obj_t *row[MAX_ROWS];
 #ifdef F3X_LOADER
     Inst *inst[F3X_SLOTS]; int ninst;
@@ -74,16 +76,17 @@ typedef struct {
 #endif
 } Win;
 
+#define IN_CONTAINER (HUB_MODE && !HOST_MODE)                    /* an app lives in a container of the hub's window (no window of its own, no slide) */
 static void open_app(Win *w, const App *a) {
-    lv_obj_t *root = HUB_MODE ? mk_root(w->scr) : w->scr;
+    lv_obj_t *root = IN_CONTAINER ? mk_root(w->scr) : w->scr;
     void *st = a->create(root);
-    if (!st) { if (HUB_MODE) lv_obj_del(root); return; }
+    if (!st) { if (IN_CONTAINER) lv_obj_del(root); return; }
     w->root = root; w->cur = a; w->st = st;
 }
 static void free_blk(Win *w) { if (w->blk) { app_free(w->blk); w->blk = 0; } }
 static void close_app(Win *w) {
     if (!w->cur) return;
-    if (HUB_MODE) lv_obj_del(w->root);                           /* its widgets first, then the app's own cleanup */
+    if (IN_CONTAINER) lv_obj_del(w->root);                       /* its widgets first, then the app's own cleanup */
     w->cur->destroy(w->st);
     w->cur = 0; w->st = 0; w->root = 0; free_blk(w);             /* an installed app's code is freed only after its destroy has returned */
 }
@@ -128,14 +131,25 @@ static void on_row(lv_event_t *e) {
     if (code != EV_CLICKED || w->cur) return;
     for (int i = 0; i < MAX_ROWS; i++) if (w->row[i] && t == w->row[i]) {
         motor_once(1, 1);
+#if HOST_MODE
+        if (w->busy) return;
+        w->busy = 1;                                             /* the manager creates the app's window (host_create) and slides it in; this window is deleted when it is left */
+        int arg = i;
+#ifdef F3X_LOADER
+        if (i >= (int)NAPPS) arg = 0x100 + w->inst[i - (int)NAPPS]->slot;
+#endif
+        wm_open(2, HOST_ID, arg, 0xf);
+        return;
+#else
         if (i < (int)NAPPS) { open_app(w, APPS[i]); return; }
 #ifdef F3X_LOADER
-        const App *a; void *blk = inst_load(w->inst[i - NAPPS], &a);
+        const App *a; void *blk = inst_load(w->inst[i - NAPPS]->slot, &a);
         if (!blk) { motor_once(4, 1); return; }                  /* damaged or incompatible file: a strong buzz, nothing opens */
         open_app(w, a);
         if (w->cur) w->blk = blk; else app_free(blk);
 #endif
         return;
+#endif
     }
 }
 static void on_screen(lv_event_t *e) {
@@ -153,7 +167,7 @@ static void on_screen(lv_event_t *e) {
         if (w->sheet) { close_sheet(w); ui_gesture_consume(); return; }       /* the sheet takes the back gesture first */
 #endif
         if (w->cur && w->cur->back(w->st)) { }                   /* the app used the gesture */
-        else if (HUB_MODE && w->cur) close_app(w);
+        else if (IN_CONTAINER && w->cur) close_app(w);
         else wm_open(3, -1, 0, BACK_ANIM);
         ui_gesture_consume();
     }
@@ -189,6 +203,38 @@ static void build_list(Win *w) {
     lv_obj_scroll_to_y(l, 0, 0);
 }
 
+#if HOST_MODE
+/* ---- the app window: a window record of our own in the RAM table (id HOST_ID), filled when the hub opens ---- */
+static u32 win_event(u32 id, u32 cls, u32 kind);
+/* create(param) of the record: param is what wm_open was given: the index of a bundled app, or 0x100 + the slot of an installed one */
+static lv_obj_t *host_create(u32 param) {
+    lv_obj_t *scr = lv_obj_create(0);
+    Win *w = (Win *)app_malloc(sizeof(Win)); if (!w) return scr;
+    fill8(w, 0, sizeof(Win)); w->scr = scr;
+    *(void **)((u8 *)scr + 0x10) = w;
+    lv_obj_clear_flag(scr, FL_SCROLLABLE); set_bg_color(scr, C_BLACK); set_bg_opa(scr, 255);
+    const App *a = 0;
+    if (param < (u32)NAPPS) a = APPS[param];
+#ifdef F3X_LOADER
+    else if (param >= 0x100 && param < 0x100 + F3X_SLOTS) w->blk = inst_load((int)(param - 0x100), &a);
+#endif
+    if (a) open_app(w, a);
+    if (!w->cur) { free_blk(w); mk_text(scr, 14, 150, 228, FT_BTN, C_WHITE, ALIGN_CENTER, "Cannot open this app"); }
+    lv_obj_add_event_cb(scr, on_screen, 0, w);
+    return scr;
+}
+static u32 host_event(u32 cls, u32 kind, void *data) { (void)data; return win_event(HOST_ID, cls & 0xff, kind & 0xff); }
+static void host_nop(void) { }
+/* the record has the fields of a stock window (docs/details.md section 2): word 0 = id | flags << 16 (0xd3: layer 3, delete the screen when leaving, the screen-off policy of the app windows),
+ * words 2 and 3 as World clock has them, +0x1c create, +0x24 event, +0x28 and +0x2c hooks (do nothing). Done once per boot: the record keeps our pointers until the watch restarts. */
+static void host_register(void) {
+    u32 *r = (u32 *)(0x200fb4e4u + HOST_ID * 0x30u);
+    if (r[7] == (u32)host_create) return;
+    r[2] = 0x0a; r[3] = 2; r[7] = (u32)host_create; r[8] = 0; r[9] = (u32)host_event; r[10] = (u32)host_nop; r[11] = (u32)host_nop;
+    r[0] = 0x01d30000u | HOST_ID;
+}
+#endif
+
 /* world_create: first function of the image (--takeover-create gets its address | 1) */
 __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 param2) {
     (void)param; (void)param2;
@@ -206,6 +252,9 @@ __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 pa
         mkdir_p(HUB_DIR);                                        /* the directory the installer writes into; created on the first visit */
 #endif
         build_list(w);
+#if HOST_MODE
+        host_register();
+#endif
     } else open_app(w, APPS[0]);
     lv_obj_add_event_cb(scr, on_screen, 0, w);                   /* 0 = LV_EVENT_ALL: gesture and DELETE (33) */
     return scr;
@@ -217,9 +266,16 @@ __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 pa
  *                                 by itself (wm_request(1, 2, ...)), exactly as in the stock apps, so we do nothing for the key.
  *   everything else -> 0. In particular the queries 6, 7 and 9 must be 0: a non-zero answer makes the manager run its own swipe-back with its own animation (docs/details.md).
  * The arguments arrive without sign or zero extension, so they are masked. */
-__attribute__((section(".text.entry.event"))) u32 world_event(u32 cls, u32 kind, void *data) {
-    (void)data; cls &= 0xff; kind &= 0xff;
-    if (cls == 0 && kind == 0) { wm_set_current(WINDOW_ID); return 0; }
+static u32 win_event(u32 id, u32 cls, u32 kind) {
+    if (cls == 0 && kind == 0) {
+        wm_set_current((u16)id);
+#if HOST_MODE
+        lv_obj_t *s = *(lv_obj_t **)(0x200fb4e4u + id * 0x30u + 0x10);                 /* the window entered (again): taps count again, whether or not the manager kept our screen */
+        if (s) { Win *w = *(Win **)((u8 *)s + 0x10); if (w) w->busy = 0; }
+#endif
+        return 0;
+    }
     if (cls == 0 && kind == 8) return 0x2c4;
     return 0;
 }
+__attribute__((section(".text.entry.event"))) u32 world_event(u32 cls, u32 kind, void *data) { (void)data; return win_event(WINDOW_ID, cls & 0xff, kind & 0xff); }

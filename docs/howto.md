@@ -32,7 +32,7 @@ Tests (no watch needed; most need `local/firmware/stock-aza3.bin`): `python3 -I 
 
 ## Install apps without flashing: the hub and `.f3x`
 
-Build the package with `--hub tennis,counter,dice` (the Application Hub replaces the chosen entry; the loader of installable apps is on by default), flash it as above, open the hub once, then put apps on
+Build the package with `--hub tennis,counter,dice` (the Application Hub replaces the chosen entry; the loader of installable apps and the native slide when an app opens are on by default, `--no-install` and `--no-native-transitions` turn them off), flash it as above, open the hub once, then put apps on
 the watch from the PC with `src/device/f3x_install.py`. A few kB per app, about a second per install, no restart. Full description, the file format and the limits: [f3x.md](f3x.md). It needs the
 Bluetooth patches, so a final package built with `--no-bluetooth-patches` cannot receive apps (the ones already installed keep working).
 

@@ -30,6 +30,11 @@ Confidence marks: **watch** = seen working on a real watch, **emu** = the real f
 **Lifecycle.** `wm_open(op, id, arg, transition)` (`0x2c225ddc`; op 0 switch, 2 push, 3 back with id -1) creates the window with `+0x1c` if it has no screen, loads it, and sends the event function `kind 0` (entered).
 Leaving sends `kind 1`; for a window with the "delete the screen" flag `destroy` follows, then `lv_obj_del`, which sends `LV_EVENT_DELETE` to the screen and its children. LCD off/on arrive as `kind 2/3` (`0x2c14b948`). [watch]
 
+**A window of our own (id `0x10`).** The records of ids `0x10` and `0x9c` are all zeros in the flash: nothing uses them. The hub fills the RAM record of `0x10` when it opens (`host_register` in `src/watch/hub.c`):
+word 0 = `0x01d30010` (id, flags `0xd3` and `+3` = 1 as World clock has them), words 2 and 3 copied from it (`0x0a`, `2`), `+0x1c` create, `+0x24` event, `+0x28` and `+0x2c` hooks that do nothing, `+0x20` zero.
+A tap on an app then calls `wm_open(2, 0x10, arg, 0xf)`: the manager calls `create(arg)` (we pass the app's index, or `0x100 + slot` of an installed one), slides the new window in from the right like the stock list does,
+and `wm_open(3, -1, 0, 0x14)` from the app's back gesture slides it out. With the flag `0x10` the manager deletes the leaving screen, so the hub list is rebuilt on return. [emu: record filled, create/event answers; the slide itself: watch, see status.md]
+
 **The app list** (`0x2c2104ac`) is built from a static 12-row template at `0x2c30021c` (12 bytes per row: kind, window id, `char*` icon image-ID string, text ID). A tap calls `wm_open(2, window, 0, 0xf)`.
 
 | Row | Window | Name | Text ID | Row | Window | Name | Text ID |

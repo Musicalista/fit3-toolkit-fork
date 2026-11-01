@@ -60,7 +60,7 @@ relocate, call `create`. On close the hub calls `destroy`, deletes the widgets, 
 
 `/user/hub/aNN.f3x`, NN = 00..15. Sixteen fixed names instead of a directory listing: the hub tries to open each one, so it never needs `readdir` (we have never run it). The hub creates `/user/hub` with the
 firmware's `mkdir_p` when it opens; the protocol's file write fails with `open error:-2` if the directory does not exist, so open the hub once before the first install. The list shows bundled apps first, then
-the installed ones in slot order. Removing an app writes an 8-byte tombstone (`F3X-GONE`) over its slot: the Bluetooth protocol we know has no delete, and the hub ignores anything that is not a valid header.
+the installed ones in slot order. Removing an app (`f3x_install.py remove`, or a **long press on its row in the hub**, then Remove twice) writes an 8-byte tombstone (`F3X-GONE`) over its slot: the Bluetooth protocol we know has no delete, and the hub ignores anything that is not a valid header.
 For the icons the hub keeps 2.1 kB per installed app in RAM while the hub window is open; the code is loaded only when you open the app.
 
 ## Limits and unknowns

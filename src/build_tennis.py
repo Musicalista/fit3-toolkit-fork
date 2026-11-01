@@ -18,6 +18,7 @@ def main():
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--app", choices=sorted(gen.APPS), help="one app owns the window (default: tennis)")
     g.add_argument("--hub", help="comma-separated apps, in the order of the list: the window becomes the Application Hub (e.g. tennis,counter,dice; \"none\" for a hub with installed apps only)")
+    ap.add_argument("--no-native-transitions", action="store_true", help="a hub that opens an app inside its own window (no slide animation) instead of as a window of its own (the default; docs/details.md section 2)")
     ap.add_argument("--no-install", action="store_true", help="a hub without the loader of installable .f3x apps (saves about 1 kB; without the Bluetooth patches nothing can be installed anyway)")
     ap.add_argument("--label", help="name in the app list (replaces the entry's name; longer than 11 characters wraps onto two lines). Default: the app's name, or Application Hub")
     ap.add_argument("--slot", default="World Clock", help="the app-list entry to replace, by name or window id (default World Clock; --list-slots)")
@@ -35,7 +36,7 @@ def main():
     install = hub and not a.no_install
     if install and a.no_bluetooth_patches: print("note: the hub can load installed apps, but without the Bluetooth patches nothing can be installed from the PC")
     work = tempfile.mkdtemp(prefix="tennis_"); loader = os.path.join(work, "loader.bin")
-    syms = build_loader.build(os.path.join(HERE, "watch", "hub.c"), loader, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]], include_dirs=[gen.generate(apps, hub, os.path.join(work, "gen"), install)])
+    syms = build_loader.build(os.path.join(HERE, "watch", "hub.c"), loader, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]], include_dirs=[gen.generate(apps, hub, os.path.join(work, "gen"), install, hub and not a.no_native_transitions)])
     label = a.label or ("Application Hub" if hub else {"tennis": "Tennis Score", "counter": "Counter", "dice": "Dice", "mars": "Mars Production"}[apps[0]])
     icon = None if a.no_icon else mkicon.encode(*mkicon.draw("hub" if hub else apps[0]))
     build_package.build(a.stock, a.out, open(loader, "rb").read(), label=label, icon=icon, slot=sl["window"], languages=a.languages, force_slot=a.force_slot, bluetooth_patches=not a.no_bluetooth_patches,

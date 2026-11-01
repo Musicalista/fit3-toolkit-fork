@@ -14,6 +14,12 @@ All firmware addresses used are in `docs/symbols.csv`.
 | `loader.ld` | linker script: `.text.entry` first (`world_create` is the first function), `.text.entry.*` kept, no `.data`/`.bss`. |
 | `test_score.c` | the scoring rules of `apps/tennis.c` on the PC (with sanitizers). |
 
+## How an app opens
+
+By default (`--hub`) every app is a window of its own, id `0x10`: the hub asks the window manager for `wm_open(2, 0x10, arg, 0xf)` and the manager slides the app in like a stock one (details: docs/details.md,
+section 2). `--no-native-transitions` builds the fallback: the app is a container inside the hub's window, without the slide. In both modes the back gesture goes to the app first (an overlay may close), then
+the app closes. A long press on the row of an **installed** app opens a sheet that removes it (Remove asks twice; the slot is overwritten with the 8-byte tombstone `F3X-GONE`).
+
 ## Build modes
 
 ```

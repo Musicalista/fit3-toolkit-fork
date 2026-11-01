@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-"""test_hub.py: the Application Hub (src/watch/hub.c with the apps tennis, counter, dice) on the PATCHED main image of a package built with `build_tennis.py --hub tennis,counter,dice`.
+"""test_hub.py: the Application Hub (src/watch/hub.c with the apps tennis, counter, dice) in its fallback mode: apps open inside the hub's own window (the default mode is test_host.py) on the PATCHED main image of a package built with `build_tennis.py --hub tennis,counter,dice`.
 
-    python3 -I src/build_tennis.py local/firmware/stock-aza3.bin local/firmware/fit3-hub.bin --hub tennis,counter,dice
+    python3 -I src/build_tennis.py local/firmware/stock-aza3.bin local/firmware/fit3-hub.bin --hub tennis,counter,dice --no-native-transitions
     python3 -I src/firmware/fwx.py local/firmware/fit3-hub.bin main local/re/main-hub.bin
     local/venv/bin/python -I src/emu/test_hub.py
 

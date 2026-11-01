@@ -42,6 +42,10 @@ Tested on **one** Galaxy Fit3 (SM-R390) on firmware **R390XXU0AZA3**. Legend: **
 | `f3x_install.py list` / `install` (eight apps, each read back identical), `mkdir_p("/user/hub")` made by the hub, the hub opening the files, code executing from `app_malloc` memory, scrolling a list of eight, repeated open/close | **watch** (2026-11-01) |
 | `f3x_install.py remove` (the tombstone), an update in place, `--force`, a damaged file refused by the hub, the largest image | PC and emulator only; **not tried on a watch** |
 
+| Removing an installed app from the hub (long press, sheet, two-step Remove, rebuilt list, hint when the hub is empty) | emulator (29 checks); **not yet tried on a watch** |
+| Native transitions: each app a window of its own (id `0x10`, `wm_open(2, 0x10, arg, 0xf)`), the record filled in RAM | emulator (26 checks, the manager's part played by the test); **not yet tried on a watch**: whether the real manager accepts the record and slides the window is the experiment |
+| Mars Production (`apps/mars.c`) | emulator (21 checks); the look is not judged (the emulator draws rounded cards with children wrongly); **not yet on a watch** |
+
 ## Open
 
 - What replacing each other stock app breaks on a watch (Alarm, Timer and Stopwatch may keep state outside their window).
