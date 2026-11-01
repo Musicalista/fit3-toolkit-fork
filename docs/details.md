@@ -55,6 +55,11 @@ World Clock and Camera Remote are listed only when enabled in the phone app. [co
 A function that returns garbage (an uninitialised `r0`) looks like a working window with a **dead side key and a back animation that runs the wrong way**. Answer `0x2c4` to query 8 and `0` to everything else you do not
 implement. The arguments reach you unmasked, use only their low byte. Keys (`0x400..0x408` messages from `thread_sidekey`) go through `wm_key_dispatch` (`0x2c225f2c`), never through LVGL.
 
+**Keys and what they open.** `wm_key_dispatch` (`0x2c225f2c`) turns the side key's messages into actions, after asking the current window for its key policy: `0x406` the short press goes to the watch face;
+`0x407` the **double press opens the app the user chose** in the watch's settings (KV `0xf8`, an index into a table of 14 windows at `0x2c315c6e`: the app list, a workout page, Health, Media Controller, Find My Phone,
+Weather, Calendar, Settings, Timer, Alarm, Stopwatch, **World Clock**, Camera Remote, Calculator); `0x404` is the power-off menu. `0x408` calls `0x2c15ee70`, which is **the emergency SOS trigger**
+(`app_emergency_sos_started_handle`): it must never be hooked. So an app that wants a key shortcut replaces one of those 14 windows and the user assigns the double press to it; no code patch is needed. [code]
+
 **Transitions** (the fourth argument of `wm_open`, also stored in the history): 0 none; `0x14` / 10 the old screen slides right and reveals the target (the "back" slide); `0x13` / 9 the old screen slides left;
 `0xf` / 1 the target slides in from the right (a push from the list); `0x10` / 2 the target slides in from the left; kinds 3, 4, 7, 8, `0xb`, `0xc`, `0x11`, `0x12`, `0x15`, `0x16` move vertically. Kinds come in mirror pairs
 (1/10, 2/9, 15/20, 16/19, ...). [emu: the frame function was run for every kind]
@@ -67,6 +72,9 @@ state that never exists. None of the 11 replaceable windows has other callers of
 **Image packs** `/nand/system/image/*.res` have no directory. An image `src` is a decimal ID string (`"21"`); two flash tables map it: `0x2c300a84` (52 packs: path, first ID, last ID) and `0x2c300cf4`
 (per ID: offset and size). A record is `lv_img_header_t` (4 bytes: `cf:5`, width and height, 11 bits each) plus a body. Formats seen: `cf 0x1b` Samsung IDX8 (`"IDX8"`, size, palette, indices, BGRA palette) and `cf 5`
 (3 bytes per pixel: RGB565 little endian + alpha). `tools/assets/lvres.py` decodes both. The app-list icons are IDs 10..21 of `app_applist.res`, **64 x 64** each; World Clock's is ID 21. [watch, code]
+
+**Small icons.** LVGL's built-in decoder draws indexed images too: a 40 x 40 icon with 16 colours (`cf 9`, `INDEXED_4BIT`: a 64-byte palette of B, G, R, A entries, then 4 bits per pixel) takes 864 bytes against 4.8 KB
+as RGB565 with alpha (checked by rendering it with the firmware's own LVGL code). [emu]
 
 **Our own icon** is an `lv_img_dsc_t` (cf 5, 64 x 64, 12,288 bytes) in the free flash and the row's icon pointer points at it. The firmware's decoder accepts only ID strings and rejects anything else
 (first check: the source type), so LVGL's built-in decoder handles it. [watch]

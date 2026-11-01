@@ -520,3 +520,7 @@ address,name,kind,confidence,evidence
 0x2011746c,wm_anim_state,data,verified,"transition state: +4 old snapshot +8 new snapshot +0xc progress +0x12 flag +0x13 kind"
 0x2c2202c8,wm_anim_kind_valid,func,likely,"checks requested direction code against anim kind (+0x13)"
 0x2c279464,indev_read_cb,func,hypothesis,"calls wm swipe detectors 0x2c22664c and 0x2c2261f8 (calls.csv)"
+0x2c15ee70,sos_key_handler,func,verified,"called by wm_key_dispatch for msg 0x408 when bit 9 of the key policy is set; strings app_emergency_sos_started_handle / [sos]; goes to the watch face, then pushes window 0x8d or calls 0x2c15eb00; DO NOT HOOK: emergency SOS"
+0x2c15eb00,sos_srv_send_start,func,verified,"string sos_srv_send_start; starts the SOS send, vibration id 8"
+0x2c0e9a58,kv_double_press_app,func,verified,"reads KV 0xf8 (4 bytes): the index of the app chosen for the double press of the side key (0 = none)"
+0x2c315c6e,double_press_app_table,data,verified,"14 x {u16 index, u16 window}: 0 window 7, 1 window 9, 2 Health 8, 3 Media 0x1c, 4 Find My Phone 0x22, 5 Weather 0x4a, 6 Calendar 0x4e, 7 Settings 0x36, 8 Timer 0x1d, 9 Alarm 0x90, 10 Stopwatch 0x4d, 11 World Clock 0x2b, 12 Camera Remote 0x47, 13 Calculator 0x8c; read by wm_key_dispatch for msg 0x407"
