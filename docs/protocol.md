@@ -8,7 +8,7 @@ Messages are plain ASCII commands, no terminator. The protocol is that of the co
 
 ## Writing a file
 
-(The protocol that sends a firmware package. `src/device/f3_flash.py` is the only tool here that writes, and only to `/user/ota/R390_WEB_FOTA.bin`.)
+(The protocol that sends a firmware package. `src/device/f3_flash.py` writes only `/user/ota/R390_WEB_FOTA.bin`; `src/device/f3x_install.py` uses the same write sequence for `/user/hub/aNN.f3x` and nothing else; the directory must exist.)
 
 | You send | The watch answers | Meaning |
 |---|---|---|

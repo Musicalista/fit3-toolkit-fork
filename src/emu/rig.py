@@ -22,6 +22,7 @@ class Rig:
         e.hook(0x2c224f04, lambda em: self.calls.append(("consume",)) or 0)
         e.hook(0x2c225ddc, lambda em: self.calls.append(("wm_open", em.arg(0), em.arg(1) & 0xffffffff, em.arg(2), em.arg(3))) or 0)
         e.hook(0x2c224d30, lambda em: self.calls.append(("set_current", em.arg(0))) or 0)
+        e.hook(0x2c1435e0, lambda em: self.calls.append(("mkdir_p", self.e.cstr(em.arg(0)))) or 0)
         self.gest = 0; e.hook(0x2c279240, lambda em: 0x20000400); e.hook(0x2c279336, lambda em: self.gest)
         self.mode = None; self.buf = b""; self.pos = 0; self.files = {}; self.path = None
     def _malloc(self, em):
@@ -68,7 +69,7 @@ class Rig:
             if 0x20000000 <= v < 0x20800000 and v % 4 == 0:
                 try:
                     cb = self.e.u32(v + 8)
-                    if 0x2c3a0524 <= (cb & ~1) < 0x2c3b0000 and self.e.u32(v + 12) == st: return v
+                    if (0x2c3a0524 <= (cb & ~1) < 0x2c3b0000 or 0x20000000 <= cb < 0x20800000) and self.e.u32(v + 12) == st: return v
                 except Exception: pass
         raise AssertionError("timer not found")
 

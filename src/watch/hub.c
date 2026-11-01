@@ -11,14 +11,65 @@
 #ifndef WINDOW_ID
 #define WINDOW_ID 0x2b                                           /* the window this build replaces (build_tennis.py --slot passes it); 0x2b = World clock */
 #endif
-#define MAX_APPS 12
+#define MAX_ROWS 28                                              /* bundled apps (at most 12) and installed ones (F3X_SLOTS) */
 #define ROW_H 90                                                 /* the stock app list: rows 254 x 90, radius 26, 10 px apart, the first 6 px from the top; icon 64 x 64 at x 12; name 8 px right of it, 152 wide */
 #define ROW_GAP 10
+
+#ifdef F3X_LOADER
+/* ---- installed apps: /user/hub/aNN.f3x (docs/f3x.md) ---- */
+typedef struct { Icon icon; char name[24]; u8 slot, pad[3]; u8 data[F3X_ICON_SIZE]; } Inst;      /* what the list needs of an installed app: its name and icon (the code is loaded when it is opened) */
+#define HUB_DIR "/user/hub"
+#define MAX_IMAGE 0x8000u
+#define MAX_RELOC 0x2000u
+static char *slot_path(char *b, int slot) { char *e = put(b, HUB_DIR "/a"); e = putn(e, (u32)slot, 2); return put(e, ".f3x"); }
+static int read_all(i32 fd, void *p, u32 n) { u32 got = 0; while (got < n) { i32 r = f_read(fd, (u8 *)p + got, n - got); if (r <= 0) return 0; got += (u32)r; } return 1; }
+static int hdr_ok(const F3xHeader *h) {
+    return h->magic == F3X_MAGIC && h->version == 1 && h->fw_id == F3X_FW && h->flags == 0 && h->image_size >= 16 && h->image_size <= MAX_IMAGE && (h->image_size & 3) == 0
+        && h->reloc_len <= MAX_RELOC && (h->app_off & 3) == 0 && h->app_off + sizeof(App) <= h->image_size && h->name[0] && h->name[23] == 0;
+}
+/* the list entry of the file in `slot`, or 0 */
+static Inst *inst_scan(int slot) {
+    char path[32]; F3xHeader h; slot_path(path, slot);
+    i32 fd = f_open(path, "r"); if (fd < 0) return 0;
+    Inst *in = 0;
+    if (read_all(fd, &h, sizeof h) && hdr_ok(&h) && (in = (Inst *)app_malloc(sizeof(Inst)))) {
+        if (read_all(fd, in->data, F3X_ICON_SIZE)) {
+            in->icon.hdr = ICON_HDR_I4(64, 64); in->icon.data_size = F3X_ICON_SIZE; in->icon.data = in->data; in->icon.pad = 0;
+            mcopy(in->name, h.name, 24); in->slot = (u8)slot;
+        } else { app_free(in); in = 0; }
+    }
+    f_close(fd); return in;
+}
+/* loads the app of `in` into the heap: checks the CRC over everything after the header, relocates the image to where it landed. Returns the block (free it after destroy) and the App in *app, or 0 */
+static void *inst_load(const Inst *in, const App **app) {
+    char path[32]; F3xHeader h; u8 chunk[128]; u32 crc = 0; void *blk = 0; slot_path(path, in->slot);
+    i32 fd = f_open(path, "r"); if (fd < 0) return 0;
+    if (!read_all(fd, &h, sizeof h) || !hdr_ok(&h)) goto fail;
+    for (u32 left = F3X_ICON_SIZE; left;) { u32 n = left < sizeof chunk ? left : (u32)sizeof chunk; if (!read_all(fd, chunk, n)) goto fail; crc = crc32_update(crc, chunk, n); left -= n; }
+    blk = app_malloc(h.image_size + h.reloc_len); if (!blk || ((u32)blk & 7)) goto fail;
+    u8 *img = (u8 *)blk, *rel = img + h.image_size;
+    if (!read_all(fd, img, h.image_size) || !read_all(fd, rel, h.reloc_len)) goto fail;
+    crc = crc32_update(crc, img, h.image_size + h.reloc_len); if (crc != h.crc) goto fail;
+    u32 delta = (u32)img - F3X_LINK_BASE, pos = 0;
+    for (u32 i = 0; i < h.reloc_len;) {                          /* delta varints: the gap to the next word to relocate, in words */
+        u32 v = 0, sh = 0; for (;;) { if (i >= h.reloc_len || sh > 28) goto fail; u8 b = rel[i++]; v |= (u32)(b & 0x7f) << sh; sh += 7; if (!(b & 0x80)) break; }
+        pos += v * 4; if (pos + 4 > h.image_size) goto fail;
+        *(u32 *)(img + pos) += delta;
+    }
+    f_close(fd); *app = (const App *)(img + h.app_off); return blk;
+fail:
+    f_close(fd); if (blk) app_free(blk); return 0;
+}
+#endif
 
 typedef struct {
     lv_obj_t *scr, *list, *root;                                 /* the screen, the list of apps (hub mode), the open app's container (the screen itself in single mode) */
     const App *cur; void *st;                                    /* the open app and its state (offset 16: src/emu tests read it) */
-    lv_obj_t *row[MAX_APPS];
+    void *blk;                                                   /* the loaded image of an installed app that is open */
+    lv_obj_t *row[MAX_ROWS];
+#ifdef F3X_LOADER
+    Inst *inst[F3X_SLOTS]; int ninst;
+#endif
 } Win;
 
 static void open_app(Win *w, const App *a) {
@@ -27,26 +78,51 @@ static void open_app(Win *w, const App *a) {
     if (!st) { if (HUB_MODE) lv_obj_del(root); return; }
     w->root = root; w->cur = a; w->st = st;
 }
+static void free_blk(Win *w) { if (w->blk) { app_free(w->blk); w->blk = 0; } }
 static void close_app(Win *w) {
     if (!w->cur) return;
     if (HUB_MODE) lv_obj_del(w->root);                           /* its widgets first, then the app's own cleanup */
     w->cur->destroy(w->st);
-    w->cur = 0; w->st = 0; w->root = 0;
+    w->cur = 0; w->st = 0; w->root = 0; free_blk(w);             /* an installed app's code is freed only after its destroy has returned */
 }
 static void on_row(lv_event_t *e) {
     Win *w = (Win *)lv_event_get_user_data(e); lv_obj_t *t = lv_event_get_target(e);
     if (lv_event_get_code(e) != EV_CLICKED || w->cur) return;
-    for (int i = 0; i < (int)NAPPS && i < MAX_APPS; i++) if (t == w->row[i]) { motor_once(1, 1); open_app(w, APPS[i]); return; }
+    for (int i = 0; i < MAX_ROWS; i++) if (w->row[i] && t == w->row[i]) {
+        motor_once(1, 1);
+        if (i < (int)NAPPS) { open_app(w, APPS[i]); return; }
+#ifdef F3X_LOADER
+        const App *a; void *blk = inst_load(w->inst[i - NAPPS], &a);
+        if (!blk) { motor_once(4, 1); return; }                  /* damaged or incompatible file: a strong buzz, nothing opens */
+        open_app(w, a);
+        if (w->cur) w->blk = blk; else app_free(blk);
+#endif
+        return;
+    }
 }
 static void on_screen(lv_event_t *e) {
     Win *w = (Win *)lv_event_get_user_data(e); u32 code = lv_event_get_code(e);
-    if (code == EV_DELETE) { if (w->cur) w->cur->destroy(w->st); app_free(w); return; }
+    if (code == EV_DELETE) {
+        if (w->cur) w->cur->destroy(w->st);
+        free_blk(w);
+#ifdef F3X_LOADER
+        for (int i = 0; i < w->ninst; i++) app_free(w->inst[i]);
+#endif
+        app_free(w); return;
+    }
     if (code == EV_GESTURE && lv_indev_get_gesture_dir(lv_indev_get_act()) == 2) {
         if (w->cur && w->cur->back(w->st)) { }                   /* the app used the gesture */
         else if (HUB_MODE && w->cur) close_app(w);
         else wm_open(3, -1, 0, BACK_ANIM);
         ui_gesture_consume();
     }
+}
+static void add_row(Win *w, int i, const char *name, const Icon *icon) {
+    lv_obj_t *r = w->row[i] = mk_box(w->list, 1, 6 + i * (ROW_H + ROW_GAP), 254, ROW_H, 26, C_CARD);
+    lv_obj_add_event_cb(r, on_row, 0, w);
+    lv_obj_t *im = lv_img_create(r); lv_img_set_src(im, icon); lv_obj_set_pos(im, 12, (ROW_H - 64) / 2);
+    lv_obj_t *nm = mk_text(r, 0, 0, 152, FT_BTN, C_WHITE, ALIGN_LEFT, name);          /* like the stock list: 152 wide, wraps onto a second line, centred beside the icon */
+    lv_obj_update_layout(nm); lv_obj_align_to(nm, im, ALIGN_OUT_RIGHT_MID, 8, 0);
 }
 
 /* world_create: first function of the image (--takeover-create gets its address | 1) */
@@ -62,13 +138,14 @@ __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 pa
         lv_obj_t *l = w->list = lv_obj_create(scr);
         lv_obj_set_size(l, SCREEN_W, SCREEN_H - 50); lv_obj_set_pos(l, 0, 50);
         set_bg_opa(l, 0); set_border_width(l, 0); set_radius(l, 0); set_pad_all(l, 0); lv_obj_set_scrollbar_mode(l, 0);
-        for (int i = 0; i < (int)NAPPS && i < MAX_APPS; i++) {
-            lv_obj_t *r = w->row[i] = mk_box(l, 1, 6 + i * (ROW_H + ROW_GAP), 254, ROW_H, 26, C_CARD);
-            lv_obj_add_event_cb(r, on_row, 0, w);
-            lv_obj_t *im = lv_img_create(r); lv_img_set_src(im, APPS[i]->icon); lv_obj_set_pos(im, 12, (ROW_H - 64) / 2);
-            lv_obj_t *nm = mk_text(r, 0, 0, 152, FT_BTN, C_WHITE, ALIGN_LEFT, APPS[i]->name);          /* like the stock list: 152 wide, wraps onto a second line, centred beside the icon */
-            lv_obj_update_layout(nm); lv_obj_align_to(nm, im, ALIGN_OUT_RIGHT_MID, 8, 0);
+        for (int i = 0; i < (int)NAPPS && i < 12; i++) add_row(w, i, APPS[i]->name, APPS[i]->icon);
+#ifdef F3X_LOADER
+        mkdir_p(HUB_DIR);                                        /* the directory the installer writes into; created on the first visit */
+        for (int slot = 0; slot < F3X_SLOTS && w->ninst < F3X_SLOTS && (int)NAPPS + w->ninst < MAX_ROWS; slot++) {
+            Inst *in = inst_scan(slot); if (!in) continue;
+            w->inst[w->ninst] = in; add_row(w, (int)NAPPS + w->ninst, in->name, &in->icon); w->ninst++;
         }
+#endif
     } else open_app(w, APPS[0]);
     lv_obj_add_event_cb(scr, on_screen, 0, w);                   /* 0 = LV_EVENT_ALL: gesture and DELETE (33) */
     return scr;

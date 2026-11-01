@@ -30,6 +30,12 @@ another language shows your name too (untested outside English). `--label` longe
 
 Tests (no watch needed; most need `local/firmware/stock-aza3.bin`): `python3 -I src/firmware/test_build_package.py`, and the emulator tests of [src/emu](../src/emu/README.md).
 
+## Install apps without flashing: the hub and `.f3x`
+
+Build the package with `--hub tennis,counter,dice` (the Application Hub replaces the chosen entry; the loader of installable apps is on by default), flash it as above, open the hub once, then put apps on
+the watch from the PC with `src/device/f3x_install.py`. A few kB per app, about a second per install, no restart. Full description, the file format and the limits: [f3x.md](f3x.md). It needs the
+Bluetooth patches, so a final package built with `--no-bluetooth-patches` cannot receive apps (the ones already installed keep working).
+
 ## Flash from the PC: `src/device/f3_flash.py`
 
 No phone app needed. It talks to the watch over Bluetooth with the protocol of [protocol.md](protocol.md), in stages you start one by one:

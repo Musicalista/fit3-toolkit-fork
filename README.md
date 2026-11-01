@@ -43,6 +43,7 @@ shows only when the entry is opened, and the watch still boots and can be flashe
 | Path | What |
 |---|---|
 | [`src/build_tennis.py`](src/README.md) | one command from your stock package to the tennis package |
+| [`src/f3x/`](docs/f3x.md) | the `.f3x` installable-app format: builder, parser, tests; `src/device/f3x_install.py` puts the files on the watch |
 | [`src/watch/`](src/watch/README.md) | the code that runs on the watch: the hub, the shared UI header and the apps (tennis, counter, dice) |
 | [`src/firmware/`](src/README.md) | read, validate and rebuild firmware packages (`build_package.py`, `validate_fwd.py`) |
 | [`src/emu/`](src/emu/README.md) | a Unicorn harness that runs functions of the real firmware on the PC; the tests of the loader run on it |

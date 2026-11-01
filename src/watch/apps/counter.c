@@ -57,4 +57,4 @@ static void *counter_create(lv_obj_t *root) {
 }
 static int counter_back(void *st) { (void)st; return 0; }
 static void counter_destroy(void *st) { Counter *s = (Counter *)st; if (s->timer) lv_timer_del(s->timer); s->timer = 0; counter_flush(s); app_free(s); }
-static const App app_counter = { "Counter", &ICON_COUNTER, counter_create, counter_back, counter_destroy };
+APP_EXPORT(counter, "Counter", &ICON_COUNTER, counter_create, counter_back, counter_destroy)

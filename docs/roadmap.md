@@ -19,6 +19,8 @@
 | 3 | `build_package.py` / `build_tennis.py`: stock package + patches + loader + label + icon, all checksums repaired, nothing third-party in the repository | **done** (the result is identical to the hand-built package; the only third-party input is your stock package) |
 | 4 | Label and icon: a longer name (`--label`, text ID 181), our own 64 x 64 icon (`mkicon.py`, `--icon`: the list row points at an `lv_img_dsc_t` in the free flash) | **done and verified** (label and icon on the watch) |
 | 5 | The tennis app as native LVGL objects: cards, Undo, Stats, save | **done and verified** |
+| 7 | The Application Hub: a native-style list of apps in one entry (`--hub`), tennis, counter and dice as apps | **done and verified** on the watch (list, every app, back gesture, double press on the side key) |
+| 8 | `.f3x`: install apps over Bluetooth without flashing (`docs/f3x.md`) | **done and verified** on the watch (eight apps installed over Bluetooth, list scrolls) |
 | 6 | Choose the replaced entry (`--slot`), other languages (`--languages all`) | built and tested in the emulator for all 11 slots; World clock verified on the watch |
 
 Why a faulty window is not a brick: nothing of ours runs at boot. A broken function restarts the watch when someone opens the entry (or, for the icon, the app list); the watch still

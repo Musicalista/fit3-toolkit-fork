@@ -40,6 +40,7 @@ typedef struct lv_obj lv_obj_t; typedef struct lv_timer lv_timer_t; typedef stru
 #define f_read(fd, buf, n)          F(0x2c142dcc, i32, (i32, void *, u32))(fd, buf, n)
 #define f_write(fd, buf, n)         F(0x2c142ee0, i32, (i32, const void *, u32))(fd, buf, n)
 #define f_close(fd)                 F(0x2c142c24, u32, (i32))(fd)
+#define mkdir_p(path)              F(0x2c1435e0, u32, (const char *))(path)           /* creates every missing directory of the path; 0 = ok */
 #define motor_once(id, flag)        F(0x2c1423f8, u32, (u32, i32))(id, flag)         /* flag != 0: respects the user's vibration setting */
 #define ui_gesture_consume()        F(0x2c224f04, void, (void))()
 #define wm_open(op, id, arg, anim)  F(0x2c225ddc, void, (i32, i32, i32, i32))(op, id, arg, anim)
@@ -101,6 +102,24 @@ typedef struct {
     void (*destroy)(void *state);                                       /* the app is closed or the window deleted: stop timers, save, free the state. Its widgets are deleted by the host */
 } App;
 
+/* How an app is exported. Bundled in the flash image (the default) it is a static `app_<id>` that gen_apps.h lists. Built as an installable file (-DF3X_BUILD, src/f3x/build_f3x.py) it is the one
+ * global `f3x_app`, without an icon (the file carries the icon in its header; the hub makes the descriptor), and nothing else of the app may be a global. docs/f3x.md. */
+#ifdef F3X_BUILD
+#define APP_EXPORT(id, nm, ic, cr, bk, de) const App f3x_app __attribute__((used)) = { nm, 0, cr, bk, de };
+#else
+#define APP_EXPORT(id, nm, ic, cr, bk, de) static const App app_##id = { nm, ic, cr, bk, de };
+#endif
+
+/* ---- the installable app file (docs/f3x.md): 64-byte header, the 64 x 64 four-bit icon, the image linked at F3X_LINK_BASE, the relocation list (delta varints of word offsets / 4) ---- */
+#define F3X_MAGIC 0x31583346u                                           /* "F3X1" */
+#define F3X_FW 0xdf60a3ccu                                              /* crc32("R390XXU0AZA3"): the firmware whose addresses the image calls */
+#define F3X_LINK_BASE 0x40000000u
+#define F3X_ICON_SIZE 2112
+#define F3X_SLOTS 16                                                    /* /user/hub/a00.f3x .. a15.f3x */
+typedef struct {
+    u32 magic; u16 version, flags; u32 fw_id, image_size, app_off, reloc_len, crc; char name[24]; u8 reserved[12];
+} F3xHeader;
+
 /* ---- memory and text ---- */
 H void mcopy(void *d, const void *s, u32 n) { u8 *a = (u8 *)d; const u8 *b = (const u8 *)s; while (n--) *a++ = *b++; }
 H void fill8(void *d, u8 v, u32 n) { u8 *a = (u8 *)d; while (n--) *a++ = v; }
@@ -110,6 +129,12 @@ H char *putn(char *b, u32 v, int pad) {
     while (n < pad && n < 10) t[n++] = '0';
     while (n) *b++ = t[--n];
     *b = 0; return b;
+}
+/* zlib-compatible CRC-32, bitwise (small): feed `c` back in to continue */
+H u32 crc32_update(u32 c, const u8 *p, u32 n) {
+    c = ~c;
+    while (n--) { c ^= *p++; for (int k = 0; k < 8; k++) c = (c >> 1) ^ (0xedb88320u & (u32)-(i32)(c & 1)); }
+    return ~c;
 }
 H char *fmt_dur(char *b, u32 s) { if (s >= 3600) { b = putn(b, s / 3600, 1); b = put(b, ":"); } b = putn(b, s / 60 % 60, s >= 3600 ? 2 : 1); b = put(b, ":"); return putn(b, s % 60, 2); }
 H char *fmt_short(char *b, u32 s) { if (s < 3600) return fmt_dur(b, s); b = putn(b, s / 3600, 1); b = put(b, "h"); return putn(b, s / 60 % 60, 2); }

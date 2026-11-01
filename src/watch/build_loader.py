@@ -20,7 +20,7 @@ def build(src, out, quiet=False, defines=(), include_dirs=()):
     sizes = run("arm-none-eabi-size", "-A", elf)
     for ln in sizes.splitlines():
         p = ln.split()
-        if len(p) >= 2 and p[0] in (".data", ".bss") and int(p[1]): sys.exit("the loader must not have %s (%s bytes): keep state in the heap" % (p[0], p[1]))
+        if len(p) >= 2 and p[0].startswith((".data", ".bss", ".noinit")) and int(p[1]): sys.exit("the loader must not have %s (%s bytes): keep state in the heap" % (p[0], p[1]))
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     run("arm-none-eabi-objcopy", "-O", "binary", elf, out)
     syms = {l.split()[2]: int(l.split()[0], 16) for l in run("arm-none-eabi-nm", elf).splitlines() if len(l.split()) == 3}

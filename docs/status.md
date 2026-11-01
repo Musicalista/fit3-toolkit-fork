@@ -32,6 +32,16 @@ Tested on **one** Galaxy Fit3 (SM-R390) on firmware **R390XXU0AZA3**. Legend: **
 | Ghidra pipeline (`src/re`) | PC: 15,478 functions and the decompiled C of the stock main image |
 | Unicorn harness, loader and icon tests, screenshots (`src/emu`) | PC: 40 checks on LVGL structures, 40 on the window, 9 on the icon, all 11 slots |
 
+## The Application Hub and .f3x
+
+| What | State |
+|---|---|
+| The hub list (rows the size of the stock list, 64 x 64 four-bit icons), tennis, counter, dice as apps; back gesture; double press on the side key (set to World Clock in Galaxy Wearable) | **watch** (2026-11-01) |
+| `.f3x` build, parse, refusals (`src/f3x`, 22 checks), the installer against a mock watch (19 checks) | PC |
+| An installed app in the hub: scan, CRC at launch, relocation identical to the PC's, the code runs from the heap and is freed after `destroy` (`src/emu/test_f3x.py`, 15 checks) | emulator |
+| `f3x_install.py list` / `install` (eight apps, each read back identical), `mkdir_p("/user/hub")` made by the hub, the hub opening the files, code executing from `app_malloc` memory, scrolling a list of eight, repeated open/close | **watch** (2026-11-01) |
+| `f3x_install.py remove` (the tombstone), an update in place, `--force`, a damaged file refused by the hub, the largest image | PC and emulator only; **not tried on a watch** |
+
 ## Open
 
 - What replacing each other stock app breaks on a watch (Alarm, Timer and Stopwatch may keep state outside their window).

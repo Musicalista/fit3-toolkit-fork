@@ -65,4 +65,4 @@ static void *dice_create(lv_obj_t *root) {
 }
 static int dice_back(void *st) { (void)st; return 0; }
 static void dice_destroy(void *st) { Dice *s = (Dice *)st; if (s->timer) lv_timer_del(s->timer); s->timer = 0; app_free(s); }
-static const App app_dice = { "Dice", &ICON_DICE, dice_create, dice_back, dice_destroy };
+APP_EXPORT(dice, "Dice", &ICON_DICE, dice_create, dice_back, dice_destroy)

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""f3_flash.py: send a firmware package to a Galaxy Fit3 from this PC over Bluetooth, from the command line. **The only tool of this repository that writes to the watch.**
+"""f3_flash.py: send a firmware package to a Galaxy Fit3 from this PC over Bluetooth, from the command line. **One of two tools of this repository that write to the watch (the other is f3x_install.py, which can only write /user/hub/aNN.f3x); this one writes only the OTA file.**
 
     python3 -I src/device/f3_flash.py out.bin --addr AA:BB:CC:DD:EE:FF                       # 1. plan only: checks the package on the PC, does not touch the watch
     python3 -I src/device/f3_flash.py out.bin --addr AA:BB:CC:DD:EE:FF --upload              # 2. copies the package to the watch and checks its size; installs nothing
@@ -69,6 +69,11 @@ def check_package(path, run=subprocess.run):
 def upload(link, data, path=OTA_PATH, progress=None, trace=None):
     """writes `data` to the OTA path: 300 / 33bin,<path>,<length> / blocks with CRC32 / 32 / 34. Nothing is installed by this."""
     if path != OTA_PATH: raise L.Error("refusing to write %r: only %s can be written" % (path, OTA_PATH))
+    write_file(link, data, path, progress, trace)
+
+
+def write_file(link, data, path, progress=None, trace=None):
+    """the protocol of a file write, for the callers that have their own guard on the path (upload above; src/device/f3x_install.py)"""
     t = trace or (lambda m: None); n_blocks = -(-len(data) // BLOCK)
     link.drain(); t("-> 300"); link.send("300"); expect(link, "300", t)
     t("-> 33bin,%s,%d" % (path, len(data))); link.send("33bin,%s,%d" % (path, len(data)))

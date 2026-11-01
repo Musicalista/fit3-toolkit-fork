@@ -192,4 +192,4 @@ static void *tennis_create(lv_obj_t *root) {
 /* back gesture: close the stats overlay first, then the host leaves the app */
 static int tennis_back(void *st) { State *s = (State *)st; if (!s->over_shown) return 0; show_stats(s, 0); return 1; }
 static void tennis_destroy(void *st) { State *s = (State *)st; if (s->timer) lv_timer_del(s->timer); s->timer = 0; flush(s); app_free(s); }
-static const App app_tennis = { "Tennis Score", &ICON_TENNIS, tennis_create, tennis_back, tennis_destroy };
+APP_EXPORT(tennis, "Tennis Score", &ICON_TENNIS, tennis_create, tennis_back, tennis_destroy)

@@ -15,6 +15,8 @@ Python 3 (numpy for the icon, Pillow for some tools), `arm-none-eabi-gcc` for th
 | `assets/lvres.py`, `assets/lvlang.py`, `assets/lvfont.py` | decode the image packs (`.res`), read or edit the language packs, decode the watch's LVGL fonts and render text to a PNG |
 | `assets/mkicon.py` | draw our app-list icon (64 x 64, RGB565 + alpha) |
 | `device/f3_pull.py`, `device/f3_link.py` | copy fonts and images (`/nand/system/font`, `/nand/system/image`) from the watch to the PC, **read-only**; `test_f3_link.py` tests the link against a mock watch |
+| `f3x/build_f3x.py`, `f3x/f3x.py` | C source of an app -> an installable `.f3x` file (docs/f3x.md); `f3x/test_f3x_format.py` tests the format and the refusals |
+| `device/f3x_install.py` | list, install and remove `.f3x` apps on the watch (only `/user/hub/a00..a15.f3x`); `test_f3x_install.py` tests it against `mock_watch.py` |
 | `device/f3_flash.py` | send a package to the watch from the PC, in stages: plan, `--upload` (+ `--verify`), `--start-update`; `test_f3_flash.py` tests it against a mock watch that can fail mid-transfer |
 
 Protocol: [../docs/protocol.md](../docs/protocol.md). Firmware: [../docs/firmware.md](../docs/firmware.md), [../docs/details.md](../docs/details.md).
