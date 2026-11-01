@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """build_tennis.py: one command from *your* stock firmware package to a package that has the tennis score tracker in place of World clock.
 
-    python3 -I tools/build_tennis.py <stock R390XXU0AZA3 package.bin> <out.bin> [--slot "World Clock"] [--label "Tennis Score"] [--languages en|all] [--no-icon] | --list-slots
+    python3 -I tools/build_tennis.py <stock R390XXU0AZA3 package.bin> <out.bin> [--slot "World Clock"] [--label "Tennis Score"] [--languages en|all] [--no-icon] [--no-bluetooth-patches] | --list-slots
 
 It compiles tools/loader/loader_v2.c (needs arm-none-eabi-gcc), draws the app-list icon (tools/assets/mkicon.py, needs numpy), and builds the package with
 tools/firmware/build_package.py (Bluetooth serial patches, the take-over of the World clock window, the list label, the icon; every checksum repaired; the result is validated).
@@ -20,6 +20,7 @@ def main():
     ap.add_argument("--force-slot", action="store_true", help="allow Settings (it would lock you out of the settings: do not)")
     ap.add_argument("--languages", choices=("en", "all"), default="en", help="rename the entry in the English files only, or in every language file (untested outside English)")
     ap.add_argument("--no-icon", action="store_true", help="keep the stock icon")
+    ap.add_argument("--no-bluetooth-patches", action="store_true", help="leave the watch's Bluetooth as stock: nobody in range can connect, and you cannot flash it from here again without a reset (use for the final package)")
     a = ap.parse_args()
     if a.list_slots: sys.exit(subprocess.call([sys.executable, "-I", os.path.join(HERE, "firmware", "build_package.py"), a.stock, "--list-slots"]))
     if not a.out: ap.error("out is required")
@@ -28,7 +29,7 @@ def main():
     work = tempfile.mkdtemp(prefix="tennis_"); loader = os.path.join(work, "loader.bin")
     syms = build_loader.build(os.path.join(HERE, "loader", "loader_v2.c"), loader, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]])
     icon = None if a.no_icon else mkicon.encode(*mkicon.draw())
-    build_package.build(a.stock, a.out, open(loader, "rb").read(), label=a.label, icon=icon, slot=sl["window"], languages=a.languages, force_slot=a.force_slot,
+    build_package.build(a.stock, a.out, open(loader, "rb").read(), label=a.label, icon=icon, slot=sl["window"], languages=a.languages, force_slot=a.force_slot, bluetooth_patches=not a.no_bluetooth_patches,
                         takeover={"create": syms["world_create"] | 1, "event": syms["world_event"] | 1})
     print("done:", a.out, "(replaces %s)" % sl["name"])
 

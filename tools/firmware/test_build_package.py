@@ -61,6 +61,15 @@ good("the icon sits after the loader and only the row of the replaced entry poin
 assert fwd.main_image_crc(mq) == fwd.u32(mq, 0x1008)
 good("the main image CRC is repaired")
 
+# 1b. without the Bluetooth patches: the stock Bluetooth behaviour, everything else the same
+qn = build("nopatch.bin", icon=icon, bluetooth_patches=False, validate=True); mn = qn.raw(fwd.MAIN)       # validate_fwd.py runs inside this build
+assert all(mn[bp.at(v):bp.at(v) + len(old)] == old for v, old, new in bp.SPP_PATCHES), "the Bluetooth patch sites changed"
+other = [bp.BASE + i for i in range(len(mq)) if mq[i] != mn[i]]
+assert all(0x2c081008 <= a < 0x2c08100c or any(v <= a < v + 2 for v, _, _ in bp.SPP_PATCHES) for a in other) and any(not (0x2c081008 <= a < 0x2c08100c) for a in other), other[:6]
+good("--no-bluetooth-patches: the two patch sites keep the stock bytes and nothing else differs from the patched build (but the image CRC)")
+try: bp.build(os.path.join(WORK, "nopatch.bin"), os.path.join(WORK, "refused.bin"), loader, TK, quiet=True, validate=False); sys.exit("FAIL: a package without patches was accepted as a patched one?")
+except AssertionError: pass
+
 # 2. the name of the entry
 short = build("short.bin", label="Tennis"); long_ = build("long.bin", label="Tennis match score"); nonen = [k for k in stock.paths() if k.endswith("language_pl_rPL.res")]
 for k in stock.paths():

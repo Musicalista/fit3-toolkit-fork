@@ -17,6 +17,7 @@ Tested on **one** Galaxy Fit3 (SM-R390) on firmware **R390XXU0AZA3**. Legend: **
 | Wake from screen-off | watch | the page stays, no stock page flashes in or comes back |
 | Own app-list name and icon | watch | `--label` (two lines when long), `mkicon.py` draws the icon, `--no-icon` keeps the stock one |
 | Replacing another entry (`--slot`) | emulator | all 11 replaceable entries build and pass the window test; **only World clock was tried on a watch** |
+| A package without the Bluetooth patches (`--no-bluetooth-patches`) | PC | built and validated (the two sites keep the stock bytes, nothing else differs); **not flashed**: it is the intended final package of a project, after which the watch can only be reached again via its setup screen |
 | Names in all languages (`--languages all`) | PC | the structure of all 69 language files is checked; not tried on a watch in another language |
 
 ## Tools
@@ -25,7 +26,8 @@ Tested on **one** Galaxy Fit3 (SM-R390) on firmware **R390XXU0AZA3**. Legend: **
 |---|---|
 | Validate and rebuild firmware packages (`tools/firmware`) | PC: every CRC, byte-identical rebuild of a known package |
 | Copy fonts and images from a watch (`tools/device/f3_pull.py`) | watch; read-only |
-| Flash from the PC (`tools/device/f3_flash.py`) | **mock watch only**: 45 checks incl. failures mid-transfer and the log file; **never run on a real watch** (the upload, the size check and the OTA command are those of the phone app, but we have not sent them ourselves) |
+| Flash from the PC: upload, size check, read-back (`tools/device/f3_flash.py --upload --verify`) | **watch** (first run 2026-11-01): the 18,263,450-byte package went in 104 s (175 kB/s, 462 blocks, all acknowledged), the watch reported the right size, and the read-back (446 blocks, 1015 s) found the file identical. Also 45 checks on a mock watch, incl. failures mid-transfer |
+| Flash from the PC: `--start-update` (the OTA command and the installation) | **not tried**: the command is the phone app's (`00AT^OTA_UPDATE`, answer of 4 bytes or none), but we have not sent it ourselves yet |
 | Decoders for fonts, image packs, language packs (`tools/assets`) | PC |
 | Ghidra pipeline (`tools/re`) | PC: 15,478 functions and the decompiled C of the stock main image |
 | Unicorn harness, loader and icon tests, screenshots (`tools/emu`) | PC: 40 checks on LVGL structures, 40 on the window, 9 on the icon, all 11 slots |

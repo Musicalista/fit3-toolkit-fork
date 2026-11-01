@@ -25,6 +25,10 @@ python3 -I tools/build_tennis.py <your package>.bin --list-slots                
 python3 -I tools/build_tennis.py <your package>.bin out.bin --slot Calculator --label "Tennis Score"
 ```
 
+**Heads-up 1:** on a watch that has only ever run Samsung's firmware the first flash needs a **factory reset** (the serial service is reachable only on the setup screen); see [docs/howto.md](docs/howto.md).
+
+**Heads-up 2:** the default build carries two Bluetooth patches that let you flash from here but also let anyone in range connect to the watch without pairing; build the final package with `--no-bluetooth-patches` (see [docs/howto.md](docs/howto.md)).
+
 Then flash `out.bin` from the PC (`tools/device/f3_flash.py`, no phone app needed) or with Fit3 Manager on the phone, and open the app list. Full steps, requirements and how to go back to stock: [docs/howto.md](docs/howto.md). You need `arm-none-eabi-gcc`, Python 3 with
 numpy, and **your own stock package**; keep a copy of it.
 

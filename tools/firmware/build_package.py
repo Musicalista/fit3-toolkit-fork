@@ -8,7 +8,8 @@
 
 What it changes (every old byte is checked first; nothing is written when something is not as expected):
   1. Bluetooth patches: 0x2c233820 `mov r4,r0` -> `movs r4,#3` (the watch is always visible and connectable),
-     0x2c227f7a `mov r1,r2` -> `movs r1,#1` (RFCOMM channel 29 accepts a second client).
+     0x2c227f7a `mov r1,r2` -> `movs r1,#1` (RFCOMM channel 29 accepts a second client). They let this PC flash the watch, and let ANYONE in range connect without pairing:
+     --no-bluetooth-patches leaves them out (flash such a package last, see docs/howto.md).
   2. the loader: the bytes of --loader go to --loader-addr (default 0x2c3a0524) in the free flash. Stock has zeros from 0x2c3a0524 to 0x2c3af920 (62460 bytes); the range is checked.
   3. the take-over of the app-list entry chosen with --slot (default World Clock): a `b.w` branch at the entry of the stock create function and of the stock window event function of that window
      goes to --takeover-create / --takeover-event (Thumb addresses inside the loader); the other window functions of its record (post-enter, +0x28, destroy) become `bx lr` because they would run
@@ -87,7 +88,7 @@ def check_stock(p):
     return raw
 
 
-def build(stock, out, loader, takeover, loader_addr=FREE_START, label="Tennis", validate=True, quiet=False, icon=None, slot=0x2b, languages="en", force_slot=False):
+def build(stock, out, loader, takeover, loader_addr=FREE_START, label="Tennis", validate=True, quiet=False, icon=None, slot=0x2b, languages="en", force_slot=False, bluetooth_patches=True):
     """takeover = {"create": Thumb address, "event": Thumb address} of the two window functions inside `loader`"""
     log = (lambda *a: None) if quiet else print
     new_label = label.encode("ascii") + b"\0"; old_label = b"World Clock\0"
@@ -110,10 +111,10 @@ def build(stock, out, loader, takeover, loader_addr=FREE_START, label="Tennis", 
         assert not any(orig[at(icon_addr):at(icon_end)]), "stock flash %#x..%#x is not empty" % (icon_addr, icon_end)
         ptr = sl["icon_ptr"]
         assert struct.unpack_from("<I", orig, at(sl["icon_field"]))[0] == ptr and re.fullmatch(rb"\d{1,4}", bytes(orig[at(ptr):at(ptr) + 4]).split(b"\0")[0] or b"x"), "the icon of row %d of the app list is not an image ID string" % sl["row"]
-    # --- Bluetooth patches
+    # --- Bluetooth patches (always checked: the sites must hold the stock bytes; applied unless bluetooth_patches is False)
     for vma, old, new in SPP_PATCHES:
         assert orig[at(vma):at(vma) + len(old)] == old, "patch site %#x does not hold %s (another version, or a package that is already patched?)" % (vma, old.hex())
-        raw[at(vma):at(vma) + len(new)] = new
+        if bluetooth_patches: raw[at(vma):at(vma) + len(new)] = new
     # --- the loader and the take-over of the window
     raw[at(loader_addr):at(lend)] = loader
     for k in ("create", "event"):
@@ -149,7 +150,7 @@ def build(stock, out, loader, takeover, loader_addr=FREE_START, label="Tennis", 
         if new != inner: p.set_raw(path, fwd.rezip_single(zbytes, new)); changed.append((path.rsplit("/", 1)[1], n))
     assert any(c[1] for c in changed), "found no label to replace for %s" % sl["name"]
     p.save(out)
-    log("Bluetooth patches: %d; loader %d bytes at %#x..%#x; take-over of %s (window %#x, list row %d): %s" % (len(SPP_PATCHES), len(loader), loader_addr, lend, sl["name"], sl["window"], sl["row"],
+    log("Bluetooth patches: %s; loader %d bytes at %#x..%#x; take-over of %s (window %#x, list row %d): %s" % ("%d (the watch is open to anyone in range)" % len(SPP_PATCHES) if bluetooth_patches else "none (stock Bluetooth behaviour)", len(loader), loader_addr, lend, sl["name"], sl["window"], sl["row"],
         ", ".join("%s %#x -> b.w %#x" % (k, sl[k], v & ~1) for k, v in takeover.items())))
     log("label -> %r; changed language files: %s" % (label, ", ".join("%s (x%d)" % c for c in changed)))
     log("wrote", out, os.path.getsize(out), "bytes")
@@ -173,6 +174,7 @@ if __name__ == "__main__":
     ap.add_argument("--slot", default="World Clock", help="which entry of the app list to take over (name or window id; --list-slots shows them)")
     ap.add_argument("--list-slots", action="store_true", help="print the replaceable entries of the stock package and exit")
     ap.add_argument("--force-slot", action="store_true", help="allow a slot that is refused by default (Settings)")
+    ap.add_argument("--no-bluetooth-patches", action="store_true", help="leave the Bluetooth behaviour as stock (the watch cannot then be flashed again without a reset; see docs/howto.md)")
     ap.add_argument("--languages", choices=("en", "all"), default="en", help="language files whose entry name is replaced (all: untested outside English)")
     a = ap.parse_args()
     if a.list_slots:
@@ -186,4 +188,4 @@ if __name__ == "__main__":
         sys.exit(0)
     if not (a.out and a.loader and a.takeover_create and a.takeover_event): ap.error("out, --loader, --takeover-create and --takeover-event are required")
     build(a.stock, a.out, open(a.loader, "rb").read(), {"create": a.takeover_create, "event": a.takeover_event}, a.loader_addr, a.label, icon=open(a.icon, "rb").read() if a.icon else None,
-          slot=a.slot, languages=a.languages, force_slot=a.force_slot)
+          slot=a.slot, languages=a.languages, force_slot=a.force_slot, bluetooth_patches=not a.no_bluetooth_patches)

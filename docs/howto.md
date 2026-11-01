@@ -42,13 +42,41 @@ python3 -I tools/device/f3_flash.py out.bin --upload --verify --start-update    
 ```
 
 - The package must pass `validate_fwd.py` or nothing is sent. Without `--start-update` nothing is installed: the file only waits on the watch, so an interrupted upload is harmless, run it again.
-- **`--verify` is optional but recommended.** Without it the tool checks only that the file on the watch has the right *length* (the phone app does the same). With it, the whole file is read back and compared byte by byte,
-  which takes as long as the upload but is the only check that the *content* arrived intact. Use it, at least the first time.
+- **`--verify` is optional but recommended.** Without it the tool checks only that the file on the watch has the right *length* (the phone app does the same). With it, the whole file is read back and compared byte by byte:
+  the only check that the *content* arrived intact. It is slow, because the watch hands the file back at about 18 kB/s: on a real watch the 18 MB upload took under 2 minutes and the read-back 17 minutes.
+  Use it at least the first time and after changing anything in the tool.
 - Requirements: the watch visible, charged to 50 % or more, Galaxy Wearable and Fit3 Manager closed (one client at a time), and **it must already carry our Bluetooth patches** (any package built here has them).
-  A watch that never had them can be reached only on its setup screen after a reset: flash that first package with Fit3 Manager.
+  A watch that never had them is a different case: see "The very first flash" below.
 - **Logs:** the tool prints the progress (bytes and percent) and writes a time-stamped log of the protocol events to `local/logs/f3_flash-<time>.log` (every command and answer, every 20th block, sizes, durations, the watch's
   reply to the OTA command; never the package's bytes). `--log PATH` picks the file, `--no-log` writes none.
 - Status: tested against a mock watch (45 checks, including failures in the middle of a transfer); see [status.md](status.md) for what has been tried on a real watch.
+
+## The Bluetooth patches, and closing the door when you are done
+
+Every package built here carries two one-instruction **Bluetooth patches** (`build_package.py`, [firmware.md](firmware.md)). They are what lets this PC (or the phone app) flash the watch, and they have a price: the watch is
+**always visible and connectable, and its file service on RFCOMM channel 29 accepts a connection without pairing from anyone in range**. The protocol behind it can read files (we use it for fonts and images; which other
+paths are readable we have not tested) and write `/user` files and a firmware package, and we saw no signature check on the firmware (only CRCs). So treat a watch with these patches as open to anyone near it.
+
+When your work with the watch is finished, build the **final package without them** and flash it last:
+
+```
+python3 -I tools/build_tennis.py stock-aza3.bin final.bin --no-bluetooth-patches ...
+python3 -I tools/device/f3_flash.py final.bin --upload --verify --start-update      # or Fit3 Manager: it is the last flash this way
+```
+
+The watch then behaves as it did from the factory (Bluetooth visible and connectable only where Samsung's firmware allows it), with your app in it. The price on the other side: **to flash it again, from here or from Fit3 Manager,
+you need the serial service, which stock firmware offers only on the setup screen after a reset** (that is a factory reset of the watch). Flashing the genuine `stock-aza3.bin` also removes the patches (and your app).
+Keep a patched build for development and make the final one last. Samsung's own phone app is not affected by any of this.
+
+## The very first flash: expect a factory reset
+
+On a watch that has only ever run Samsung's firmware, **the serial service that every tool here (and Fit3 Manager) talks to is reachable only on the watch's setup screen, the screen it shows after a factory reset**.
+So the first time you put any package on such a watch, you have to **reset it to factory settings** (everything on it is erased and it must be paired with the phone again afterwards), connect while it shows the
+setup screen, and flash that first package; Fit3 Manager and `f3_flash.py` both work then. If that package carries the Bluetooth patches (the default), later flashes need no reset. If you build the final
+package with `--no-bluetooth-patches`, the next flash needs a reset again (see above).
+
+This comes from the notes of the author of the phone app and of the first patches (Musicalista); **we have not tried it ourselves**, because the watch we work with was patched before this project began.
+If you reset a watch for this, please report what you saw.
 
 ## The pieces you bring (none of them is in this repository)
 
