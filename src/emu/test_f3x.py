@@ -22,6 +22,9 @@ class Rig(_Rig):
     def root(self): k = self.children(self.scr); return k[2] if len(k) > 2 else None
     def app_state(self): return self.e.u32(self.win + 16)
 
+class Rig2(Rig):
+    def __init__(self): _Rig.__init__(self, os.path.join(ROOT, "local/re/main-hubempty.bin"))
+
 def build(name, kind):
     wd = tempfile.mkdtemp(prefix="t_f3x_"); src = os.path.join(ROOT, "src/watch/apps/%s.c" % name)
     image, off, rel = f3x.compile_app(src, wd, [gen.generate(list(gen.APPS), False, os.path.join(wd, "gen"))])
@@ -70,5 +73,33 @@ def main():
     # delete the window with an installed app open
     r.click(r.rows[3]); blk2 = [a for a, n in r.sizes.items() if n == ((len(d_img) + len(f3x.varints(d_rel)) + 15) & ~15)][-1]; r.freed.clear(); e.call(A["obj_del"], scr)
     ok("deleting the window with an installed app open frees its code block, the list entries and the window", blk2 in r.freed and r.win in r.freed and len(r.freed) >= 5, [hex(x) for x in r.freed])
+    # ---- removing an installed app from the hub: a long press (LV_EVENT_LONG_PRESSED = 5) ----
+    r = Rig(); e = r.e; r.files[HUB % 0] = counter; r.files[HUB % 1] = dice; scr = r.create(); PRESSED, LONG = 1, 5
+    ev = lambda o, code: e.call(A["event_send"], o, code, 0)
+    sheet = lambda: r.children(r.scr)[2] if len(r.children(r.scr)) > 2 else None
+    tap = lambda o: (ev(o, PRESSED), r.click(o))                                  # a real touch always starts with PRESSED
+    ok("a long press on a bundled app does nothing", (ev(r.rows[0], PRESSED), ev(r.rows[0], LONG), sheet() is None)[2])
+    ev(r.rows[1], PRESSED); ev(r.rows[1], LONG); sh = sheet()
+    ok("a long press on an installed app opens the sheet: question, name, size, two buttons", sh is not None and r.alltext(sh) == ["Remove app?", "Counter", "3.5 kB", "Remove", "Cancel"], sh and r.alltext(sh))
+    r.click(r.rows[1]); ok("the release after the long press is not a tap: the app does not open", r.app_state() == 0 and len(r.children(r.scr)) == 3)
+    r.click(r.children(sh)[-1]); ok("Cancel closes the sheet and removes nothing", sheet() is None and r.files[HUB % 0] == counter and len(r.rows) == 3)
+    ev(r.rows[1], PRESSED); ev(r.rows[1], LONG); r.calls.clear(); r.gesture(2)
+    ok("the back gesture closes the sheet first (the hub is not left)", sheet() is None and not any(c[0] == "wm_open" for c in r.calls), r.calls)
+    tap(r.rows[1]); ok("a plain tap after that still opens the app", r.app_state() != 0); r.gesture(2)
+    ev(r.rows[1], PRESSED); ev(r.rows[1], LONG); sh = sheet(); r.click(r.children(sh)[-2])
+    ok("Remove asks first (Sure?) and removes nothing yet", "Sure?" in r.alltext(sh) and r.files[HUB % 0] == counter)
+    nw = len(r.writes); r.click(r.children(sh)[-2])
+    ok("the second tap writes the tombstone over the slot", r.files[HUB % 0] == b"F3X-GONE" and len(r.writes) == nw + 1 and r.files[HUB % 1] == dice, r.files[HUB % 0])
+    r.rows = r.children(r.list)
+    ok("the sheet is gone and the list is rebuilt without the app: Counter (bundled) and Dice", sheet() is None and [r.alltext(x) for x in r.rows] == [["Counter"], ["Dice"]], [r.alltext(x) for x in r.rows])
+    tap(r.rows[1]); ok("the remaining installed app still opens", r.app_state() != 0 and "Dice" in r.alltext(r.root())); r.gesture(2)
+    ev(r.rows[1], PRESSED); ev(r.rows[1], LONG); sh = sheet(); r.click(r.children(sh)[-2]); r.click(r.children(sh)[-2]); r.rows = r.children(r.list)
+    ok("removing the last installed app leaves the bundled one", [r.alltext(x) for x in r.rows] == [["Counter"]])
+    e.call(A["obj_del"], scr)
+    # an empty hub says so, and says so again after the last removal
+    r = Rig2(); e = r.e; scr = r.create(); ok("an empty hub shows a hint instead of an empty list", r.alltext(r.list) == ["No apps yet", "Add apps from a PC"], r.alltext(r.list))
+    e.call(A["obj_del"], scr); r.files[HUB % 5] = counter; scr = r.create(); rows = r.children(r.list); ok("one installed app: one row, no hint", [r.alltext(x) for x in rows] == [["Counter"]])
+    ev(rows[0], PRESSED); ev(rows[0], LONG); sh = r.children(r.scr)[2]; r.click(r.children(sh)[-2]); r.click(r.children(sh)[-2])
+    ok("after the last removal the hint is back and slot 5 holds the tombstone", r.alltext(r.list) == ["No apps yet", "Add apps from a PC"] and r.files[HUB % 5] == b"F3X-GONE", r.alltext(r.list))
     print("%d/%d passed" % (sum(res), len(res))); return 0 if all(res) else 1
 sys.exit(main())

@@ -19,6 +19,8 @@ typedef struct lv_obj lv_obj_t; typedef struct lv_timer lv_timer_t; typedef stru
 #define lv_obj_update_layout(o)     F(0x2c278d2c, void, (lv_obj_t *))(o)
 #define lv_obj_align_to(o, base, align, x, y) F(0x2c27908c, void, (lv_obj_t *, lv_obj_t *, u32, i32, i32))(o, base, align, x, y)
 #define ALIGN_OUT_RIGHT_MID 0x14
+#define lv_obj_clean(o)             F(0x2c27b1e8, void, (lv_obj_t *))(o)                 /* deletes all children */
+#define lv_obj_scroll_to_y(o, y, anim) F(0x2c27be64, void, (lv_obj_t *, i32, u32))(o, y, anim)
 #define lv_obj_set_scrollbar_mode(o, m) F(0x2c27b5c8, void, (lv_obj_t *, u32))(o, m)       /* 0 = off */
 #define lv_obj_add_event_cb(o, cb, code, ud) F(0x2c27d9cc, void *, (lv_obj_t *, void (*)(lv_event_t *), u32, void *))(o, cb, code, ud)
 #define lv_event_get_code(e)        F(0x2c27d988, u32, (lv_event_t *))(e)
@@ -58,6 +60,8 @@ typedef struct lv_obj lv_obj_t; typedef struct lv_timer lv_timer_t; typedef stru
 #define FL_HIDDEN (1u << 0)
 #define FL_CLICKABLE (1u << 1)
 #define FL_SCROLLABLE (1u << 4)
+#define EV_PRESSED 1
+#define EV_LONG_PRESSED 5
 #define EV_CLICKED 7
 #define EV_GESTURE 12
 #define EV_DELETE 33

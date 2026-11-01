@@ -17,7 +17,7 @@
 
 #ifdef F3X_LOADER
 /* ---- installed apps: /user/hub/aNN.f3x (docs/f3x.md) ---- */
-typedef struct { Icon icon; char name[24]; u8 slot, pad[3]; u8 data[F3X_ICON_SIZE]; } Inst;      /* what the list needs of an installed app: its name and icon (the code is loaded when it is opened) */
+typedef struct { Icon icon; char name[24]; u8 slot, pad[3]; u32 size; u8 data[F3X_ICON_SIZE]; } Inst;      /* what the list needs of an installed app: its name and icon (the code is loaded when it is opened) */
 #define HUB_DIR "/user/hub"
 #define MAX_IMAGE 0x8000u
 #define MAX_RELOC 0x2000u
@@ -35,7 +35,7 @@ static Inst *inst_scan(int slot) {
     if (read_all(fd, &h, sizeof h) && hdr_ok(&h) && (in = (Inst *)app_malloc(sizeof(Inst)))) {
         if (read_all(fd, in->data, F3X_ICON_SIZE)) {
             in->icon.hdr = ICON_HDR_I4(64, 64); in->icon.data_size = F3X_ICON_SIZE; in->icon.data = in->data; in->icon.pad = 0;
-            mcopy(in->name, h.name, 24); in->slot = (u8)slot;
+            mcopy(in->name, h.name, 24); in->slot = (u8)slot; in->size = (u32)sizeof h + F3X_ICON_SIZE + h.image_size + h.reloc_len;
         } else { app_free(in); in = 0; }
     }
     f_close(fd); return in;
@@ -69,6 +69,8 @@ typedef struct {
     lv_obj_t *row[MAX_ROWS];
 #ifdef F3X_LOADER
     Inst *inst[F3X_SLOTS]; int ninst;
+    lv_obj_t *sheet, *b_rm, *l_rm, *b_cancel;                    /* the "Remove app?" sheet of a long press, and its buttons */
+    int sel; u8 armed, lp;                                       /* the installed row it is about (index in row[]), "Sure?" shown, a long press was sent (the release must not open the app) */
 #endif
 } Win;
 
@@ -85,9 +87,45 @@ static void close_app(Win *w) {
     w->cur->destroy(w->st);
     w->cur = 0; w->st = 0; w->root = 0; free_blk(w);             /* an installed app's code is freed only after its destroy has returned */
 }
-static void on_row(lv_event_t *e) {
+static void build_list(Win *w);
+#ifdef F3X_LOADER
+/* ---- removing an installed app: a long press on its row opens a sheet; "Remove" asks twice ("Sure?"), then the slot is overwritten with the tombstone the hub ignores ---- */
+static void close_sheet(Win *w) { if (w->sheet) { lv_obj_del(w->sheet); w->sheet = 0; } w->armed = 0; }
+static void on_sheet(lv_event_t *e) {
     Win *w = (Win *)lv_event_get_user_data(e); lv_obj_t *t = lv_event_get_target(e);
-    if (lv_event_get_code(e) != EV_CLICKED || w->cur) return;
+    if (lv_event_get_code(e) != EV_CLICKED || !w->sheet) return;
+    if (t == w->b_rm) {
+        if (!w->armed) { w->armed = 1; lv_label_set_text(w->l_rm, "Sure?"); set_bg_color(w->b_rm, C_WARN); motor_once(1, 1); return; }
+        char path[32]; slot_path(path, w->inst[w->sel - (int)NAPPS]->slot); blob_save(path, "F3X-GONE", 8);
+        motor_once(4, 1); close_sheet(w); build_list(w);
+    } else if (t == w->b_cancel) { motor_once(1, 1); close_sheet(w); }
+}
+static void open_sheet(Win *w, int idx) {
+    const Inst *in = w->inst[idx - (int)NAPPS]; char b[TXT_MAX], *p;
+    w->sel = idx; w->armed = 0;
+    lv_obj_t *s = w->sheet = mk_root(w->scr);
+    mk_text(s, 0, 40, SCREEN_W, FT_NAME, C_WHITE, ALIGN_CENTER, "Remove app?");
+    mk_text(s, 14, 120, 228, FT_BTN, C_WHITE, ALIGN_CENTER, in->name);
+    u32 t = (in->size * 10u + 512u) / 1024u; p = putn(b, t / 10u, 1); p = put(p, "."); p = putn(p, t % 10u, 1); put(p, " kB");
+    mk_text(s, 0, 236, SCREEN_W, FT_SMALL, C_MUTED, ALIGN_CENTER, b);
+    w->b_rm = mk_pill(s, 6, 344, 118, "Remove", &w->l_rm, on_sheet, w);
+    w->b_cancel = mk_pill(s, 132, 344, 118, "Cancel", 0, on_sheet, w);
+    motor_once(4, 1);
+}
+#endif
+
+static void on_row(lv_event_t *e) {
+    Win *w = (Win *)lv_event_get_user_data(e); lv_obj_t *t = lv_event_get_target(e); u32 code = lv_event_get_code(e);
+#ifdef F3X_LOADER
+    if (code == EV_PRESSED) w->lp = 0;
+    if (code == EV_LONG_PRESSED && !w->cur && !w->sheet) {
+        for (int i = (int)NAPPS; i < MAX_ROWS; i++) if (w->row[i] && t == w->row[i]) { w->lp = 1; open_sheet(w, i); return; }
+        return;                                                  /* a bundled app cannot be removed: nothing happens */
+    }
+    if (code == EV_CLICKED && w->lp) { w->lp = 0; return; }      /* the release after a long press is not a tap */
+    if (w->sheet) return;
+#endif
+    if (code != EV_CLICKED || w->cur) return;
     for (int i = 0; i < MAX_ROWS; i++) if (w->row[i] && t == w->row[i]) {
         motor_once(1, 1);
         if (i < (int)NAPPS) { open_app(w, APPS[i]); return; }
@@ -111,6 +149,9 @@ static void on_screen(lv_event_t *e) {
         app_free(w); return;
     }
     if (code == EV_GESTURE && lv_indev_get_gesture_dir(lv_indev_get_act()) == 2) {
+#ifdef F3X_LOADER
+        if (w->sheet) { close_sheet(w); ui_gesture_consume(); return; }       /* the sheet takes the back gesture first */
+#endif
         if (w->cur && w->cur->back(w->st)) { }                   /* the app used the gesture */
         else if (HUB_MODE && w->cur) close_app(w);
         else wm_open(3, -1, 0, BACK_ANIM);
@@ -123,6 +164,29 @@ static void add_row(Win *w, int i, const char *name, const Icon *icon) {
     lv_obj_t *im = lv_img_create(r); lv_img_set_src(im, icon); lv_obj_set_pos(im, 12, (ROW_H - 64) / 2);
     lv_obj_t *nm = mk_text(r, 0, 0, 152, FT_BTN, C_WHITE, ALIGN_LEFT, name);          /* like the stock list: 152 wide, wraps onto a second line, centred beside the icon */
     lv_obj_update_layout(nm); lv_obj_align_to(nm, im, ALIGN_OUT_RIGHT_MID, 8, 0);
+}
+
+/* (re)builds the rows: the bundled apps, then the installed ones in slot order; with no row at all a hint */
+static void build_list(Win *w) {
+    lv_obj_t *l = w->list; int n = 0;
+    lv_obj_clean(l);
+    fill8(w->row, 0, sizeof w->row);
+#ifdef F3X_LOADER
+    for (int i = 0; i < w->ninst; i++) app_free(w->inst[i]);
+    w->ninst = 0;
+#endif
+    for (int i = 0; i < (int)NAPPS && i < 12; i++, n++) add_row(w, i, APPS[i]->name, APPS[i]->icon);
+#ifdef F3X_LOADER
+    for (int slot = 0; slot < F3X_SLOTS && n < MAX_ROWS; slot++) {
+        Inst *in = inst_scan(slot); if (!in) continue;
+        w->inst[w->ninst++] = in; add_row(w, n++, in->name, &in->icon);
+    }
+    if (!n) {
+        mk_text(l, 0, 90, SCREEN_W, FT_NAME, C_WHITE, ALIGN_CENTER, "No apps yet");
+        mk_text(l, 14, 140, 228, FT_SMALL, C_MUTED, ALIGN_CENTER, "Add apps from a PC");
+    }
+#endif
+    lv_obj_scroll_to_y(l, 0, 0);
 }
 
 /* world_create: first function of the image (--takeover-create gets its address | 1) */
@@ -138,14 +202,10 @@ __attribute__((section(".text.entry"))) lv_obj_t *world_create(u32 param, u32 pa
         lv_obj_t *l = w->list = lv_obj_create(scr);
         lv_obj_set_size(l, SCREEN_W, SCREEN_H - 50); lv_obj_set_pos(l, 0, 50);
         set_bg_opa(l, 0); set_border_width(l, 0); set_radius(l, 0); set_pad_all(l, 0); lv_obj_set_scrollbar_mode(l, 0);
-        for (int i = 0; i < (int)NAPPS && i < 12; i++) add_row(w, i, APPS[i]->name, APPS[i]->icon);
 #ifdef F3X_LOADER
         mkdir_p(HUB_DIR);                                        /* the directory the installer writes into; created on the first visit */
-        for (int slot = 0; slot < F3X_SLOTS && w->ninst < F3X_SLOTS && (int)NAPPS + w->ninst < MAX_ROWS; slot++) {
-            Inst *in = inst_scan(slot); if (!in) continue;
-            w->inst[w->ninst] = in; add_row(w, (int)NAPPS + w->ninst, in->name, &in->icon); w->ninst++;
-        }
 #endif
+        build_list(w);
     } else open_app(w, APPS[0]);
     lv_obj_add_event_cb(scr, on_screen, 0, w);                   /* 0 = LV_EVENT_ALL: gesture and DELETE (33) */
     return scr;
