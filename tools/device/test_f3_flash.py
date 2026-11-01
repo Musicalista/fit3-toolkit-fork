@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests of f3_flash.py against a mock watch that speaks the real protocol and can fail in the ways a real transfer can. No hardware. python3 -I tools/device/test_f3_flash.py"""
-import hashlib, os, random, socket, sys, tempfile, threading, zlib
+import hashlib, os, random, re, socket, sys, tempfile, threading, zlib
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import f3_link as L, f3_flash as F
 pauses = []; F.pause = lambda s: pauses.append(s); L.time.sleep = lambda s: None            # no real waiting in the tests
@@ -73,7 +73,7 @@ def raises(fn, text=""):
 random.seed(5); PKG = bytes(random.getrandbits(8) for _ in range(100_000))              # 3 blocks: 39600 + 39600 + 20800
 def run(watch, *flags, answer="FLASH", package=PKG):
     out = []; F.check_package = lambda path: (package, hashlib.sha256(package).hexdigest())
-    code = F.main(["pkg.bin", "--addr", "00:11:22:33:44:55", *flags], connect=watch.connect, confirm=lambda prompt: answer, say=out.append)
+    code = F.main(["pkg.bin", "--addr", "00:11:22:33:44:55", *(flags if "--log" in flags else (*flags, "--no-log"))], connect=watch.connect, confirm=lambda prompt: answer, say=out.append)
     return code, "\n".join(out)
 
 # 1. the default does not touch the watch at all
@@ -114,6 +114,20 @@ check(code == 0 and w.log[-1] == "OTA" and w.log.count("OTA") == 1 and w.connect
 check("answered b'0000'" in text and "do not touch it" in text, "the watch's answer is shown, with the instruction to leave the watch alone")
 w = Watch("no-reply"); code, text = run(w, "--start-update", "--yes-flash")
 check(code == 0 and "answered None" in text, "no answer to the OTA command (the watch restarts at once) is not an error")
+
+# 5b. the log file: time-stamped protocol events, counts and sizes, never the package's bytes
+logf = os.path.join(tempfile.mkdtemp(), "sub", "flash.log"); w = Watch(); code, text = run(w, "--start-update", "--yes-flash", "--verify", "--log", logf)
+log = open(logf, encoding="utf-8").read()
+check(code == 0 and os.path.exists(logf) and logf in text.replace("\n", " "), "a log file is written (also in a folder that did not exist) and its name is shown")
+check(all(re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{3}  ", l) for l in log.strip().split("\n")), "every line of the log has a date and a time with milliseconds")
+check(hashlib.sha256(PKG).hexdigest() in log and "00:11:22:33:44:55" in log and "arguments:" in log, "the log names the package's SHA-256, the watch's address and the arguments")
+for needle in ("session upload: connected", "-> 300", "-> 33bin,/user/ota/R390_WEB_FOTA.bin,100000", "block 1/3: 39600 bytes", "block 3/3", "-> 32", "-> 34", "session check: closed", "<- header: the file is 100000 bytes (the package: 100000)",
+               "read-back: 5 blocks, 100000 bytes, all identical", "pause 2.20 s", "-> 00AT^OTA_UPDATE", "<- b'0000'", "uploaded 100000 bytes"):
+    check(needle in log, "the log has: " + needle)
+check(PKG[5000:5016].hex() not in log and repr(PKG[5000:5016]) not in log, "the log never contains the package's bytes")
+w = Watch("refuse"); logf2 = os.path.join(tempfile.mkdtemp(), "f.log"); code, text = run(w, "--upload", "--log", logf2)
+check(code == 1 and "ERROR" in open(logf2, encoding="utf-8").read() and "open error" in open(logf2, encoding="utf-8").read(), "a failure is in the log with the watch's own words")
+w = Watch(); code, text = run(w, "--upload"); check("log " not in text and not any(f.startswith("f3_flash-") for f in os.listdir(tempfile.gettempdir())), "--no-log writes no file")
 
 # 6. the write path is guarded
 w = Watch(); link = w.connect()

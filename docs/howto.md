@@ -46,7 +46,9 @@ python3 -I tools/device/f3_flash.py out.bin --upload --verify --start-update    
   which takes as long as the upload but is the only check that the *content* arrived intact. Use it, at least the first time.
 - Requirements: the watch visible, charged to 50 % or more, Galaxy Wearable and Fit3 Manager closed (one client at a time), and **it must already carry our Bluetooth patches** (any package built here has them).
   A watch that never had them can be reached only on its setup screen after a reset: flash that first package with Fit3 Manager.
-- Status: tested against a mock watch (25 checks, including failures in the middle of a transfer); see [status.md](status.md) for what has been tried on a real watch.
+- **Logs:** the tool prints the progress (bytes and percent) and writes a time-stamped log of the protocol events to `local/logs/f3_flash-<time>.log` (every command and answer, every 20th block, sizes, durations, the watch's
+  reply to the OTA command; never the package's bytes). `--log PATH` picks the file, `--no-log` writes none.
+- Status: tested against a mock watch (45 checks, including failures in the middle of a transfer); see [status.md](status.md) for what has been tried on a real watch.
 
 ## The pieces you bring (none of them is in this repository)
 
