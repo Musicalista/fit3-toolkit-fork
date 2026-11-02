@@ -32,7 +32,7 @@ PC over Bluetooth. Nothing of Samsung's is in this repository. The apps look and
 - **Demo apps** you can use or copy: *Tennis Score*, *Counter*, *Dice*, *Mars Production*. Each can be built into the firmware or installed later.
 - **Tools**: build and validate firmware packages, flash them, install apps, an emulator that runs the real firmware's functions on your PC, decoders for the watch's fonts and images.
 
-Tested on one SM-R390 with firmware **R390XXU0AZA3** only; the build refuses anything else. What was actually seen on a watch: [docs/status.md](docs/status.md).
+Tested on one SM-R390 with firmware **R390XXU0AZA3** only; the build refuses anything else. **Your watch must be on exactly this version** (check: band Settings > About band > Software information, or Galaxy Wearable > Band settings > About band > Software information; details in [docs/howto.md](docs/howto.md#check-your-firmware-version)). What was actually seen on a watch: [docs/status.md](docs/status.md).
 
 ## Quick start
 

@@ -1,8 +1,17 @@
 # How to
 
-**Read [legal.md](legal.md) first.** You need a Galaxy Fit3 (SM-R390) on exactly `R390XXU0AZA3` (Settings > About > Software information), charged to 50 % or more; Linux with a Bluetooth adapter, Python 3
+**Read [legal.md](legal.md) first.** You need a Galaxy Fit3 (SM-R390) on exactly `R390XXU0AZA3` (see [Check your firmware version](#check-your-firmware-version)), charged to 50 % or more; Linux with a Bluetooth adapter, Python 3
 (numpy, Pillow) and `arm-none-eabi-gcc`; and **the stock package** `stock-aza3.bin` (SHA-256 `25e692badec82afe111c517c19c5dbdb1d28c8558c2b027143c43f5c8d05998a`, e.g. from the fit3-flasher project).
 Keep a copy of it: flashing it is the way back.
+
+## Check your firmware version
+
+The build and the flasher work only with **exactly `R390XXU0AZA3`**. The version of a different build has other addresses, so our code would land in the wrong place; the build refuses it, and you should not try to get around that. Check before you do anything:
+
+- **On the band:** Settings > About band > Software information. The line to look for is `R390XXU0AZA3`.
+- **In the Galaxy Wearable app (phone):** Band settings > About band > Software information (the band must be connected).
+
+If the version differs, do not flash: other versions are not supported (see [status.md](status.md)).
 
 ## 1. Build a package
 
