@@ -12,16 +12,21 @@
 > [!WARNING]
 > **Unofficial and experimental. Not affiliated with Samsung.** Flashing firmware can leave a watch unusable. Read [docs/legal.md](docs/legal.md) first and keep the stock firmware at hand.
 
-The Galaxy Fit3 has no SDK and no way to install apps. **fit3-toolkit puts your own native apps on it.** You build a firmware package from *your own* stock firmware with one command and flash it from your
+The Galaxy Fit3 has no SDK and no way to install apps. **fit3-toolkit puts your own native apps on it, and patches what the stock firmware does.** You build a firmware package from *your own* stock firmware with one command and flash it from your
 PC over Bluetooth. Nothing of Samsung's is in this repository. The apps look and behave like stock ones: the firmware's own LVGL widgets and fonts, the stock slide animations, the side key, the back gesture.
 
 <table width="100%">
   <tr>
-    <td width="20%" align="center"><img src="docs/images/hub-system.jpg" width="100%"><br><sub>Hub in the app list</sub></td>
-    <td width="20%" align="center"><img src="docs/images/hub-apps.jpg" width="100%"><br><sub>The Application Hub</sub></td>
-    <td width="20%" align="center"><img src="docs/images/app-tennis.jpg" width="100%"><br><sub>Tennis Score</sub></td>
-    <td width="20%" align="center"><img src="docs/images/app-mars.jpg" width="100%"><br><sub>Mars Production</sub></td>
-    <td width="20%" align="center"><img src="docs/images/app-dice.jpg" width="100%"><br><sub>Dice</sub></td>
+    <td width="25%" align="center"><img src="docs/images/hub-system.jpg" width="100%"><br><sub>Hub in the app list</sub></td>
+    <td width="25%" align="center"><img src="docs/images/hub-apps.jpg" width="100%"><br><sub>The Application Hub</sub></td>
+    <td width="25%" align="center"><img src="docs/images/app-tennis.jpg" width="100%"><br><sub>Tennis Score</sub></td>
+    <td width="25%" align="center"><img src="docs/images/app-mars.jpg" width="100%"><br><sub>Mars Production</sub></td>
+  </tr>
+  <tr>
+    <td width="25%" align="center"><img src="docs/images/app-dice.jpg" width="100%"><br><sub>Dice</sub></td>
+    <td width="25%" align="center"><img src="docs/images/reply-page.jpg" width="100%"><br><sub><i>Write reply</i> above the quick replies</sub></td>
+    <td width="25%" align="center"><img src="docs/images/reply-t9.jpg" width="100%"><br><sub>Reply keyboard: T9</sub></td>
+    <td width="25%" align="center"><img src="docs/images/reply-qwerty.jpg" width="100%"><br><sub>Reply keyboard: QWERTY</sub></td>
   </tr>
 </table>
 
@@ -29,6 +34,7 @@ PC over Bluetooth. Nothing of Samsung's is in this repository. The apps look and
 
 - **Application Hub**: one entry of the stock app list becomes a native-style list of your apps. Open one and it slides in like a stock app; swipe back to leave.
 - **Install apps without flashing**: `.f3x` files go to the watch over Bluetooth in about a second. A long press on an app's row removes it.
+- **Reply keyboard** (a firmware patch, not an app): a *Write reply* row on the page of quick replies of a notification opens a keyboard, QWERTY or T9 multi-tap, with the letters of your language; the text goes to the phone as the reply. Layouts for 24 Latin-script languages, chosen at build time and followed from the watch's system language. [docs/replies.md](docs/replies.md)
 - **Demo apps** you can use or copy: *Tennis Score*, *Counter*, *Dice*, *Mars Production*. Each can be built into the firmware or installed later.
 - **Tools**: build and validate firmware packages, flash them, install apps, an emulator that runs the real firmware's functions on your PC, decoders for the watch's fonts and images.
 
@@ -55,7 +61,13 @@ python3 -I src/device/f3x_install.py install mars.f3x
 python3 -I src/device/f3x_install.py list
 ```
 
-**3. Write your own** &nbsp;(start from the smallest complete app, [`counter.c`](src/watch/apps/counter.c); the guide is in [src/watch/apps](src/watch/apps/README.md))
+**3. Reply keyboard** (optional; a firmware patch, rebuild the package with it)
+
+```sh
+python3 -I src/build_firmware.py stock-aza3.bin hub.bin --hub none --reply-keyboard --kb-lang pl,en    # the layouts you want, or all; needs Roboto (fc-match) for the font
+```
+
+**4. Write your own** &nbsp;(start from the smallest complete app, [`counter.c`](src/watch/apps/counter.c); the guide is in [src/watch/apps](src/watch/apps/README.md))
 
 ```sh
 cp src/watch/apps/counter.c src/watch/apps/myapp.c       # edit, then build it as in step 2
@@ -72,6 +84,7 @@ src/
 ├── build_firmware.py     one command: your stock package -> a package with the hub or an app
 ├── watch/                the code that runs on the watch
 │   ├── hub.c             the Application Hub: window, list, loader of installed apps
+│   ├── kbd.c, kblang.py  the reply keyboard and its layouts per language
 │   ├── ui.h              shared header: firmware functions, colours, fonts, widgets
 │   └── apps/             demo apps (Tennis Score, Counter, Dice, Mars Production) and the guide to writing your own
 ├── f3x/                  the .f3x app format and its builder
@@ -84,6 +97,7 @@ docs/
 ├── howto.md              the full procedure, step by step
 ├── status.md             what was tried on a watch, and what was not
 ├── f3x.md                the .f3x file format
+├── replies.md            writing your own reply to a notification (keyboard, QWERTY and T9)
 ├── details.md            how the firmware works: addresses, windows, fonts
 ├── firmware.md           the package format
 ├── protocol.md           the Bluetooth file-transfer protocol
@@ -97,7 +111,7 @@ Every directory under `src/` has its own README.
 ## How it works
 
 The firmware calls two functions of each window of its app list through a table. The build puts a branch at the start of those two functions of the chosen entry, into our code in an empty area of the
-firmware image (62 KB of zeros). Our code calls the firmware's own LVGL functions and answers the window manager's questions. Each app opens as a window of its own, so the manager animates it. Nothing
+firmware image (62 KB of zeros). The reply keyboard is the same idea at two other places: the two calls that build the page of quick replies go through our code, which adds a row. Our code calls the firmware's own LVGL functions and answers the window manager's questions. Each app opens as a window of its own, so the manager animates it. Nothing
 runs at boot: a mistake shows only when the entry is opened, and the watch still boots and can be flashed again. Addresses and details: [docs/details.md](docs/details.md).
 
 ## Credits

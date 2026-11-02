@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """build_firmware.py: one command from *your* stock firmware package to a package that has our watch code in place of World clock (or another app-list entry).
 
-    python3 -I src/build_firmware.py <stock R390XXU0AZA3 package.bin> <out.bin> [--app tennis | --hub tennis,counter,dice [--no-install]] [--slot "World Clock"] [--label "..."] [--languages en|all] [--no-icon] [--no-bluetooth-patches] | --list-slots
+    python3 -I src/build_firmware.py <stock R390XXU0AZA3 package.bin> <out.bin> [--app tennis | --hub tennis,counter,dice [--no-install]] [--slot "World Clock"] [--label "..."] [--languages en|all] [--no-icon] [--no-bluetooth-patches] [--reply-keyboard [--kb-lang en,pl,pt | all] [--kb-font Roboto-Medium.ttf]] | --list-slots
 
 `--app NAME` makes the entry that one app (default: tennis); `--hub A,B,C` makes it the Application Hub, a native-style list that opens the apps (src/watch/README.md; apps: tennis, counter, dice, mars).
 It compiles src/watch/hub.c with the chosen apps (needs arm-none-eabi-gcc), draws the app-list icon (src/assets/mkicon.py, needs numpy), and builds the package with
@@ -10,7 +10,7 @@ Nothing of Samsung's or anybody else's is stored in this repository: you bring t
 import argparse, os, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 for d in ("watch", "assets", "firmware"): sys.path.insert(0, os.path.join(HERE, d))
-import build_loader, gen, mkicon, build_package, fwd
+import build_loader, gen, mkicon, build_package, fwd, kblang
 
 
 def main():
@@ -25,6 +25,9 @@ def main():
     ap.add_argument("--list-slots", action="store_true", help="show the entries of the app list that can be replaced and exit")
     ap.add_argument("--force-slot", action="store_true", help="allow Settings (it would lock you out of the settings: do not)")
     ap.add_argument("--languages", choices=("en", "all"), default="en", help="rename the entry in the English files only, or in every language file (untested outside English)")
+    ap.add_argument("--reply-keyboard", action="store_true", help="add a \"Write reply\" row to the page of quick replies of a notification: a keyboard (QWERTY or multi-tap, with Polish letters) whose text goes to the phone (docs/replies.md)")
+    ap.add_argument("--kb-lang", default="en", help="the keyboard layouts to build in, comma-separated (default en): %s, or all. With more than one the layout follows the watch's system language (the first is the fallback) and a tap on the count at the top of the keyboard switches it" % ", ".join(kblang.LANGS))
+    ap.add_argument("--kb-font", help="a TTF with Latin glyphs for the keyboard (default: Roboto Medium found with fc-match; Apache-2.0, not stored in the repository)")
     ap.add_argument("--no-icon", action="store_true", help="keep the stock icon")
     ap.add_argument("--no-bluetooth-patches", action="store_true", help="leave the watch's Bluetooth as stock: nobody in range can connect, and you cannot flash it from here again without a reset (use for the final package)")
     a = ap.parse_args()
@@ -35,12 +38,18 @@ def main():
     hub = a.hub is not None; apps = ([x.strip() for x in a.hub.split(",")] if a.hub.strip() not in ("", "none") else []) if hub else [a.app or "tennis"]
     install = hub and not a.no_install
     if install and a.no_bluetooth_patches: print("note: the hub can load installed apps, but without the Bluetooth patches nothing can be installed from the PC")
+    kb_ttf = None; kb_langs = list(kblang.LANGS) if a.kb_lang.strip() == "all" else [x.strip() for x in a.kb_lang.split(",") if x.strip()]
+    bad = [x for x in kb_langs if x not in kblang.LANGS]
+    if bad or not kb_langs: ap.error("--kb-lang: unknown or empty (%s); choose from %s or all" % (", ".join(bad), ", ".join(kblang.LANGS)))
+    if a.reply_keyboard:
+        kb_ttf = a.kb_font or subprocess.run(["fc-match", "-f", "%{file}", "Roboto:medium"], capture_output=True, text=True).stdout
+        if not kb_ttf or not os.path.isfile(kb_ttf) or "oboto" not in os.path.basename(kb_ttf) and not a.kb_font: sys.exit("--reply-keyboard needs a Roboto TTF with the Polish letters: install Roboto or pass --kb-font")
     work = tempfile.mkdtemp(prefix="fit3_"); loader = os.path.join(work, "loader.bin")
-    syms = build_loader.build(os.path.join(HERE, "watch", "hub.c"), loader, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]], include_dirs=[gen.generate(apps, hub, os.path.join(work, "gen"), install, hub and not a.no_native_transitions)])
+    syms = build_loader.build(os.path.join(HERE, "watch", "hub.c"), loader, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]], include_dirs=[gen.generate(apps, hub, os.path.join(work, "gen"), install, hub and not a.no_native_transitions, kb_ttf, kb_langs)])
     label = a.label or ("Application Hub" if hub else {"tennis": "Tennis Score", "counter": "Counter", "dice": "Dice", "mars": "Mars Production"}[apps[0]])
     icon = None if a.no_icon else mkicon.encode(*mkicon.draw("hub" if hub else apps[0]))
     build_package.build(a.stock, a.out, open(loader, "rb").read(), label=label, icon=icon, slot=sl["window"], languages=a.languages, force_slot=a.force_slot, bluetooth_patches=not a.no_bluetooth_patches,
-                        takeover={"create": syms["world_create"] | 1, "event": syms["world_event"] | 1})
+                        takeover={"create": syms["world_create"] | 1, "event": syms["world_event"] | 1}, reply_hook={"main": syms["reply_page"] | 1, "refresh": syms["reply_refresh"] | 1} if kb_ttf else None)
     size = len(open(loader, "rb").read()); free = build_package.FREE_END - build_package.FREE_START; used = size + (16 + len(icon) + 15 if icon else 0)
     print("done:", a.out, "(%s replaces %s)" % ("hub of " + (", ".join(apps) or "installed apps") + (" + installable apps" if install else "") if hub else apps[0], sl["name"]))
     print("free flash: %d of %d bytes used (code and app icons %d, app-list icon %d), %d left" % (used, free, size, used - size, free - used))

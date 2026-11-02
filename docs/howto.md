@@ -31,6 +31,18 @@ Calculator; Settings is refused because it would lock you out of the watch's set
 the emulator. The entry you replace is gone (Alarm, Timer and Stopwatch may keep timers running; Weather, Media Controller and Health get data from the phone), and it must be visible in the app list (World Clock
 and Camera Remote are shown only when enabled in the phone app).
 
+### The reply keyboard (optional)
+
+```
+python3 -I src/build_firmware.py stock-aza3.bin out.bin --hub none --reply-keyboard --kb-lang pl,en
+```
+
+`--reply-keyboard` adds a *Write reply* row to the page of quick replies of a notification (the page the reply icon opens); it opens a QWERTY or T9 keyboard and sends the text to the phone as the reply.
+`--kb-lang` lists the layouts to build in (`en` is the default; `pl pt es fr de it nl cs sk hu hr sl ro sv nb is tr lt lv et ca ga sq`, or `all`). With more than one, the watch's system language
+chooses (the first of the list is the fallback), and the language button in the keyboard's header switches it. It needs a Roboto TTF for the font: found with `fc-match`, or pass `--kb-font file.ttf`.
+It costs 10 to 25 kB of the free flash depending on the languages, and works with `--app` and `--hub`. To remove it, build and flash again without the option. Details, limits and what was tried on a
+watch: [replies.md](replies.md).
+
 ## 2. Flash it from the PC: `src/device/f3_flash.py`
 
 No phone app needed. The protocol is in [protocol.md](protocol.md); each stage is a separate command:

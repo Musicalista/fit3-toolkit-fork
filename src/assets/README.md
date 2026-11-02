@@ -7,6 +7,7 @@ Notes on the formats: [docs/assets.md](../../docs/assets.md). Tools that read th
 | [`lvres.py`](lvres.py) | decode the image packs (`/nand/system/image/*.res`): `info`, `png`, `ids`, `icons` |
 | [`lvlang.py`](lvlang.py) | read the language packs: strings by ID, embedded fonts |
 | [`lvfont.py`](lvfont.py) | decode the watch's LVGL fonts and render text to a PNG |
+| [`mkfont.py`](mkfont.py) | a TTF to a static LVGL font in C (Latin and the Polish letters) for the reply keyboard |
 | [`mkicon.py`](mkicon.py) | **our own** app icons (tennis, hub, counter, dice, mars) as 64 × 64 images for the firmware and for the hub's list |
 | [`test_lvres.py`](test_lvres.py) | a test of the image-pack decoder on a synthetic pack |
 

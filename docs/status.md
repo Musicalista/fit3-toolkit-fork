@@ -3,6 +3,10 @@
 Tested on **one** Galaxy Fit3 (SM-R390) on firmware **R390XXU0AZA3**. Legend: **watch** = seen working on a real watch (2026-11-01 unless noted); **emulator** = the real firmware code run on the PC
 (`src/emu`); **PC** = tools tested without a watch; **open** = not tried.
 
+## Reply keyboard
+
+Writing your own reply to a notification ([replies.md](replies.md)): **works on a watch (2026-11-02)**: the *Write reply* row is the first on every opening of the reply page, the keyboard opens (QWERTY and T9, layouts per language, language button) and replies sent on SMS and Signal reached the phone. Built and tested in the emulator (82 checks) and on the PC. Not yet confirmed: Polish letters arriving intact on the phone, the system language choosing the layout.
+
 ## Hub, apps, installable apps
 
 | What | State |

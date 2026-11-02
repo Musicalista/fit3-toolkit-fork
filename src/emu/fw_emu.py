@@ -108,8 +108,8 @@ class FwEmu:
         return True
 
     def seed_text_functions(self):
-        """The firmware keeps its UTF-8 helpers in .data function pointers (lv_txt: next at 0x200fd858, get_length at 0x200fd864);
-        we do not run the C runtime start-up that fills .data, so install Python versions (UTF-8) at those two slots."""
+        """The firmware keeps its UTF-8 helpers in .data function pointers (lv_txt: next at 0x200fd858, prev at 0x200fd85c, get_length at 0x200fd864);
+        we do not run the C runtime start-up that fills .data, so install Python versions (UTF-8) at those three slots."""
         def nxt(e):
             txt, ip = e.arg(0), e.arg(1); i = e.u32(ip) if ip else 0; b = e.u8(txt + i)
             n = 1 if b < 0x80 else 2 if b >> 5 == 6 else 3 if b >> 4 == 14 else 4
@@ -117,7 +117,12 @@ class FwEmu:
             if ip: e.w32(ip, i + n)
             return ord(ch[0])
         def length(e): return len(e.cstr(e.arg(0), 4096).encode("latin1").decode("utf-8", "replace"))
-        for slot, addr, fn in ((0x200fd858, 0x20000400, nxt), (0x200fd864, 0x20000410, length)):
+        def prev(e):                                    # (txt, &i): the character before i; i moves back (used by the wrapping of long labels)
+            txt, ip = e.arg(0), e.arg(1); i = e.u32(ip) - 1
+            while i > 0 and (e.u8(txt + i) & 0xC0) == 0x80: i -= 1
+            e.w32(ip, i); b = e.u8(txt + i); n = 1 if b < 0x80 else 2 if b >> 5 == 6 else 3 if b >> 4 == 14 else 4
+            return ord(e.read(txt + i, n).decode("utf-8", "replace")[0])
+        for slot, addr, fn in ((0x200fd858, 0x20000400, nxt), (0x200fd85c, 0x20000420, prev), (0x200fd864, 0x20000410, length)):
             self.hook(addr, fn); self.w32(slot, addr | 1)
 
     def trace(self, n=64):

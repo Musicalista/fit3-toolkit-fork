@@ -35,7 +35,7 @@ As far as we know; check them yourself before you rely on this.
 |---|---|
 | **Musicalista**: [fit3-store-apps-games](https://github.com/Musicalista/fit3-store-apps-games), [freemyfit3](https://github.com/Musicalista/freemyfit3) (the Fit3 Manager phone app, the app loader, the `.f3a` format, patched packages) | no license file in either repository; the packages are marked "private builds ... do not publish the .bin files". We used facts only |
 | **yuriyurin**: [fit3-flasher](https://github.com/yuriyurin/fit3-flasher) | the transfer protocol and package validation rules; the sequence of a flash was also checked against the published source of Fit3 Manager (no license file: read for interoperability, our code is our own) |
-| Roboto (the shape of the watch's fonts) | Apache 2.0 for Roboto itself; Samsung's compiled font files are theirs |
+| Roboto (the shape of the watch's fonts; the font of the reply keyboard) | Apache 2.0 for Roboto itself; Samsung's compiled font files are theirs. The keyboard's glyph tables are generated at build time from the Roboto you have installed ([`mkfont.py`](../src/assets/mkfont.py)) and end up in your package; no font file is stored in this repository |
 | Fonts and images on the watch | Samsung; proprietary, for inspection on your own watch only |
 
 The two Bluetooth patches in `src/firmware/build_package.py` (two one-instruction changes, addresses in its source) are also in Musicalista's package; we found them again by comparing the stock package

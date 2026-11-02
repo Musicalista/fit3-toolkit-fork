@@ -11,6 +11,16 @@ WIN = int(os.environ.get("F3_WINDOW", "0x2b"), 0); CREATE = int(os.environ.get("
 CLICKED, GESTURE, HIDDEN = 7, 12, 1
 BACK = 0x14                                                                   # BACK_ANIM of ui.h
 
+def bl_target(raw, addr):
+    """the target of the Thumb-2 BL or B.W at `addr` in a main image (to find where a patched site now goes)"""
+    h1, h2 = struct.unpack_from("<HH", raw, addr - 0x2c080000)
+    assert h1 & 0xf800 == 0xf000 and h2 & 0xd000 in (0xd000, 0x9000), "not a BL or B.W at %#x" % addr
+    s = (h1 >> 10) & 1; i1 = ~((h2 >> 13) ^ s) & 1; i2 = ~((h2 >> 11) ^ s) & 1
+    off = (s << 24) | (i1 << 23) | (i2 << 22) | ((h1 & 0x3ff) << 12) | ((h2 & 0x7ff) << 1)
+    if s: off -= 1 << 25
+    return addr + 4 + off
+
+
 class Rig:
     def __init__(self, image):
         self.p = Probe(image); self.e = e = self.p.e

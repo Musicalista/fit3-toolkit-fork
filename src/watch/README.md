@@ -8,6 +8,8 @@ All firmware addresses used are in `docs/symbols.csv`.
 |---|---|
 | `hub.c` | the window that replaces one entry of the app list: **single-app mode** (one app owns the window) or the **Application Hub** (a native-style list; a tap opens an app, the back gesture closes it). The window manager's answers (key policy, swipe queries) and the back gesture live here, once, for every app. |
 | `ui.h` | what the code shares: the firmware functions we call, colours, fonts, text helpers, small file helpers (`blob_save`/`blob_load`), widgets (`mk_box`, `mk_text`, `mk_pill`), and the `App` interface. |
+| `kblang.py` | the keyboard layouts of the reply keyboard per system language (`--kb-lang`), and the header they become. |
+| `kbd.c` | the reply keyboard and its hook (included when `--reply-keyboard` is given; [docs/replies.md](../../docs/replies.md)). |
 | [`apps/`](apps/README.md) | the demo apps (Tennis Score, Counter, Dice, Mars Production) and the guide to writing your own. `counter.c` is the smallest complete one. |
 | `gen.py` | writes the two generated headers into a build directory (never into the repository): `icons.h` (the 64 x 64 four-bit icons, drawn by `src/assets/mkicon.py`) and `gen_apps.h` (`HUB_MODE`, which apps, in which order). |
 | `build_loader.py` | compiles `hub.c` (arm-none-eabi-gcc, `-Os`, freestanding), refuses libc/libgcc calls and any `.data`/`.bss`. |

@@ -113,4 +113,25 @@ refuses("a take-over without the event function", takeover={"create": CREATE})
 refuses("an icon of the wrong size", icon=bytes(100))
 try: bp.build(os.path.join(WORK, "default.bin"), os.path.join(WORK, "refused.bin"), loader, TK, quiet=True, validate=False); sys.exit("FAIL: a patched package was accepted as stock")
 except AssertionError: good("refused: an already patched package as the stock input")
+
+# 5. the reply keyboard: the one call of the stock page of quick replies is pointed at the loader, nothing else outside the free flash changes
+for _ in range(2000):
+    src = random.randrange(0x2c080000, 0x2c3b0000, 2); dst = random.randrange(0x2c080000, 0x2c3b0000, 2); buf = bytearray(0x400000); buf[src - bp.BASE:src - bp.BASE + 4] = bp.encode_bl(src, dst)
+    h1, h2 = struct.unpack_from("<HH", buf, src - bp.BASE); assert (h1 & 0xF800) == 0xF000 and (h2 & 0xD000) == 0xD000, "not a BL"
+    buf[src - bp.BASE:src - bp.BASE + 4] = bp.encode_b(src, dst); assert decode_b(buf, src) == dst        # the same offset field as B.W
+good("encode_bl: 2000 random calls have the BL bits and the same offsets as B.W")
+msite, mbytes = bp.REPLY_MAIN; rsite, rbytes = bp.REPLY_REFRESH
+assert bp.encode_bl(rsite, 0x2c1d0b94) == rbytes, "the stock call must be reproduced by the encoder"; assert bp.encode_b(msite, 0x2c1d09d0) == mbytes, "the stock tail call must be reproduced by the encoder"
+good("the stock bl and the stock tail call at the two reply-page sites are reproduced by the encoders")
+HOOK = {"main": 0x2c3a0525 + 0x40, "refresh": 0x2c3a0525 + 0x80}
+p = build("reply.bin", reply_hook=HOOK); new = p.raw(fwd.MAIN)
+assert new[msite - bp.BASE:msite - bp.BASE + 4] == bp.encode_b(msite, HOOK["main"] & ~1) and new[rsite - bp.BASE:rsite - bp.BASE + 4] == bp.encode_bl(rsite, HOOK["refresh"] & ~1)
+assert sm[msite - bp.BASE:msite - bp.BASE + 4] == mbytes and sm[rsite - bp.BASE:rsite - bp.BASE + 4] == rbytes
+good("with reply_hook both sites go to the loader (a branch for the tail call, a call for the refresh)")
+base = build("noreply.bin").raw(fwd.MAIN); diff = [i for i in range(len(new)) if new[i] != base[i] and i >= 0x1010]       # the first bytes hold the image's CRC, which follows the content
+assert diff and all(any(x - bp.BASE <= i < x - bp.BASE + 4 for x in (msite, rsite)) for i in diff), "only the two sites may differ: %s" % [hex(i + bp.BASE) for i in diff[:5]]
+good("... and nothing else in the main image changes")
+refuses("a reply hook outside the loader", reply_hook={"main": 0x2c3a8001, "refresh": HOOK["refresh"]})
+refuses("a reply hook that is not Thumb", reply_hook={"main": HOOK["main"] & ~1, "refresh": HOOK["refresh"]})
+refuses("a reply hook without the refresh entry", reply_hook={"main": HOOK["main"]})
 print("%d checks passed" % ok)

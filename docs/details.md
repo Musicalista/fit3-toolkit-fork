@@ -84,6 +84,8 @@ as RGB565 with alpha (checked by rendering it with the firmware's own LVGL code)
 **Our own icon** is an `lv_img_dsc_t` (cf 5, 64 x 64, 12,288 bytes) in the free flash and the row's icon pointer points at it. The firmware's decoder accepts only ID strings and rejects anything else
 (first check: the source type), so LVGL's built-in decoder handles it. [watch]
 
+**The system language** is a byte at `0x200fafe0` (set by `0x2c211c3c`): an index 0 to 68 into the table of the 69 packs at `0x2c30d1ec` (en = 1, pl = 16, pt_rBR = 45; 8, 18, 56 and 61 are the right-to-left ones). [code]
+
 **Language packs** `language_xx.res` (69 of them, a ZIP with one entry, unzipped by the firmware to `/user/language.res`): a 0x18-byte header, `count x {string offset, font key}`, the strings, and the UI fonts embedded
 in the file. `src/assets/lvlang.py` reads and edits them; `set_string` appends a string and fixes every later offset. The app-list name is text ID 181 for World Clock. [watch]
 
@@ -123,7 +125,18 @@ Children set `EVENT_BUBBLE` so the screen sees their events. [code]
 own drawing code (`screenshot.py`). It does **not** model the display, touch, the RTOS or the C start-up: `.data` is not initialised, so the lv_txt function pointers are installed by the harness; and a filled box that is the
 child of a card with rounded corners is drawn black (the serve dot and divider are drawn right on the watch), so judge such details on the watch.
 
-## 8. Not known
+## 8. Notifications and quick replies
+
+Tags: [code] = read in the decompilation only; nothing here has been run on the watch yet.
+
+- **Stored replies** live in `/nand/user/notice_reply_data.txt`: up to 31 records of 101 bytes (a 100-byte text and NUL), loaded into a list by `0x2c0ee83c`; `0x2c0ee9d0` adds one, `0x2c0eeb44` writes the file. `0x2c0ec1bc` returns their count, `0x2c0ec194(buf, 1, i)` copies text *i*. [code]
+- **Two builders of the reply page.** The page that the reply icon opens is built by `0x2c1d09d0(screen, index - 1, notice id)` (reached by a tail call from `0x2c1d0f84`, called from `0x2c1d2258` mode 2 and from the icon's handler `0x2c1d1654`; it stores its arguments in `0x201160a0/a4/a8`). The variant below is used only to refresh the page when the phone sends new replies. [code, emu]
+- **The refresh variant** is built by `0x2c1d0b94` (the notice-detail window, event handler `0x2c1d2524`, event `0x42` while the page state `0x200faad0` is 2). It makes one label row per stored reply, with the row index as user data and `0x2c1d0770` as click callback, and a last button with `0x2c1d0974`. With no stored replies it shows a text (ID `0x148`). The page's screen object is at `0x201160a0`, the reply count at `0x2011609c`, the current notice id at `0x201160b8`. [code]
+- **Sending** (`0x2c1d0770`): looks the notice up (`0x2c0ed1f8`, record of about 0x124 + 4 bytes; the 32-bit `seq_id` is at record `+0x124`), copies reply *i*, and calls `0x2c112f58(seq_id, text, len)`. That builds the frame `8a 02 01 <seq_id u32> 0a <len u8> <text>` and queues it with `0x2c10cbcc(7, frame)`. Then it shows a confirmation. If the phone link is down (`0x2c0e6ef4() == 0`) it shows a toast instead (`0x2c1d1448`). [code]
+- **Limits:** the stock buffer holds about 100 characters; the length byte allows 255. Whether the phone app accepts a text that is not one of its own list is **not known**.
+- **Fonts for typing** do not exist: the language packs carry subsets of Roboto made for the UI strings (`language_pl.res`: lower-case Polish letters are complete only in the 20, 24, 28 and 30 px fonts, no size has all nine capitals), and the watch-face fonts are ASCII only. [measured on the pulled files]
+
+## 9. Not known
 
 Where the image stores the `.data` initialisers; the signature of the RTC call; the heart-rate and step getters; the layouts of image formats `cf 6` and `0x15..0x1a`; why 2 KB writes restart the watch; what the
 phone app does with a window it does not know (we only replace existing entries).

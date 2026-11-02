@@ -524,3 +524,23 @@ address,name,kind,confidence,evidence
 0x2c15eb00,sos_srv_send_start,func,verified,"string sos_srv_send_start; starts the SOS send, vibration id 8"
 0x2c0e9a58,kv_double_press_app,func,verified,"reads KV 0xf8 (4 bytes): the index of the app chosen for the double press of the side key (0 = none)"
 0x2c315c6e,double_press_app_table,data,verified,"14 x {u16 index, u16 window}: 0 window 7, 1 window 9, 2 Health 8, 3 Media 0x1c, 4 Find My Phone 0x22, 5 Weather 0x4a, 6 Calendar 0x4e, 7 Settings 0x36, 8 Timer 0x1d, 9 Alarm 0x90, 10 Stopwatch 0x4d, 11 World Clock 0x2b, 12 Camera Remote 0x47, 13 Calculator 0x8c; read by wm_key_dispatch for msg 0x407"
+0x2c1d0b94,reply_page_build,func,verified,"builds the page of quick replies (one row per stored reply, a last image button); called once from 0x2c1d2598; emu"
+0x2c1d2598,reply_page_call_site,code,verified,"bl 0x2c1d0b94 in the notice window event function 0x2c1d2524 (event 0x42, state 0x200faad0 == 2); patched by build_package.py --reply-keyboard"
+0x2c1d2524,notice_window_event,func,likely,"event function of window 0x18; handles 0x42 (reply page), 0x3a, 0x39"
+0x2c1d0770,reply_row_click,func,verified,"click of a stored reply: looks up the notice, copies reply i, 0x2c112f58(seq_id,text,len), shows a confirmation"
+0x2c1d0974,reply_extra_click,func,likely,"click of the image button at the end of the page; log 'reply toast'"
+0x2c112f58,send_reply_frame,func,verified,"(seq_id,text,len): frame 8a 02 01 <seq_id> 0a <len> <text>, queued with 0x2c10cbcc(7,frame)"
+0x2c0ed1f8,notice_lookup,func,likely,"(buf,1,id_a,id_b,&flag) fills a 0x568-byte notice record; seq_id at +0x124; ids at 0x201160a8/0x201160a4"
+0x2c0ec1bc,reply_count,func,verified,returns the number of stored quick replies
+0x2c0ec194,reply_text,func,verified,"(buf,1,index): copies stored reply index (text from buf+1, 101-byte records)"
+0x2c0e6ef4,phone_linked,func,likely,0 when the phone link is down (the stock reply row shows a toast then)
+0x201160a0,reply_page_screen,data,verified,screen object of the reply page (cleaned and rebuilt by 0x2c1d0b94)
+0x2011609c,reply_page_count,data,verified,number of stored replies shown on the page
+0x2c1d09d0,reply_page_build_main,func,verified,"(screen,index-1,notice id): builds the page the reply icon opens; stores the args in 0x201160a0/a4/a8; entered by a tail call at 0x2c1d0f92; emu"
+0x2c1d0f84,reply_page_open,func,verified,"loads (screen 0x201160a0, index 0x20116111 - 1, id 0x201160b8) and b.w 0x2c1d09d0; called from 0x2c1d2258 mode 2 and 0x2c1d1654"
+0x2c1d2258,notice_set_mode,func,verified,"mode 0 list 0x2c1d18d4, 2 reply page 0x2c1d0f84, 3 detail 0x2c1d1f50; stores the mode in 0x200faad0"
+0x2c1d1654,notice_reply_icon_click,func,likely,"if the phone is linked: mode 2 then 0x2c1d0f84, else toast 0x2c1d1448"
+0x2c1d0f92,reply_page_hook_site,code,verified,"b.w 0x2c1d09d0 patched by build_package.py --reply-keyboard"
+0x200fafe0,system_language_id,data,verified,"byte: index 0..68 into the language-pack table 0x2c30d1ec (en = 1, pl = 16, pt_rBR = 45); 8, 18, 56, 61 are treated as right-to-left; set by 0x2c211c3c"
+0x2c30d1ec,language_file_names,data,verified,"69 pointers to the language_xx.res names, in language-id order"
+0x2c211c3c,set_language,func,verified,"(id <= 0x44): loads the language, stores the id in 0x200fafe0"

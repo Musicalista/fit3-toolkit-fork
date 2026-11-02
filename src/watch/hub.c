@@ -7,6 +7,9 @@
  * Freestanding C: no libc, no libgcc, no static data (the window's state lives in one app-heap block). Firmware addresses: docs/symbols.csv. */
 #include "ui.h"
 #include "gen_apps.h"
+#ifdef REPLY_KBD
+#include "kbd.c"                                                 /* the reply keyboard and the hook of the page of quick replies (build_firmware.py --reply-keyboard) */
+#endif
 
 #ifndef WINDOW_ID
 #define WINDOW_ID 0x2b                                           /* the window this build replaces (build_firmware.py --slot passes it); 0x2b = World clock */

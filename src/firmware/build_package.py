@@ -52,6 +52,16 @@ def encode_b(src, dst):
     return struct.pack("<HH", 0xF000 | (s << 10) | ((off >> 12) & 0x3FF), 0x9000 | (j1 << 13) | (j2 << 11) | ((off >> 1) & 0x7FF))
 
 
+def encode_bl(src, dst):
+    """Thumb-2 BL (encoding T1): like B.W but sets lr; 4 bytes that call dst from src"""
+    w = bytearray(encode_b(src, dst)); w[3] |= 0x40                      # the second half-word is 0x9000 | ... for B.W and 0xd000 | ... for BL
+    return bytes(w)
+
+
+REPLY_MAIN = (0x2c1d0f92, bytes.fromhex("fff71dbd"))   # b.w 0x2c1d09d0 (tail call): the page of quick replies that the reply icon opens (docs/details.md section 8)
+REPLY_REFRESH = (0x2c1d2598, bytes.fromhex("fef7fcfa"))   # bl 0x2c1d0b94 in the notice window's event function: the page rebuilt when the phone sends new replies (event 0x42)
+
+
 def _fn(v): return (v & 0x00ffffff) + 0x2c000000 & ~1 if v else 0     # a record field -> the function's address (the 0x0c.. flash alias removed, Thumb bit cleared)
 
 
@@ -88,8 +98,8 @@ def check_stock(p):
     return raw
 
 
-def build(stock, out, loader, takeover, loader_addr=FREE_START, label="Tennis", validate=True, quiet=False, icon=None, slot=0x2b, languages="en", force_slot=False, bluetooth_patches=True):
-    """takeover = {"create": Thumb address, "event": Thumb address} of the two window functions inside `loader`"""
+def build(stock, out, loader, takeover, loader_addr=FREE_START, label="Tennis", validate=True, quiet=False, icon=None, slot=0x2b, languages="en", force_slot=False, bluetooth_patches=True, reply_hook=None):
+    """reply_hook = {"main": Thumb address, "refresh": Thumb address} of reply_page and reply_refresh inside `loader` (the reply keyboard): the two places that build the stock page of quick replies are pointed at them. takeover = {"create": Thumb address, "event": Thumb address} of the two window functions inside `loader`"""
     log = (lambda *a: None) if quiet else print
     new_label = label.encode("ascii") + b"\0"; old_label = b"World Clock\0"
     long_label = len(new_label) > len(old_label)            # longer than "World Clock": only the app-list string is replaced, via lvlang.Lang.set_string
@@ -121,6 +131,12 @@ def build(stock, out, loader, takeover, loader_addr=FREE_START, label="Tennis", 
         entry = sl[k]; h = struct.unpack_from("<H", orig, at(entry))[0]
         assert entry and ((h & 0xfe00) == 0xb400 or h == 0xe92d), "the window %s function %#x does not start like a function (push): another version?" % (k, entry)
         raw[at(entry):at(entry) + 4] = encode_b(entry, takeover[k] & ~1)
+    if reply_hook is not None:    # the reply keyboard: the two places that build the stock page of quick replies now go through our functions, which call the stock builder and add a row
+        assert set(reply_hook) == {"main", "refresh"}, "reply_hook needs main and refresh"
+        for key, (site, stock, enc) in (("main", REPLY_MAIN + (encode_b,)), ("refresh", REPLY_REFRESH + (encode_bl,))):
+            assert orig[at(site):at(site) + 4] == stock, "the reply-page site %#x does not hold %s (another version?)" % (site, stock.hex())
+            assert loader_addr <= reply_hook[key] & ~1 < lend and reply_hook[key] & 1, "reply hook %s %#x is not a Thumb address inside the loader" % (key, reply_hook[key])
+            raw[at(site):at(site) + 4] = enc(site, reply_hook[key] & ~1)
     # the other window functions would run on the stock state that we never create: make them no-ops (a function nobody else points at, checked against all 166 records)
     refs = {}
     for w in range(WINDOW_COUNT):
@@ -152,6 +168,7 @@ def build(stock, out, loader, takeover, loader_addr=FREE_START, label="Tennis", 
     p.save(out)
     log("Bluetooth patches: %s; loader %d bytes at %#x..%#x; take-over of %s (window %#x, list row %d): %s" % ("%d (the watch is open to anyone in range)" % len(SPP_PATCHES) if bluetooth_patches else "none (stock Bluetooth behaviour)", len(loader), loader_addr, lend, sl["name"], sl["window"], sl["row"],
         ", ".join("%s %#x -> b.w %#x" % (k, sl[k], v & ~1) for k, v in takeover.items())))
+    if reply_hook is not None: log("reply keyboard: %#x -> %#x (page of the reply icon), %#x -> %#x (refresh)" % (REPLY_MAIN[0], reply_hook["main"] & ~1, REPLY_REFRESH[0], reply_hook["refresh"] & ~1))
     log("label -> %r; changed language files: %s" % (label, ", ".join("%s (x%d)" % c for c in changed)))
     log("wrote", out, os.path.getsize(out), "bytes")
     if validate:
