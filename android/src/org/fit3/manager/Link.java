@@ -34,7 +34,7 @@ final class Link implements Closeable {
 
     @SuppressLint("MissingPermission")
     static Link open(BluetoothAdapter adapter, String addr) throws IOException {
-        if (!BluetoothAdapter.checkBluetoothAddress(addr)) throw new Error("invalid watch address: " + addr);
+        if (!BluetoothAdapter.checkBluetoothAddress(addr)) throw new Error("endereço do relógio inválido: " + addr);
         BluetoothDevice dev = adapter.getRemoteDevice(addr);
         IOException last = null;
         for (int i = 0; i < 6; i++) {                                  // the channel needs a few seconds to be released after a session
@@ -53,21 +53,21 @@ final class Link implements Closeable {
                 sleep(4000);
             }
         }
-        throw new Error("cannot connect to the watch (" + (last == null ? "?" : last.getMessage()) + "). Force-stop Galaxy Wearable, check that the watch runs the hub firmware with the Bluetooth patches, and try again.");
+        throw new Error("não consegui conectar ao relógio (" + (last == null ? "?" : last.getMessage()) + "). Force a parada do Galaxy Wearable, confira se o relógio está com o firmware do hub com os patches de Bluetooth e tente de novo.");
     }
 
     static void sleep(long ms) { try { Thread.sleep(ms); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } }
 
-    void send(byte[] d) throws IOException { try { out.write(d); out.flush(); } catch (IOException e) { throw new Error("the watch closed the connection"); } }
+    void send(byte[] d) throws IOException { try { out.write(d); out.flush(); } catch (IOException e) { throw new Error("o relógio fechou a conexão"); } }
     void send(String t) throws IOException { send(t.getBytes(StandardCharsets.ISO_8859_1)); }
 
     /** n bytes within the timeout (the socket's stream has no timeout of its own: poll available()) */
     byte[] read(int n, int timeoutMs) throws IOException {
         byte[] b = new byte[n]; int got = 0; long end = System.currentTimeMillis() + timeoutMs;
         while (got < n) {
-            int av; try { av = in.available(); } catch (IOException e) { throw new Error("the watch closed the connection"); }
-            if (av > 0) { int r = in.read(b, got, Math.min(av, n - got)); if (r < 0) throw new Error("the watch closed the connection"); got += r; continue; }
-            if (System.currentTimeMillis() > end) throw new Error("the watch did not answer in time");
+            int av; try { av = in.available(); } catch (IOException e) { throw new Error("o relógio fechou a conexão"); }
+            if (av > 0) { int r = in.read(b, got, Math.min(av, n - got)); if (r < 0) throw new Error("o relógio fechou a conexão"); got += r; continue; }
+            if (System.currentTimeMillis() > end) throw new Error("o relógio não respondeu a tempo");
             sleep(5);
         }
         return b;
@@ -75,7 +75,11 @@ final class Link implements Closeable {
     void drain() throws IOException { long end = System.currentTimeMillis() + 300; while (System.currentTimeMillis() < end) { int av = in.available(); if (av > 0) in.skip(av); else sleep(20); } }
     private void expect(String t) throws IOException {
         byte[] got = read(t.length(), 30000);
-        if (!Arrays.equals(got, t.getBytes(StandardCharsets.ISO_8859_1))) throw new Error("the watch rejected the transfer: expected " + t + ", got " + new String(got, StandardCharsets.ISO_8859_1).trim());
+        if (Arrays.equals(got, t.getBytes(StandardCharsets.ISO_8859_1))) return;
+        StringBuilder all = new StringBuilder(new String(got, StandardCharsets.ISO_8859_1));
+        long end = System.currentTimeMillis() + 600;                   // the rest of the answer, e.g. "open error:-2, 331"
+        while (System.currentTimeMillis() < end) { int av = in.available(); if (av > 0) { byte[] b = new byte[Math.min(av, 256)]; int r = in.read(b); if (r > 0) all.append(new String(b, 0, r, StandardCharsets.ISO_8859_1)); } else sleep(20); }
+        throw new Error(all.toString().replaceAll("[^\\x20-\\x7e]", " ").trim());
     }
 
     /** reads a whole file (always to the end: the watch must see the closing "062"); null when it does not exist */
@@ -87,7 +91,7 @@ final class Link implements Closeable {
         ByteArrayOutputStream data = new ByteArrayOutputStream(total);
         while (data.size() < total) {
             send("062"); byte[] hh = read(5, 15000); int n = be32(hh, 1);
-            if ((hh[0] & 0xff) != 0x40 || n <= 0 || n > total - data.size()) throw new Error("invalid block while reading");
+            if ((hh[0] & 0xff) != 0x40 || n <= 0 || n > total - data.size()) throw new Error("bloco inválido na leitura");
             data.write(read(n, 60000)); read(4, 60000);
         }
         send("062"); sleep(100); return data.toByteArray();
@@ -95,11 +99,15 @@ final class Link implements Closeable {
 
     /** the only write: one of the sixteen slots, a valid .f3x or the tombstone */
     void writeSlot(byte[] data, String path, Progress p) throws IOException {
-        if (!SLOT_PATH.matcher(path).matches()) throw new Error("refusing to write " + path);
-        if (!Arrays.equals(data, F3x.TOMBSTONE)) try { F3x.parse(data); } catch (F3x.Invalid e) { throw new Error("refusing to write: " + e.getMessage()); }
+        if (!SLOT_PATH.matcher(path).matches()) throw new Error("gravação recusada: " + path);
+        if (!Arrays.equals(data, F3x.TOMBSTONE)) try { F3x.parse(data); } catch (F3x.Invalid e) { throw new Error("gravação recusada: " + e.getMessage()); }
         drain(); send("300"); expect("300");
         send("33bin," + path + "," + data.length);
-        try { expect("330"); } catch (Error e) { throw new Error("the watch does not accept the file. Open the Application Hub on the watch once (it creates /user/hub), then try again."); }
+        try { expect("330"); } catch (Error e) {
+            String ans = e.getMessage();
+            if (ans.contains("-2")) throw new Error("a pasta /user/hub ainda não existe no relógio (resposta: \"" + ans + "\"). Abra o Application Hub no relógio uma vez: ele cria a pasta. Se mesmo assim falhar, o firmware do relógio não tem o instalador de apps: grave o firmware do hub feito com este projeto.");
+            throw new Error("o relógio recusou o arquivo (resposta: \"" + ans + "\").");
+        }
         for (int off = 0; off < data.length; off += BLOCK) {
             int n = Math.min(BLOCK, data.length - off); CRC32 c = new CRC32(); c.update(data, off, n); long v = c.getValue();
             byte[] blk = new byte[n + 4]; System.arraycopy(data, off, blk, 0, n);

@@ -27,6 +27,10 @@ public final class LinkTest {
         try (Link l = link(port)) { ok("the tombstone reads back", Arrays.equals(l.readFile(F3x.slotPath(3), 65536), F3x.TOMBSTONE)); }
         try (Link l = link(port)) { l.writeSlot(app, "/user/ota/R390_WEB_FOTA.bin", null); ok("a path outside the slots is refused", false); } catch (Link.Error e) { ok("a path outside the slots is refused", true); }
         try (Link l = link(port)) { l.writeSlot(bad, F3x.slotPath(4), null); ok("a damaged file is never written", false); } catch (Link.Error e) { ok("a damaged file is never written", true); }
+        if (a.length > 2) {                                            // a second mock that refuses every file like a watch without /user/hub ("open error:-2, 331")
+            try (Link l = link(Integer.parseInt(a[2]))) { l.writeSlot(app, F3x.slotPath(0), null); ok("a refused file is reported", false); }
+            catch (Link.Error e) { ok("a refused file is reported with the watch's answer: " + e.getMessage(), e.getMessage().contains("open error:-2, 331") && e.getMessage().contains("/user/hub")); }
+        }
         System.out.println(n + " checks, " + fails + " failed"); System.exit(fails == 0 ? 0 : 1);
     }
 }
