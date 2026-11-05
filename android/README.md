@@ -10,7 +10,7 @@ serves one session at a time. The connection is RFCOMM channel 29 (the PC tools'
 ## Build
 
 ```sh
-ANDROID_HOME=/path/to/sdk sh android/build.sh          # platforms;android-34, build-tools;34.0.0, JDK 17+  ->  local/out/fit3-apps.apk (debug-signed, key in local/)
+ANDROID_HOME=/path/to/sdk sh android/build.sh          # platforms;android-34, build-tools;35.0.0, JDK 17+  ->  local/out/fit3-apps.apk (debug-signed, key in local/)
 ```
 
 ## Test (no phone)

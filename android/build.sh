@@ -1,11 +1,11 @@
 #!/bin/sh
 # SPDX-License-Identifier: Apache-2.0
 # build.sh: builds android/fit3-apps.apk with the Android SDK tools only (no Gradle, no libraries).
-#   ANDROID_HOME=/path/to/sdk sh android/build.sh       needs platforms;android-34 and build-tools;34.0.0, a JDK 17+
+#   ANDROID_HOME=/path/to/sdk sh android/build.sh       needs platforms;android-34 and build-tools;35.0.0, a JDK 17+
 # Signed with a debug key kept in local/ (git-ignored), created on the first build.
 set -eu
 cd "$(dirname "$0")"
-SDK=${ANDROID_HOME:?set ANDROID_HOME}; BT=$SDK/build-tools/34.0.0; JAR=$SDK/platforms/android-34/android.jar
+SDK=${ANDROID_HOME:?set ANDROID_HOME}; BT=$SDK/build-tools/35.0.0; JAR=$SDK/platforms/android-34/android.jar
 OUT=../local/android; KS=../local/android-debug.keystore
 rm -rf "$OUT"; mkdir -p "$OUT/res" "$OUT/classes" "$OUT/dex"
 "$BT/aapt2" compile --dir res -o "$OUT/res.zip"
