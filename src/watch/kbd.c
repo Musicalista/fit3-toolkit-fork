@@ -55,7 +55,7 @@ static const char *kb_take(const char *s, int maxn, char *out) {
 static int kb_count(const char *s) { int n = 0; while (*s) { s += kb_clen(s); n++; } return n; }
 
 /* ---- the key table of a layer ---- */
-enum { K_CHAR, K_SHIFT, K_SYM, K_EXTRA, K_ABC, K_DEL, K_SPACE, K_GROUP };
+enum { K_CHAR, K_SHIFT, K_SYM, K_EXTRA, K_ABC, K_DEL, K_SPACE, K_GROUP, K_EMOJI };
 typedef struct { lv_obj_t *o, *lab; char s[24]; u8 code; } Key;       /* s: the character to insert (K_CHAR), or the characters of a multi-tap group (K_GROUP) */
 typedef struct {
     lv_obj_t *scr, *field, *view, *txt, *pad, *b_mode, *l_mode, *b_lang, *l_lang, *b_send, *l_cnt, *over;
@@ -133,6 +133,21 @@ static void kb_row(Kb *k, const char *row, i32 x_lo, i32 x_hi, i32 y, int up) {
 static void kb_build(Kb *k) {
     lv_obj_clean(k->pad); fill8(k->key, 0, sizeof k->key); k->nkeys = 0;
     const KbLang *L = KB_L(k); int up = k->shift && k->layer != 2;
+#ifdef KB_EMOJI
+    if (k->layer == 4) {                                         /* the emoji layer (both modes): three rows of eight, then abc, space and delete */
+        for (int r = 0; r < 3; r++) {
+            const char *e = KB_EMOJI_ROWS[r];
+            for (int i = 0; *e; i++) { char one[5]; int n = kb_clen(e); for (int j = 0; j < n; j++) one[j] = e[j]; one[n] = 0; kb_key(k, 4 + i * 31, r * 56, 29, 50, one, K_CHAR, one, C_BTN_OFF); e += n; }
+        }
+        kb_key(k, 3, 168, 60, 50, "abc", K_ABC, 0, C_BTN_OFF);
+        kb_key(k, 66, 168, 124, 50, " ", K_SPACE, 0, C_BTN_OFF);
+        kb_key(k, 193, 168, 60, 50, "<", K_DEL, 0, C_BTN_OFF);
+        return;
+    }
+#define KB_EMO 1
+#else
+#define KB_EMO 0
+#endif
     if (k->mode == 0) {                                          /* a letter layout */
         char r0[24], r1[24]; const char *r2;
         if (k->layer == 2) { kb_row(k, ROW_SYM[0], 3, 253, 0, 0); kb_row(k, ROW_SYM[1], 3, 253, 56, 0); r2 = ROW_SYM[2]; }
@@ -143,12 +158,16 @@ static void kb_build(Kb *k) {
         { char t[24]; kb_take(r2, 7, t); kb_row(k, t, 41, 219, 112, k->layer == 2 ? 0 : up); }
         if (k->layer != 2) kb_key(k, 3, 112, 36, 50, k->shift ? "AB" : "ab", K_SHIFT, 0, k->shift ? C_BTN : C_BTN_OFF);
         kb_key(k, 222, 112, 31, 50, "<", K_DEL, 0, C_BTN_OFF);
-        kb_key(k, 3, 168, 60, 50, k->layer == 2 ? "abc" : "123", k->layer == 2 ? K_ABC : K_SYM, 0, C_BTN_OFF);
+        i32 w = KB_EMO ? 52 : 60, x = 3 + w + 3;                 /* the bottom row: 123, the extra letters, the emoji key (KB_EMOJI builds), space */
+        kb_key(k, 3, 168, w, 50, k->layer == 2 ? "abc" : "123", k->layer == 2 ? K_ABC : K_SYM, 0, C_BTN_OFF);
         if (L->extra[0]) {                                       /* a language with extra letters: a key for their layer, captioned with the first two */
             char cap[8]; kb_take(L->extra, 2, cap);
-            kb_key(k, 66, 168, 60, 50, k->layer == 3 ? "abc" : cap, k->layer == 3 ? K_ABC : K_EXTRA, 0, C_BTN_OFF);
-            kb_key(k, 129, 168, 124, 50, " ", K_SPACE, 0, C_BTN_OFF);
-        } else kb_key(k, 66, 168, 187, 50, " ", K_SPACE, 0, C_BTN_OFF);
+            kb_key(k, x, 168, w, 50, k->layer == 3 ? "abc" : cap, k->layer == 3 ? K_ABC : K_EXTRA, 0, C_BTN_OFF); x += w + 3;
+        }
+#ifdef KB_EMOJI
+        kb_key(k, x, 168, 40, 50, "\xf0\x9f\x98\x8a", K_EMOJI, 0, C_BTN_OFF); x += 43;      /* U+1F60A */
+#endif
+        kb_key(k, x, 168, 253 - x, 50, " ", K_SPACE, 0, C_BTN_OFF);
     } else {                                                     /* multi-tap: a 3 x 4 pad */
         for (int d = 1; d <= 9; d++) {
             char lab[24]; int n = 0, glyphs = 0; const char *g = L->group[d];
@@ -156,9 +175,16 @@ static void kb_build(Kb *k) {
             lab[n] = 0;
             kb_key(k, 3 + ((d - 1) % 3) * 86, ((d - 1) / 3) * 56, 82, 50, lab, K_GROUP, L->group[d], C_BTN_OFF);
         }
+#ifdef KB_EMOJI
+        kb_key(k, 3, 168, 60, 50, k->shift ? "AB" : "ab", K_SHIFT, 0, k->shift ? C_BTN : C_BTN_OFF);
+        kb_key(k, 66, 168, 48, 50, "\xf0\x9f\x98\x8a", K_EMOJI, 0, C_BTN_OFF);
+        kb_key(k, 117, 168, 70, 50, "_", K_GROUP, L->group[0], C_BTN_OFF);
+        kb_key(k, 190, 168, 63, 50, "<", K_DEL, 0, C_BTN_OFF);
+#else
         kb_key(k, 3, 168, 82, 50, k->shift ? "AB" : "ab", K_SHIFT, 0, k->shift ? C_BTN : C_BTN_OFF);
         kb_key(k, 89, 168, 82, 50, "_", K_GROUP, L->group[0], C_BTN_OFF);
         kb_key(k, 175, 168, 78, 50, "<", K_DEL, 0, C_BTN_OFF);
+#endif
     }
 }
 static void kb_modetext(Kb *k) { lv_label_set_text(k->l_mode, k->mode ? "T9" : "QWE"); }
@@ -190,6 +216,7 @@ static void kb_click(lv_event_t *e) {
     case K_SYM: k->layer = 2; was = -1; break;
     case K_EXTRA: k->layer = 3; was = -1; break;
     case K_ABC: k->layer = 0; was = -1; break;
+    case K_EMOJI: k->layer = 4; k->pending = 0; was = -1; break;
     case K_DEL: kb_erase(k); k->pending = 0; kb_autocap(k); break;
     case K_GROUP: {
         u32 now = lv_tick_get(); const char *g = K->s; int n = 0; for (const char *p = g; *p; p += kb_clen(p)) n++;

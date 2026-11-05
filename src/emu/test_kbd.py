@@ -190,6 +190,24 @@ def main():
     k = open_kb(16, saved=bytes([0, 2, 0, 0])); ok("a saved choice beats the system language", r.lang(k) == "EN", r.lang(k)); e.call(A["obj_del"], k)
     k = open_kb(16, saved=struct.pack("<I", 1)); ok("an old save file (the layout switch only, 4 bytes) follows the system language", r.lang(k) == "PL" and "T9" in r.alltext(k), r.alltext(k)[:3]); e.call(A["obj_del"], k)
     k = open_kb(16, saved=bytes([0, 99, 0, 0])); ok("a damaged save file is ignored", r.lang(k) == "PL", r.lang(k)); e.call(A["obj_del"], k)
+    # ---- the emoji layer (only in a build with --kb-emoji-font): a key in both modes, 24 emoji of four UTF-8 bytes each, sent as they are
+    EMO = "\U0001F60A"
+    k = open_kb(45, saved=bytes([0, 0, 0, 0]))
+    if EMO in keyset(k):
+        typed = lambda: [t for t in r.alltext(k) if t.endswith("_")][0]
+        r.click(r.keys(k)[1][EMO]); ks = keyset(k); emo = [c for c in ks if len(c) == 1 and ord(c) > 0xffff]
+        ok("emoji: the key opens a layer of 24 emoji with abc, space and delete", len(emo) == 24 and {"abc", " ", "<"} <= ks, sorted(ks))
+        r.click(r.keys(k)[1]["\U0001F602"]); r.click(r.keys(k)[1]["\U0001F44D"]); ok("an emoji is four bytes of UTF-8 in the text", typed() == "\U0001F602\U0001F44D_" and r.used(k) == 8, (typed(), r.used(k)))
+        r.click(r.keys(k)[1]["<"]); ok("delete removes a whole emoji", typed() == "\U0001F602_" and r.used(k) == 4, typed())
+        for _ in range(30): r.click(r.keys(k)[1]["\U0001F525"])
+        ok("the 100-byte limit: 25 emoji at most, no half emoji", r.used(k) == 100 and typed().endswith("\U0001F525_"), r.used(k))
+        sn = len(r.sent); r.click([c for c in r.children(k) if r.alltext(c) == ["Send"]][0])
+        ok("Send hands the emoji to the reply sender as UTF-8", r.sent[sn:] and r.sent[-1][1] == ("\U0001F602" + "\U0001F525" * 24).encode(), r.sent[sn:][:1])
+        e.call(A["obj_del"], k)
+        k = open_kb(45, saved=bytes([0, 0, 0, 0])); r.click(r.keys(k)[1][EMO]); r.click(r.keys(k)[1]["abc"]); ok("abc goes back to the letters", "Q" in keyset(k) or "q" in keyset(k), sorted(keyset(k))[:5]); e.call(A["obj_del"], k)
+        k = open_kb(45, saved=bytes([1, 0, 0, 0])); ok("multi-tap has the emoji key too", EMO in keyset(k) and "_" in keyset(k) and "<" in keyset(k), sorted(keyset(k)))
+        r.click(r.keys(k)[1][EMO]); r.click(r.keys(k)[1]["\U0001F64F"]); ok("... and types an emoji", [t for t in r.alltext(k) if t.endswith("_")][0] == "\U0001F64F_"); e.call(A["obj_del"], k)
+    else: e.call(A["obj_del"], k)
     # ---- the block can be anywhere in RAM: the watch's heap is not the emulator's (a first version accepted only 0x20000000..0x20800000 and showed the error screen on the watch)
     for addr in (0x28000010, 0x2a123450):
         e.uc.mem_map(addr & ~0xfff, 0x1000); e.w32(addr, 0x3159424b); e.w32(addr + 4, 0x77); r.freed.clear()

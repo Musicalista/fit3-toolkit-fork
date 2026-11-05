@@ -29,6 +29,14 @@ With more than one layout the keyboard picks the one of the **watch's system lan
 
 Cost against a hub with no apps, measured: `en` 10 kB of the free flash, `pl,en` 12 kB, all 24 layouts 25 kB (most of it the font and the tables).
 
+## Emoji
+
+`--kb-emoji-font NotoEmoji-Medium.ttf` adds a layer of 24 emoji (a 😊 key next to space, in QWERTY and in multi-tap): 😂😍👍🙏😊😭😅🤣 😘🥰😉😎🤔😢😡😴 👏💪🙌🎉🔥👋💯💙.
+They are drawn on the watch in one colour, from [Noto Emoji](https://fonts.google.com/noto/specimen/Noto+Emoji) (SIL Open Font License; get the TTF from Google Fonts, it is not stored in
+the repository, only the 24 glyph bitmaps go into the package), merged into the keyboard font at 22 px. Each is a single code point, four bytes of UTF-8, so the 100-byte limit holds 25 of them;
+the phone shows them in colour. **Not yet tried on a watch**: whether the phone shows four-byte characters that come from the watch is open, like the Polish letters above.
+Cost: about 4 kB of the free flash. Tests: `test_kbd.py` with a build that has them (90 checks).
+
 ## What you get
 
 - **Write reply** as the first row of the page of quick replies (also when you have no stored replies).

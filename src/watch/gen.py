@@ -35,13 +35,14 @@ def apps_h(apps, hub, install=False, host=False, reply=False):
     return "\n".join(out) + "\n"
 
 
-def generate(apps, hub, outdir, install=False, host=False, kb_ttf=None, kb_langs=("en",)):
-    """kb_ttf: a TTF with Latin glyphs (Roboto Medium): turns on the reply keyboard (kbd.c), its font and the layouts of kb_langs (kblang.py)"""
+def generate(apps, hub, outdir, install=False, host=False, kb_ttf=None, kb_langs=("en",), kb_emoji_ttf=None):
+    """kb_ttf: a TTF with Latin glyphs (Roboto Medium): turns on the reply keyboard (kbd.c), its font and the layouts of kb_langs (kblang.py);
+    kb_emoji_ttf: a monochrome emoji TTF (Noto Emoji): adds the emoji layer, its glyphs merged into the keyboard font at 22 px"""
     os.makedirs(outdir, exist_ok=True)
     if kb_ttf:
         import mkfont
         import kblang
-        open(os.path.join(outdir, "kbfont.h"), "w").write(mkfont.emit(mkfont.build(kb_ttf, 24, kblang.alphabet(list(kb_langs)), polish=False), "KB"))
-        open(os.path.join(outdir, "kblang.h"), "w").write(kblang.header(list(kb_langs)))
+        open(os.path.join(outdir, "kbfont.h"), "w").write(mkfont.emit(mkfont.build(kb_ttf, 24, kblang.alphabet(list(kb_langs)), polish=False, emoji_ttf=kb_emoji_ttf, emoji="".join(kblang.EMOJI) if kb_emoji_ttf else "", emoji_size=22), "KB"))
+        open(os.path.join(outdir, "kblang.h"), "w").write(kblang.header(list(kb_langs), bool(kb_emoji_ttf)))
     open(os.path.join(outdir, "icons.h"), "w").write(icons_h()); open(os.path.join(outdir, "gen_apps.h"), "w").write(apps_h(apps, hub, install, host, bool(kb_ttf)))
     return outdir

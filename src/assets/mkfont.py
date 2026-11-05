@@ -50,12 +50,14 @@ def plan_cmaps(cps):
         while j + 1 < len(cps) and cps[j + 1] == cps[j] + 1: j += 1
         segs.append((i, j + 1))                        # slice [i, j+1) is one run of consecutive code points
         i = j + 1
-    out, sparse = [], []
+    out, sparse = [], []                               # a sparse cmap stores offsets from its first code point as u16: emoji (U+1Fxxx) start a new one
     def flush():
         if sparse: out.append((SPARSE, sparse[0][0][0], [c for s in sparse for c in s[0]], sparse[0][1])); sparse.clear()
     for a, b in segs:
         if b - a >= RUN_MIN: flush(); out.append((TINY, cps[a], cps[a:b], a + 1))
-        else: sparse.append((cps[a:b], a + 1))
+        else:
+            if sparse and cps[b - 1] - sparse[0][0][0] > 0xffff: flush()
+            sparse.append((cps[a:b], a + 1))
     flush()
     return out
 
@@ -84,10 +86,19 @@ def pack(px, bpp):
     return bytes(out)
 
 
-def build(ttf, size, extra="", bpp=2, polish=True):
+def build(ttf, size, extra="", bpp=2, polish=True, emoji_ttf=None, emoji="", emoji_size=None):
+    """emoji: characters drawn from a second font (emoji_ttf, a monochrome one such as Noto Emoji) at emoji_size px, on the same baseline, merged into the one font"""
     cps = charset(extra, polish); missing = [chr(c) for c in cps if c not in ttf_codepoints(ttf)]
     if missing: raise SystemExit("%s has no glyph for: %s" % (os.path.basename(ttf), " ".join(missing)))
-    asc, desc, gl = render(ttf, size, cps, bpp); bitmap = bytearray(b"\0"); idx = [0]    # byte 0 belongs to glyph 0
+    asc, desc, gl = render(ttf, size, cps, bpp)
+    ecps = sorted({ord(c) for c in emoji} - set(cps))
+    if ecps:
+        assert emoji_ttf, "emoji need emoji_ttf"
+        em = [chr(c) for c in ecps if c not in ttf_codepoints(emoji_ttf)]
+        if em: raise SystemExit("%s has no glyph for: %s" % (os.path.basename(emoji_ttf), " ".join(em)))
+        _, _, eg = render(emoji_ttf, emoji_size or size, ecps, bpp)
+        merged = sorted(gl[1:] + eg[1:], key=lambda g: g["cp"]); gl = [gl[0]] + merged; cps = [g["cp"] for g in merged]
+    bitmap = bytearray(b"\0"); idx = [0]    # byte 0 belongs to glyph 0
     for g in gl[1:]:
         b = pack(g["px"], bpp); idx.append(len(bitmap) if b else 0); bitmap += b
     return dict(size=size, bpp=bpp, ascent=asc, descent=desc, cps=cps, glyphs=gl, bitmap_index=idx, bitmap=bytes(bitmap), cmaps=plan_cmaps(cps))

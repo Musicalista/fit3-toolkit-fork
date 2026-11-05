@@ -16,6 +16,7 @@
 > - **Game Boy** ([`src/watch/apps/gameboy.c`](src/watch/apps/gameboy.c)): a Game Boy emulator app on [Peanut-GB](src/watch/apps/gb/README.md) (MIT). Bring your own games.
 > - **Fit3 Apps** ([`android/`](android/README.md)): an Android app, in the watch's look, that installs and removes `.f3x` apps and sends a Game Boy ROM from the phone.
 > - **Settings > Tips and tutorials** as an entry for the hub (`--slot "Tips and tutorials"`).
+> - **Emoji in the reply keyboard** (`--kb-emoji-font`, [docs/replies.md](docs/replies.md#emoji)).
 >
 > The hub, the App Manager, the Benchmark and app installs from the phone ran on a watch; the Game Boy app has not yet (emulator tests only). Everything else is the upstream project, under its license.
 

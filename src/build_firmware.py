@@ -28,6 +28,7 @@ def main():
     ap.add_argument("--reply-keyboard", action="store_true", help="add a \"Write reply\" row to the page of quick replies of a notification: a keyboard (QWERTY or multi-tap, with Polish letters) whose text goes to the phone (docs/replies.md)")
     ap.add_argument("--kb-lang", default="en", help="the keyboard layouts to build in, comma-separated (default en): %s, or all. With more than one the layout follows the watch's system language (the first is the fallback) and a tap on the count at the top of the keyboard switches it" % ", ".join(kblang.LANGS))
     ap.add_argument("--kb-font", help="a TTF with Latin glyphs for the keyboard (default: Roboto Medium found with fc-match; Apache-2.0, not stored in the repository)")
+    ap.add_argument("--kb-emoji-font", help="with --reply-keyboard: a monochrome emoji TTF (Noto Emoji, OFL; not stored in the repository): adds a layer of 24 emoji to the keyboard")
     ap.add_argument("--no-icon", action="store_true", help="keep the stock icon")
     ap.add_argument("--no-bluetooth-patches", action="store_true", help="leave the watch's Bluetooth as stock: nobody in range can connect, and you cannot flash it from here again without a reset (use for the final package)")
     a = ap.parse_args()
@@ -45,7 +46,7 @@ def main():
         kb_ttf = a.kb_font or subprocess.run(["fc-match", "-f", "%{file}", "Roboto:medium"], capture_output=True, text=True).stdout
         if not kb_ttf or not os.path.isfile(kb_ttf) or "oboto" not in os.path.basename(kb_ttf) and not a.kb_font: sys.exit("--reply-keyboard needs a Roboto TTF with the Polish letters: install Roboto or pass --kb-font")
     work = tempfile.mkdtemp(prefix="fit3_"); loader = os.path.join(work, "loader.bin")
-    syms = build_loader.build(os.path.join(HERE, "watch", "hub.c"), loader, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]], include_dirs=[gen.generate(apps, hub, os.path.join(work, "gen"), install, hub and not a.no_native_transitions, kb_ttf, kb_langs)])
+    syms = build_loader.build(os.path.join(HERE, "watch", "hub.c"), loader, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]], include_dirs=[gen.generate(apps, hub, os.path.join(work, "gen"), install, hub and not a.no_native_transitions, kb_ttf, kb_langs, a.kb_emoji_font if kb_ttf else None)])
     label = a.label or ("Application Hub" if hub else {"tennis": "Tennis Score", "counter": "Counter", "dice": "Dice", "mars": "Mars Production", "manager": "App Manager", "bench": "Benchmark", "gameboy": "Game Boy"}[apps[0]])
     icon = None if a.no_icon or sl["row"] is None else mkicon.encode(*mkicon.draw("hub" if hub else apps[0]))
     build_package.build(a.stock, a.out, open(loader, "rb").read(), label=label, icon=icon, slot=sl["window"], languages=a.languages, force_slot=a.force_slot, bluetooth_patches=not a.no_bluetooth_patches,
