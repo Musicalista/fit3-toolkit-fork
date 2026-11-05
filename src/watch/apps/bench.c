@@ -6,7 +6,8 @@
  *   Read     sequential reads of a stock image pack in 4 KB blocks, up to 256 KB: KB/s
  *   FPS 1x   a 160 x 144, 2-bit indexed image (the Game Boy screen) redrawn as fast as LVGL draws it, 2 s
  *   FPS 1.5x the same with lv_img_set_zoom(384): 240 x 216 on the screen
- *   Heap     the largest single app_malloc block, then the total in 16 KB blocks (all freed at once)
+ *   Heap     single app_malloc blocks of 32, 64, 96, 128, 192, 256, 384 and 512 KB, each freed at once, up to the first refusal (a first version asked for 4 MB at once
+ *            and the watch hung: the allocator lives in the chip's ROM, so what it does when it runs out is not known)
  *
  * The results are saved (64 bytes) in /user/bench.sav before each step, so if a step restarts the watch, opening the app again shows how far it got. The heap step is last on purpose: it is not known
  * whether app_malloc returns 0 on failure or asserts. Nothing else is written. */
@@ -24,7 +25,6 @@
 #define GB_BYTES (GB_PAL + GB_W * GB_H / 4)
 #define EV_DRAW_MAIN_END 22
 #define NRES 6
-#define NCHUNK 128
 enum { R_CPU, R_INTERP, R_READ, R_FPS1, R_FPS15, R_HEAP };
 enum { ST_IDLE, ST_CPU, ST_INTERP, ST_READ, ST_FPS1, ST_FPS15, ST_HEAP, ST_DONE };
 
@@ -36,7 +36,7 @@ typedef struct {
     lv_timer_t *timer, *ftimer;
     Icon dsc;                                                            /* lv_img_dsc_t of the frame */
     u8 *fb;                                                              /* GB_BYTES */
-    void *chunk[NCHUNK];
+    u32 hstep;
     char t_res[NRES][TXT_MAX], t_status[TXT_MAX], t_run[TXT_MAX];
 } Bench;
 
@@ -55,11 +55,11 @@ static void bench_render(Bench *s) {
         e = put(b, RES_NAME[i]);
         if (v == 0xffffffffu) { put(e, "-"); set_txt(s->res[i], s->t_res[i], b); continue; }
         switch (i) {
-        case R_CPU: e = put(e, "~"); e = putn(e, v, 1); put(e, " MHz"); break;
+        case R_CPU: e = put(e, "c. "); e = putn(e, v, 1); put(e, " MHz"); break;          /* the font has no "~" */
         case R_INTERP: e = putn(e, v, 1); put(e, " k op/s"); break;
         case R_READ: if (x == 0xffu) put(e, "no file"); else { e = putn(e, v, 1); e = put(e, " KB/s #"); putn(e, x, 1); } break;
         case R_FPS1: case R_FPS15: e = putn(e, v / 10, 1); e = put(e, "."); putn(e, v % 10, 1); break;
-        case R_HEAP: e = putn(e, v, 1); e = put(e, "/"); e = putn(e, x, 1); put(e, " KB"); break;
+        case R_HEAP: e = putn(e, v, 1); e = put(e, " KB ok"); if (x && x != 0xffffffffu) { e = put(e, ", "); e = putn(e, x >= 100000u ? x - 100000u : x, 1); put(e, x >= 100000u ? " no" : s->timer ? "?" : " hung"); } break;
         }
         set_txt(s->res[i], s->t_res[i], b);
     }
@@ -111,14 +111,17 @@ static void read_test(Bench *s, u8 *buf) {
     }
     s->r.val[R_READ] = 0; s->r.extra[R_READ] = 0xffu;
 }
-static void heap_test(Bench *s) {
-    u32 lo = 0, hi = 0, sz;
-    for (sz = 4u << 20; sz >= 1024u; sz >>= 1) { void *p = app_malloc(sz); if (p) { app_free(p); lo = sz; hi = sz * 2; break; } }
-    while (hi - lo > 1024u) { u32 mid = (lo + hi) / 2 & ~1023u; void *p = app_malloc(mid); if (p) { app_free(p); lo = mid; } else hi = mid; }
-    u32 n = 0; while (n < NCHUNK && (s->chunk[n] = app_malloc(16384u)) != 0) n++;
-    while (n) app_free(s->chunk[--n]);
-    for (n = 0; n < NCHUNK && s->chunk[n]; n++) {}
-    s->r.val[R_HEAP] = lo / 1024u; s->r.extra[R_HEAP] = n * 16u;
+static const u16 HEAP_KB[] = { 32, 64, 96, 128, 192, 256, 384, 512 };
+#define NHEAP (sizeof HEAP_KB / sizeof HEAP_KB[0])
+/* one size per tick: the size about to be tried is saved first (extra), so after a hang or a restart the page shows the last size that worked (val) and the one that did not */
+static int heap_step(Bench *s) {
+    u32 i = s->hstep; if (i >= NHEAP) { s->r.extra[R_HEAP] = 0; return 1; }
+    s->r.extra[R_HEAP] = HEAP_KB[i]; bench_save(s);
+    void *p = app_malloc((u32)HEAP_KB[i] * 1024u);
+    if (!p) { s->r.extra[R_HEAP] = HEAP_KB[i] + 100000u; return 1; }    /* refused (app_malloc returned 0): val keeps the last size that worked; 100000 + the refused size */
+    app_free(p); s->r.val[R_HEAP] = HEAP_KB[i]; s->hstep++;
+    if (s->hstep >= NHEAP) { s->r.extra[R_HEAP] = 0; return 1; }
+    return 0;
 }
 
 /* ---- drawing: a moving diagonal pattern in the four Game Boy greens; a frame is counted each time LVGL has drawn the image ---- */
@@ -157,8 +160,8 @@ static void bench_tick(lv_timer_t *t) {
     case ST_INTERP: s->r.val[R_INTERP] = interp_kops(s->fb); s->r.stage = ST_READ; bench_save(s); break;
     case ST_READ: read_test(s, s->fb); s->r.stage = ST_FPS1; bench_save(s); fps_start(s, 256); s->t0 = now; break;
     case ST_FPS1: if (now - s->t0 < 2000) return; s->r.val[R_FPS1] = fps_stop(s); s->r.stage = ST_FPS15; bench_save(s); fps_start(s, 384); s->t0 = now; break;
-    case ST_FPS15: if (now - s->t0 < 2000) return; s->r.val[R_FPS15] = fps_stop(s); lv_obj_add_flag(s->img, FL_HIDDEN); s->r.stage = ST_HEAP; bench_save(s); break;
-    case ST_HEAP: heap_test(s); s->r.stage = ST_DONE; bench_save(s); lv_timer_del(s->timer); s->timer = 0; lv_obj_clear_flag(s->b_run, FL_HIDDEN); motor_once(4, 1); break;
+    case ST_FPS15: if (now - s->t0 < 2000) return; s->r.val[R_FPS15] = fps_stop(s); lv_obj_add_flag(s->img, FL_HIDDEN); s->r.stage = ST_HEAP; s->r.val[R_HEAP] = 0; s->hstep = 0; bench_save(s); break;
+    case ST_HEAP: if (now - s->t0 < 400) return; s->t0 = now; if (!heap_step(s)) break;           /* a step (and its 56-byte save) at most every 0.4 s: frequent writes once restarted the watch */ s->r.stage = ST_DONE; bench_save(s); lv_timer_del(s->timer); s->timer = 0; lv_obj_clear_flag(s->b_run, FL_HIDDEN); motor_once(4, 1); break;
     default: break;
     }
     bench_render(s);
