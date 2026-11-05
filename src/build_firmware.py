@@ -46,7 +46,7 @@ def main():
         if not kb_ttf or not os.path.isfile(kb_ttf) or "oboto" not in os.path.basename(kb_ttf) and not a.kb_font: sys.exit("--reply-keyboard needs a Roboto TTF with the Polish letters: install Roboto or pass --kb-font")
     work = tempfile.mkdtemp(prefix="fit3_"); loader = os.path.join(work, "loader.bin")
     syms = build_loader.build(os.path.join(HERE, "watch", "hub.c"), loader, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]], include_dirs=[gen.generate(apps, hub, os.path.join(work, "gen"), install, hub and not a.no_native_transitions, kb_ttf, kb_langs)])
-    label = a.label or ("Application Hub" if hub else {"tennis": "Tennis Score", "counter": "Counter", "dice": "Dice", "mars": "Mars Production", "manager": "App Manager", "bench": "Benchmark"}[apps[0]])
+    label = a.label or ("Application Hub" if hub else {"tennis": "Tennis Score", "counter": "Counter", "dice": "Dice", "mars": "Mars Production", "manager": "App Manager", "bench": "Benchmark", "gameboy": "Game Boy"}[apps[0]])
     icon = None if a.no_icon or sl["row"] is None else mkicon.encode(*mkicon.draw("hub" if hub else apps[0]))
     build_package.build(a.stock, a.out, open(loader, "rb").read(), label=label, icon=icon, slot=sl["window"], languages=a.languages, force_slot=a.force_slot, bluetooth_patches=not a.no_bluetooth_patches,
                         takeover={"create": syms["world_create"] | 1, "event": syms["world_event"] | 1}, reply_hook={"main": syms["reply_page"] | 1, "refresh": syms["reply_refresh"] | 1} if kb_ttf else None)

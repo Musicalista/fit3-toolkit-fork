@@ -2,10 +2,10 @@
 
 An Android app (Java, no libraries, minSdk 26) that does what `src/device/f3x_install.py` does, from the phone: it lists the sixteen slots `/user/hub/a00.f3x .. a15.f3x`, installs an
 `.f3x` file you pick (into the slot of an app with the same name, or the first free one), and removes an app by writing the tombstone. Every write is read back and compared, as the PC tool does.
-It writes nothing else: the protocol code (`Link.java`) refuses every other path and every file that is not a valid `.f3x` for R390XXU0AZA3. It cannot flash firmware.
+It also sends a Game Boy ROM to `/user/gb/rom.gb` for the Game Boy app (the same **Instalar** button: the file is recognised as a ROM by its header). It writes nothing else: the protocol code (`Link.java`) refuses every other path and every file that is not a valid `.f3x` for R390XXU0AZA3 or (for `/user/gb/rom.gb` only) a Game Boy ROM. It cannot flash firmware.
 
 Needs on the watch the hub firmware **with the Bluetooth patches** (the default build) and the hub opened once (it creates `/user/hub`). On the phone: **force-stop Galaxy Wearable** first; the watch
-serves one session at a time. The connection is RFCOMM channel 29 (the PC tools' channel), with the service UUID as a fallback. **Not yet tried on a phone.**
+serves one session at a time. The connection is RFCOMM channel 29 (the PC tools' channel), with the service UUID as a fallback. Tried on a phone: reading the slots and installing apps work.
 
 ## Build
 

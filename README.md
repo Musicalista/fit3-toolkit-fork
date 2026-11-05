@@ -13,9 +13,11 @@
 > **This is a fork** of [yksen/fit3-toolkit](https://github.com/yksen/fit3-toolkit), not the original project. It adds:
 > - **App Manager** ([`src/watch/apps/manager.c`](src/watch/apps/manager.c)): a page on the watch that lists the installed `.f3x` apps, checks their files and removes them.
 > - **Benchmark** ([`src/watch/apps/bench.c`](src/watch/apps/bench.c)): measures CPU, file reads, drawing speed and heap, to judge whether a Game Boy emulator could run.
-> - **Fit3 Apps** ([`android/`](android/README.md)): an Android app, in the watch's look, that installs and removes `.f3x` apps from the phone.
+> - **Game Boy** ([`src/watch/apps/gameboy.c`](src/watch/apps/gameboy.c)): a Game Boy emulator app on [Peanut-GB](src/watch/apps/gb/README.md) (MIT). Bring your own games.
+> - **Fit3 Apps** ([`android/`](android/README.md)): an Android app, in the watch's look, that installs and removes `.f3x` apps and sends a Game Boy ROM from the phone.
+> - **Settings > Tips and tutorials** as an entry for the hub (`--slot "Tips and tutorials"`).
 >
-> None of these has been tried on a watch or a phone yet (emulator and mock tests only). Everything else is the upstream project, under its license.
+> The hub, the App Manager, the Benchmark and app installs from the phone ran on a watch; the Game Boy app has not yet (emulator tests only). Everything else is the upstream project, under its license.
 
 > [!WARNING]
 > **Unofficial and experimental. Not affiliated with Samsung.** Flashing firmware can leave a watch unusable. Read [docs/legal.md](docs/legal.md) first and keep the stock firmware at hand.

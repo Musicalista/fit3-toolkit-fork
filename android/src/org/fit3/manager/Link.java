@@ -97,15 +97,25 @@ final class Link implements Closeable {
         send("062"); sleep(100); return data.toByteArray();
     }
 
-    /** the only write: one of the sixteen slots, a valid .f3x or the tombstone */
+    /** writes 1: one of the sixteen slots, a valid .f3x or the tombstone */
     void writeSlot(byte[] data, String path, Progress p) throws IOException {
         if (!SLOT_PATH.matcher(path).matches()) throw new Error("gravação recusada: " + path);
         if (!Arrays.equals(data, F3x.TOMBSTONE)) try { F3x.parse(data); } catch (F3x.Invalid e) { throw new Error("gravação recusada: " + e.getMessage()); }
+        writeFile(data, path, p, "Abra o Application Hub no relógio uma vez: ele cria a pasta.");
+    }
+
+    /** writes 2: the game of the Game Boy app, a ROM that passes GbRom's checks, always at /user/gb/rom.gb */
+    void writeGame(byte[] data, Progress p) throws IOException {
+        try { GbRom.parse(data); } catch (F3x.Invalid e) { throw new Error("gravação recusada: " + e.getMessage()); }
+        writeFile(data, GbRom.PATH, p, "Abra o app Game Boy no relógio uma vez: ele cria a pasta /user/gb.");
+    }
+
+    private void writeFile(byte[] data, String path, Progress p, String howToCreateDir) throws IOException {
         drain(); send("300"); expect("300");
         send("33bin," + path + "," + data.length);
         try { expect("330"); } catch (Error e) {
             String ans = e.getMessage();
-            if (ans.contains("-2")) throw new Error("a pasta /user/hub ainda não existe no relógio (resposta: \"" + ans + "\"). Abra o Application Hub no relógio uma vez: ele cria a pasta. Se mesmo assim falhar, o firmware do relógio não tem o instalador de apps: grave o firmware do hub feito com este projeto.");
+            if (ans.contains("-2")) throw new Error("a pasta de " + path + " ainda não existe no relógio (resposta: \"" + ans + "\"). " + howToCreateDir + " Se mesmo assim falhar, grave o firmware do hub feito com este projeto.");
             throw new Error("o relógio recusou o arquivo (resposta: \"" + ans + "\").");
         }
         for (int off = 0; off < data.length; off += BLOCK) {

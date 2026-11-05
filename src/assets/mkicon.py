@@ -21,7 +21,8 @@ KINDS = {"tennis": ((46, 128, 222), (30, 93, 182)),     # court blue
          "dice": ((154, 104, 232), (104, 60, 190)),     # purple
          "mars": ((214, 96, 52), (150, 52, 30)),        # rust red
          "manager": ((98, 128, 255), (58, 76, 222)),    # One UI blue
-         "bench": ((255, 112, 96), (214, 58, 64))}      # coral red
+         "bench": ((255, 112, 96), (214, 58, 64)),      # coral red
+         "gameboy": ((132, 104, 230), (88, 62, 186))}   # violet
 WHITE = (255, 255, 255)
 
 
@@ -84,7 +85,16 @@ def _glyph_bench(x, y, rgb):
     return np.where((arc | needle | hub)[..., None], np.array(WHITE, float), rgb)
 
 
-GLYPHS = {"manager": _glyph_manager, "bench": _glyph_bench, "mars": _glyph_mars, "tennis": _glyph_tennis, "hub": _glyph_hub, "counter": _glyph_counter, "dice": _glyph_dice}
+def _glyph_gameboy(x, y, rgb):
+    body = _rr(x, y, 32, 32, 13.5, 20.0, 3.5)                                   # a handheld: light body, green screen, a D-pad and two buttons
+    rgb = np.where(body[..., None], np.array((236, 236, 240), float), rgb)
+    rgb = np.where(_rr(x, y, 32, 23, 9.5, 7.5, 1.5)[..., None], np.array((155, 188, 15), float), rgb)
+    pad = _rr(x, y, 25, 41, 4.2, 1.4, 0.6) | _rr(x, y, 25, 41, 1.4, 4.2, 0.6)
+    btn = (((x - 38) ** 2 + (y - 39.5) ** 2) <= 2.2 ** 2) | (((x - 42) ** 2 + (y - 37) ** 2) <= 2.2 ** 2)
+    return np.where((pad | btn)[..., None], np.array((60, 50, 90), float), rgb)
+
+
+GLYPHS = {"gameboy": _glyph_gameboy, "manager": _glyph_manager, "bench": _glyph_bench, "mars": _glyph_mars, "tennis": _glyph_tennis, "hub": _glyph_hub, "counter": _glyph_counter, "dice": _glyph_dice}
 
 
 def draw(kind="tennis", size=SIZE):

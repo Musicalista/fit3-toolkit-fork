@@ -8,6 +8,9 @@ Four demo apps. Use them as they are, or copy one and make it yours.
 | **Dice** | [`dice.c`](dice.c) | Rolls one or two dice and shows the sum. Shows drawing with plain boxes, a button that changes the mode and random numbers. | 3,761 B |
 | **Tennis Score** | [`tennis.c`](tennis.c) | A score keeper for a tennis match: points, games, sets and tie-break, who serves, undo, match, game and set timers and match stats; the match is saved. The biggest demo: an overlay closed by the back gesture and scoring rules tested on the PC ([`../test_score.c`](../test_score.c)). | 6,181 B |
 | **Mars Production** | [`mars.c`](mars.c) | A production tracker for the board game *Terraforming Mars*: the six production tracks (credits, steel, titanium, plants, energy, heat) with round −/+ buttons and a `Reset` that asks twice; the values are saved. Shows a list of rows with buttons and a two-step confirmation. | 3,982 B |
+| **App Manager** | [`manager.c`](manager.c) | Lists the installed `.f3x` apps (slot, size, a CRC check of the file) and removes them with a two-step confirmation. | 6,067 B |
+| **Benchmark** | [`bench.c`](bench.c) | Measures the CPU, an interpreter loop, file reads, the drawing speed of a 160 x 144 image and the heap (32..512 KB steps). On the watch: c. 176-193 MHz, 9.8 M ops/s, 10.6 MB/s, 58 fps, 512 KB. | 5,271 B |
+| **Game Boy** | [`gameboy.c`](gameboy.c) | A Game Boy (DMG) emulator on [Peanut-GB](gb/README.md) (MIT): the game is `/user/gb/rom.gb` (send it with the phone app or `src/device/gb_send.py`), the picture scaled 1.5x, touch D-pad, A, B, Select, Start, the cartridge save kept in `/user/gb/rom.sav`. No sound. Not yet tried on a watch. | 20,408 B |
 
 Size is the installable file: header, code, relocation table and the 2,112-byte icon. *Terraforming Mars* is a game by FryxGames; this app is unofficial and not affiliated with them.
 

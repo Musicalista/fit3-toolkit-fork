@@ -105,7 +105,7 @@ public final class MainActivity extends Activity {
         list = new LinearLayout(this); list.setOrientation(LinearLayout.VERTICAL); col.addView(list);
 
         LinearLayout bottom = new LinearLayout(this); bottom.setPadding(dp(11), dp(10), dp(11), dp(18)); bottom.setBackgroundColor(BG);
-        bRefresh = pill("Atualizar", CARD, v -> refresh()); bInstall = pill("Instalar app", ACCENT, v -> pick());
+        bRefresh = pill("Atualizar", CARD, v -> refresh()); bInstall = pill("Instalar", ACCENT, v -> pick());
         bottom.addView(bRefresh); bottom.addView(bInstall); root.addView(bottom);
         setContentView(root);
 
@@ -247,9 +247,15 @@ public final class MainActivity extends Activity {
         super.onActivityResult(req, res, data);
         if (req != REQ_PICK || res != RESULT_OK || data == null || data.getData() == null) return;
         byte[] bytes; F3x app;
-        try { bytes = readUri(data.getData()); app = F3x.parse(bytes); }
-        catch (F3x.Invalid e) { dialog("Arquivo inválido", "Este não é um app .f3x para o firmware R390XXU0AZA3: " + e.getMessage()); return; }
+        try { bytes = readUri(data.getData()); }
         catch (IOException e) { dialog("Não deu para ler o arquivo", e.getMessage()); return; }
+        try { app = F3x.parse(bytes); }
+        catch (F3x.Invalid e) {
+            GbRom game;
+            try { game = GbRom.parse(bytes); }
+            catch (F3x.Invalid g) { dialog("Arquivo inválido", "Não é um app .f3x para o firmware R390XXU0AZA3 (" + e.getMessage() + ") nem um jogo de Game Boy (" + g.getMessage() + ")."); return; }
+            confirmGame(bytes, game); return;
+        }
         final byte[] fb = bytes; final F3x fa = app;
         ImageView im = new ImageView(this); im.setImageBitmap(app.iconBitmap());
         LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(dp(72), dp(72)); ip.gravity = Gravity.CENTER_HORIZONTAL; ip.bottomMargin = dp(10); im.setLayoutParams(ip);
@@ -265,7 +271,7 @@ public final class MainActivity extends Activity {
         try (InputStream in = getContentResolver().openInputStream(u)) {
             if (in == null) throw new IOException("sem acesso ao arquivo");
             ByteArrayOutputStream o = new ByteArrayOutputStream(); byte[] b = new byte[8192]; int r;
-            while ((r = in.read(b)) > 0) { o.write(b, 0, r); if (o.size() > 64 * 1024) throw new IOException("arquivo grande demais para um app .f3x"); }
+            while ((r = in.read(b)) > 0) { o.write(b, 0, r); if (o.size() > GbRom.MAX) throw new IOException("arquivo grande demais (máximo 1 MB)"); }
             return o.toByteArray();
         }
     }
@@ -279,6 +285,28 @@ public final class MainActivity extends Activity {
             writeAndVerify(target, data, "Enviando " + app.name);
             final int t = target; List<Slot> after = new ArrayList<>(table); after.set(t, new Slot(t, app, true));
             ui.post(() -> slots = after); status(app.name + " instalado no espaço " + String.format(Locale.ROOT, "%02d", t));
+        });
+    }
+
+    private void confirmGame(byte[] data, GbRom game) {
+        Sheet sh = new Sheet("Enviar jogo?");
+        TextView nm = text(game.title, 20, TEXT, true); nm.setGravity(Gravity.CENTER); sh.view(nm);
+        sh.msg(String.format(Locale.getDefault(), "%d kB. Ele substitui o jogo que estiver no app Game Boy do relógio.", game.size / 1024));
+        sh.msg("Use só jogos que você tem direito de usar. Feche o Galaxy Wearable (Forçar parada) antes.", TEXT);
+        sh.close("Cancelar", CARD);
+        sh.button("Enviar", ACCENT, v -> { sh.d.dismiss(); sendGame(data, game); });
+        sh.show();
+    }
+    private void sendGame(byte[] data, GbRom game) {
+        job("Conectando…", () -> {
+            status("Enviando " + game.title + "…");
+            try (Link l = Link.open(adapter(), addr())) { l.writeGame(data, this::progress); }
+            Link.sleep(2200);
+            status("Conferindo…");
+            byte[] got;
+            try (Link l = Link.open(adapter(), addr())) { got = l.readFile(GbRom.PATH, GbRom.MAX); }
+            if (!Arrays.equals(got, data)) throw new IOException("O jogo no relógio não confere com o arquivo. Tente de novo.");
+            status(game.title + " enviado: abra o app Game Boy no relógio");
         });
     }
 
