@@ -19,7 +19,9 @@ KINDS = {"tennis": ((46, 128, 222), (30, 93, 182)),     # court blue
          "hub": ((64, 196, 150), (28, 140, 108)),       # green
          "counter": ((250, 168, 44), (226, 118, 22)),   # orange
          "dice": ((154, 104, 232), (104, 60, 190)),     # purple
-         "mars": ((214, 96, 52), (150, 52, 30))}        # rust red
+         "mars": ((214, 96, 52), (150, 52, 30)),        # rust red
+         "manager": ((98, 128, 255), (58, 76, 222)),    # One UI blue
+         "bench": ((255, 112, 96), (214, 58, 64))}      # coral red
 WHITE = (255, 255, 255)
 
 
@@ -64,7 +66,25 @@ def _glyph_mars(x, y, rgb):
     return np.where(patch[..., None], np.array((86, 190, 98), float), rgb)
 
 
-GLYPHS = {"mars": _glyph_mars, "tennis": _glyph_tennis, "hub": _glyph_hub, "counter": _glyph_counter, "dice": _glyph_dice}
+def _glyph_manager(x, y, rgb):
+    m = np.zeros(x.shape, bool)
+    for cy in (21.0, 32.0, 43.0):                                              # a list: three rows, each a dot and a bar
+        m |= ((x - 20) ** 2 + (y - cy) ** 2) <= 3.6 ** 2
+        m |= _rr(x, y, 35.5, cy, 11.5, 3.2, 3.2)
+    return np.where(m[..., None], np.array(WHITE, float), rgb)
+
+
+def _glyph_bench(x, y, rgb):
+    r = np.hypot(x - 32, y - 38); ang = np.arctan2(y - 38, x - 32)            # a gauge: an open arc and a needle
+    arc = (np.abs(r - 18.0) <= 3.0) & (ang <= 0.35) & (ang >= -np.pi - 0.35)
+    t = np.clip(((x - 32) * 0.6 + (y - 38) * -0.8) / 16.0, 0, 1)             # needle towards the upper right
+    nx, ny = 32 + t * 16 * 0.6, 38 - t * 16 * 0.8
+    needle = (np.hypot(x - nx, y - ny) <= 2.4) & (((x - 32) * 0.6 + (y - 38) * -0.8) >= -1) & (((x - 32) * 0.6 + (y - 38) * -0.8) <= 17)
+    hub = np.hypot(x - 32, y - 38) <= 4.2
+    return np.where((arc | needle | hub)[..., None], np.array(WHITE, float), rgb)
+
+
+GLYPHS = {"manager": _glyph_manager, "bench": _glyph_bench, "mars": _glyph_mars, "tennis": _glyph_tennis, "hub": _glyph_hub, "counter": _glyph_counter, "dice": _glyph_dice}
 
 
 def draw(kind="tennis", size=SIZE):
