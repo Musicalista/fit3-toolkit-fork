@@ -34,7 +34,7 @@ def main():
     if a.list_slots: sys.exit(subprocess.call([sys.executable, "-I", os.path.join(HERE, "firmware", "build_package.py"), a.stock, "--list-slots"]))
     if not a.out: ap.error("out is required")
     p = fwd.Package.load(a.stock); raw = build_package.check_stock(p); en = next(build_package.lvlang.Lang(p.raw(k)) for k in p.paths() if k.endswith("/language_en.res"))
-    sl = build_package.find_slot(build_package.slot_table(raw, en), a.slot)
+    sl = build_package.find_slot(build_package.all_slots(raw, en), a.slot)
     hub = a.hub is not None; apps = ([x.strip() for x in a.hub.split(",")] if a.hub.strip() not in ("", "none") else []) if hub else [a.app or "tennis"]
     install = hub and not a.no_install
     if install and a.no_bluetooth_patches: print("note: the hub can load installed apps, but without the Bluetooth patches nothing can be installed from the PC")
@@ -47,7 +47,7 @@ def main():
     work = tempfile.mkdtemp(prefix="fit3_"); loader = os.path.join(work, "loader.bin")
     syms = build_loader.build(os.path.join(HERE, "watch", "hub.c"), loader, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]], include_dirs=[gen.generate(apps, hub, os.path.join(work, "gen"), install, hub and not a.no_native_transitions, kb_ttf, kb_langs)])
     label = a.label or ("Application Hub" if hub else {"tennis": "Tennis Score", "counter": "Counter", "dice": "Dice", "mars": "Mars Production", "manager": "App Manager", "bench": "Benchmark"}[apps[0]])
-    icon = None if a.no_icon else mkicon.encode(*mkicon.draw("hub" if hub else apps[0]))
+    icon = None if a.no_icon or sl["row"] is None else mkicon.encode(*mkicon.draw("hub" if hub else apps[0]))
     build_package.build(a.stock, a.out, open(loader, "rb").read(), label=label, icon=icon, slot=sl["window"], languages=a.languages, force_slot=a.force_slot, bluetooth_patches=not a.no_bluetooth_patches,
                         takeover={"create": syms["world_create"] | 1, "event": syms["world_event"] | 1}, reply_hook={"main": syms["reply_page"] | 1, "refresh": syms["reply_refresh"] | 1} if kb_ttf else None)
     size = len(open(loader, "rb").read()); free = build_package.FREE_END - build_package.FREE_START; used = size + (16 + len(icon) + 15 if icon else 0)

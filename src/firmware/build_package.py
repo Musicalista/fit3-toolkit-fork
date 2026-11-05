@@ -77,6 +77,29 @@ def slot_table(raw, english=None):
     return rows
 
 
+# entries outside the app list that open a window of the same kind (layer 3, deleted when left): (address of the menu row, expected text id, expected window id, where it is).
+# A menu row is 12 bytes like an app-list row but laid out u16 text id, u16 window id, u32, char* icon: the row of the Settings menu at 0x2c2f9094 says text 1708 ("Tips and tutorials")
+# opens window 0x40, whose create function shows text 1722 ("Tips and tutorials") as its title (0x2c1b76c0). Only the name changes; the menu keeps its stock icon.
+MENU_SLOTS = ((0x2c2f9094, 1708, 0x40, "Settings"),)
+
+
+def menu_slots(raw, english=None):
+    """the extra entries of MENU_SLOTS, checked against the stock bytes, as rows like slot_table's (row None, no icon)"""
+    rd = lambda a, fmt: struct.unpack_from(fmt, raw, a - BASE)
+    rows = []
+    for a, text, win, where in MENU_SLOTS:
+        t, w = rd(a, "<Hh")
+        assert (t, w) == (text, win), "the menu row at %#x is not text %d / window %#x (another version?)" % (a, text, win)
+        rec = WINDOW_TABLE + win * 0x30
+        row = dict(row=None, kind="menu", window=win, text_id=text, icon_field=None, icon_ptr=None, where=where, name=english.string(text) if english else "text %d" % text)
+        for nm, off in WINDOW_FNS: row[nm] = _fn(rd(rec + off, "<I")[0])
+        rows.append(row)
+    return rows
+
+
+def all_slots(raw, english=None): return slot_table(raw, english) + menu_slots(raw, english)
+
+
 def find_slot(table, spec):
     """spec: a window id (int or '0x2b') or a name ('World Clock', 'worldclock', 'calc')"""
     if isinstance(spec, str) and not spec.strip().lower().startswith("0x") and not spec.strip().isdigit():
@@ -105,7 +128,8 @@ def build(stock, out, loader, takeover, loader_addr=FREE_START, label="Tennis", 
     long_label = len(new_label) > len(old_label)            # longer than "World Clock": only the app-list string is replaced, via lvlang.Lang.set_string
     p = fwd.Package.load(stock); raw = bytearray(check_stock(p)); orig = bytes(raw)
     english = next(lvlang.Lang(p.raw(k)) for k in p.paths() if k.endswith("/language_en.res"))
-    sl = find_slot(slot_table(orig, english), slot)
+    sl = find_slot(all_slots(orig, english), slot)
+    assert sl["row"] is not None or icon is None, "%s is not a row of the app list: it keeps its stock icon (pass no icon)" % sl["name"]
     assert force_slot or sl["window"] not in FORBIDDEN, "slot %s refused: %s (force_slot=True / --force-slot overrides)" % (sl["name"], FORBIDDEN[sl["window"]])
     is_wc = sl["window"] == 0x2b
     # --- placement checks
@@ -166,7 +190,7 @@ def build(stock, out, loader, takeover, loader_addr=FREE_START, label="Tennis", 
         if new != inner: p.set_raw(path, fwd.rezip_single(zbytes, new)); changed.append((path.rsplit("/", 1)[1], n))
     assert any(c[1] for c in changed), "found no label to replace for %s" % sl["name"]
     p.save(out)
-    log("Bluetooth patches: %s; loader %d bytes at %#x..%#x; take-over of %s (window %#x, list row %d): %s" % ("%d (the watch is open to anyone in range)" % len(SPP_PATCHES) if bluetooth_patches else "none (stock Bluetooth behaviour)", len(loader), loader_addr, lend, sl["name"], sl["window"], sl["row"],
+    log("Bluetooth patches: %s; loader %d bytes at %#x..%#x; take-over of %s (window %#x, list row %d): %s" % ("%d (the watch is open to anyone in range)" % len(SPP_PATCHES) if bluetooth_patches else "none (stock Bluetooth behaviour)", len(loader), loader_addr, lend, sl["name"], sl["window"], -1 if sl["row"] is None else sl["row"],
         ", ".join("%s %#x -> b.w %#x" % (k, sl[k], v & ~1) for k, v in takeover.items())))
     if reply_hook is not None: log("reply keyboard: %#x -> %#x (page of the reply icon), %#x -> %#x (refresh)" % (REPLY_MAIN[0], reply_hook["main"] & ~1, REPLY_REFRESH[0], reply_hook["refresh"] & ~1))
     log("label -> %r; changed language files: %s" % (label, ", ".join("%s (x%d)" % c for c in changed)))
@@ -197,11 +221,12 @@ if __name__ == "__main__":
     if a.list_slots:
         p = fwd.Package.load(a.stock); raw = check_stock(p); en = next(lvlang.Lang(p.raw(k)) for k in p.paths() if k.endswith("/language_en.res"))
         print("row  window  entry                      note")
-        for r in slot_table(raw, en):
+        for r in all_slots(raw, en):
             note = ("refused without --force-slot: " + FORBIDDEN[r["window"]]) if r["window"] in FORBIDDEN else (
                 "default: rarely used, nothing runs in the background" if r["window"] == 0x2b else
                 "replaces the stock app" + ("; it may keep timers, alarms or data running in the background" if r["window"] in WARNED else ""))
-            print("%3d  %#6x  %-26s %s" % (r["row"], r["window"], r["name"], note))
+            if r["row"] is None: note = "in %s, not in the app list: only its name changes, the stock icon stays" % r["where"]
+            print("%3s  %#6x  %-26s %s" % ("-" if r["row"] is None else r["row"], r["window"], r["name"], note))
         sys.exit(0)
     if not (a.out and a.loader and a.takeover_create and a.takeover_event): ap.error("out, --loader, --takeover-create and --takeover-event are required")
     build(a.stock, a.out, open(a.loader, "rb").read(), {"create": a.takeover_create, "event": a.takeover_event}, a.loader_addr, a.label, icon=open(a.icon, "rb").read() if a.icon else None,

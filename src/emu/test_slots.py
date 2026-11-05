@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""test_slots.py: build the tennis package for every replaceable app-list entry and test each result in the emulator.
+"""test_slots.py: build the tennis package for every replaceable entry (the app list and MENU_SLOTS) and test each result in the emulator.
 
     python3 -I src/emu/test_slots.py [slot ...]        # all slots except Settings, or the given names / window ids
 
@@ -17,14 +17,14 @@ EMU_PY = os.path.join(ROOT, "local/venv/bin/python")                  # Unicorn 
 def main(argv):
     if not os.path.exists(STOCK): print("SKIP: need local/firmware/stock-aza3.bin"); return 0
     p = fwd.Package.load(STOCK); orig = p.raw(fwd.MAIN); en = next(lvlang.Lang(p.raw(k)) for k in p.paths() if k.endswith("/language_en.res"))
-    table = bp.slot_table(orig, en); chosen = [bp.find_slot(table, a) for a in argv] or [r for r in table if r["window"] not in bp.FORBIDDEN]
+    table = bp.all_slots(orig, en); chosen = [bp.find_slot(table, a) for a in argv] or [r for r in table if r["window"] not in bp.FORBIDDEN]
     work = tempfile.mkdtemp(prefix="slots_", dir=os.path.join(ROOT, "local")) if os.path.isdir(os.path.join(ROOT, "local")) else tempfile.mkdtemp()
     icon = mkicon.encode(*mkicon.draw()); bad = 0
     for sl in chosen:
-        name = "%s (window %#x, row %d)" % (sl["name"], sl["window"], sl["row"]); print("== " + name)
+        name = "%s (window %#x, %s)" % (sl["name"], sl["window"], "row %d" % sl["row"] if sl["row"] is not None else "menu of " + sl["where"]); print("== " + name)
         lo = os.path.join(work, "loader_%x.bin" % sl["window"]); syms = build_loader.build(os.path.join(ROOT, "src/watch/hub.c"), lo, quiet=True, defines=["WINDOW_ID=%#x" % sl["window"]], include_dirs=[gen.generate(["tennis"], False, os.path.join(work, "gen"))])
         out = os.path.join(work, "slot_%x.bin" % sl["window"])
-        bp.build(STOCK, out, open(lo, "rb").read(), label="Tennis Score", icon=icon, slot=sl["window"], quiet=True, validate=False,
+        bp.build(STOCK, out, open(lo, "rb").read(), label="Tennis Score", icon=icon if sl["row"] is not None else None, slot=sl["window"], quiet=True, validate=False,
                  takeover={"create": syms["world_create"] | 1, "event": syms["world_event"] | 1})
         new = fwd.Package.load(out).raw(fwd.MAIN); ok = True
         diff = [i for i in range(len(orig)) if orig[i] != new[i]]
@@ -32,7 +32,7 @@ def main(argv):
             a = bp.BASE + i
             if 0x2c081008 <= a < 0x2c08100c or a in (0x2c227f7a, 0x2c227f7b, 0x2c233820, 0x2c233821): return True        # image CRC, spp patches
             if 0x2c3a0524 <= a < 0x2c3af920: return True                                                                # loader and icon
-            if sl["icon_field"] <= a < sl["icon_field"] + 4: return True
+            if sl["icon_field"] and sl["icon_field"] <= a < sl["icon_field"] + 4: return True
             return any(f <= a < f + (4 if k in ("create", "event") else 2) for k in ("create", "event", "post", "x28", "destroy") for f in [sl[k]] if f)
         stray = [hex(bp.BASE + i) for i in diff if not covered(i)]
         if stray: ok = False; print("FAIL unexpected changes in the main image:", stray[:8])
@@ -42,8 +42,8 @@ def main(argv):
         for k in ("post", "x28", "destroy"):
             f = sl[k]
             if f and k not in bp.KEEP_STOCK.get(sl["window"], ()) and new[f - bp.BASE:f - bp.BASE + 2] != bp.BX_LR: ok = False; print("FAIL the %s function %#x is not a no-op" % (k, f))
-        icon_ptr = struct.unpack_from("<I", new, sl["icon_field"] - bp.BASE)[0]
-        others = all(struct.unpack_from("<I", new, bp.APPLIST_TABLE + 12 * r["row"] + 4 - bp.BASE)[0] == r["icon_ptr"] for r in table if r["row"] != sl["row"])
+        icon_ptr = struct.unpack_from("<I", new, sl["icon_field"] - bp.BASE)[0] if sl["icon_field"] else 0x2c3a0524      # a menu entry keeps its stock icon
+        others = all(struct.unpack_from("<I", new, bp.APPLIST_TABLE + 12 * r["row"] + 4 - bp.BASE)[0] == r["icon_ptr"] for r in table if r["row"] is not None and r["row"] != sl["row"])
         if not (0x2c3a0524 <= icon_ptr < 0x2c3af920 and others): ok = False; print("FAIL the icon pointers are wrong")
         img = os.path.join(work, "main_%x.bin" % sl["window"]); open(img, "wb").write(new)
         env = dict(os.environ, F3_IMAGE=os.path.relpath(img, ROOT), F3_WINDOW=hex(sl["window"]), F3_CREATE=hex(sl["create"]), F3_EVENT=hex(sl["event"]))
